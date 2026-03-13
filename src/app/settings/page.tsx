@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Dialog as ResetDialog, DialogContent as ResetDialogContent, DialogHeader as ResetDialogHeader,
+  DialogTitle as ResetDialogTitle, DialogFooter as ResetDialogFooter,
+} from "@/components/ui/dialog";
+import {
   Settings, Building2, FileText, Bell, Palette, RotateCcw,
-  Save, Upload, Trash2, DollarSign, Code, Eye, EyeOff, Database, FileUp, CheckCircle2,
+  Save, Upload, Trash2, DollarSign, Code, Eye, EyeOff, Database, FileUp, CheckCircle2, AlertTriangle, Plus, X, Package,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
 import { useStore, type AppSettings, type OdooImportData } from "@/lib/store";
@@ -23,6 +27,17 @@ export default function SettingsPage() {
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
   const [importResult, setImportResult] = useState<{ clients: number; products: number; invoices: number; orders: number } | null>(null);
   const [importing, setImporting] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+  const [newCategory, setNewCategory] = useState("");
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (hasChanges) { e.preventDefault(); }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges]);
 
   function handleChange<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -61,37 +76,35 @@ export default function SettingsPage() {
   }
 
   function handleReset() {
-    if (confirm("هل أنت متأكد من إعادة تعيين جميع البيانات؟ سيتم حذف جميع البيانات المحلية.")) {
-      localStorage.clear();
-      window.location.reload();
-    }
+    localStorage.clear();
+    window.location.reload();
   }
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-6 page-enter">
-        <div className="flex items-center justify-between animate-fade-in-up">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">الإعدادات</h1>
-            <p className="mt-1 text-sm text-muted-foreground">تخصيص إعدادات النظام والفواتير</p>
-          </div>
+      <div className="mx-auto max-w-3xl space-y-8 page-enter">
+        <div className="animate-fade-in-up text-center">
+          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الإعدادات</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">تخصيص إعدادات النظام والفواتير</p>
           {hasChanges && (
-            <Button className="gap-1.5" onClick={handleSave}>
-              <Save className="h-4 w-4" />
-              حفظ التغييرات
-            </Button>
+            <div className="mt-4 flex justify-center">
+              <Button className="gap-1.5" onClick={handleSave}>
+                <Save className="h-4 w-4" />
+                حفظ التغييرات
+              </Button>
+            </div>
           )}
         </div>
 
         {/* Business Info */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Building2 className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Building2 className="h-5 w-5 text-primary" />
               معلومات المنشأة
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-6">
             <div className="flex flex-col gap-5 sm:flex-row">
               <ImageUpload
                 value={form.logo}
@@ -101,7 +114,7 @@ export default function SettingsPage() {
               />
               <div className="flex-1 space-y-4">
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-medium">اسم المنشأة (عربي)</label>
+                  <label className="text-base font-medium">اسم المنشأة (عربي)</label>
                   <Input
                     value={form.businessName}
                     onChange={(e) => handleChange("businessName", e.target.value)}
@@ -109,7 +122,7 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <label className="text-sm font-medium">اسم المنشأة (إنجليزي)</label>
+                  <label className="text-base font-medium">اسم المنشأة (إنجليزي)</label>
                   <Input
                     value={form.businessNameEn}
                     onChange={(e) => handleChange("businessNameEn", e.target.value)}
@@ -122,7 +135,7 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">رقم الهاتف</label>
+                <label className="text-base font-medium">رقم الهاتف</label>
                 <Input
                   value={form.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
@@ -131,7 +144,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">العنوان</label>
+                <label className="text-base font-medium">العنوان</label>
                 <Input
                   value={form.address}
                   onChange={(e) => handleChange("address", e.target.value)}
@@ -143,29 +156,29 @@ export default function SettingsPage() {
         </Card>
 
         {/* Invoice Settings */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <FileText className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <FileText className="h-5 w-5 text-primary" />
               إعدادات الفواتير
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">بادئة الفاتورة</label>
+                <label className="text-base font-medium">بادئة الفاتورة</label>
                 <Input
                   value={form.invoicePrefix}
                   onChange={(e) => handleChange("invoicePrefix", e.target.value)}
                   placeholder="INV"
                   dir="ltr"
                 />
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   مثال: {form.invoicePrefix}-2025-001
                 </p>
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">العملة</label>
+                <label className="text-base font-medium">العملة</label>
                 <Input
                   value={form.currency}
                   onChange={(e) => handleChange("currency", e.target.value)}
@@ -174,7 +187,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <label className="text-sm font-medium">رمز العملة</label>
+                <label className="text-base font-medium">رمز العملة</label>
                 <Input
                   value={form.currencySymbol}
                   onChange={(e) => handleChange("currencySymbol", e.target.value)}
@@ -185,7 +198,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="grid gap-1.5">
-              <label className="text-sm font-medium">ملاحظة أسفل الفاتورة</label>
+              <label className="text-base font-medium">ملاحظة أسفل الفاتورة</label>
               <Textarea
                 value={form.invoiceNotes}
                 onChange={(e) => handleChange("invoiceNotes", e.target.value)}
@@ -200,8 +213,8 @@ export default function SettingsPage() {
             {/* Tax */}
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">تفعيل الضريبة</p>
-                <p className="text-xs text-muted-foreground">إضافة ضريبة تلقائياً على الفواتير</p>
+                <p className="text-base font-medium">تفعيل الضريبة</p>
+                <p className="text-sm text-muted-foreground">إضافة ضريبة تلقائياً على الفواتير</p>
               </div>
               <button
                 onClick={() => handleChange("taxEnabled", !form.taxEnabled)}
@@ -217,7 +230,7 @@ export default function SettingsPage() {
 
             {form.taxEnabled && (
               <div className="grid gap-1.5 sm:w-1/3">
-                <label className="text-sm font-medium">نسبة الضريبة (%)</label>
+                <label className="text-base font-medium">نسبة الضريبة (%)</label>
                 <Input
                   type="number"
                   min={0}
@@ -231,18 +244,18 @@ export default function SettingsPage() {
         </Card>
 
         {/* Notifications */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Bell className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Bell className="h-5 w-5 text-primary" />
               التنبيهات
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium">تنبيه المخزون المنخفض</p>
-                <p className="text-xs text-muted-foreground">إظهار تنبيه عندما ينخفض مخزون منتج عن الحد الأدنى</p>
+                <p className="text-base font-medium">تنبيه المخزون المنخفض</p>
+                <p className="text-sm text-muted-foreground">إظهار تنبيه عندما ينخفض مخزون منتج عن الحد الأدنى</p>
               </div>
               <button
                 onClick={() => handleChange("lowStockWarning", !form.lowStockWarning)}
@@ -258,16 +271,74 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Import from Odoo */}
-        <Card className="border shadow-sm">
+        {/* Product Categories */}
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Database className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Package className="h-5 w-5 text-primary" />
+              فئات المنتجات
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              إدارة فئات المنتجات المتاحة في المخزون
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {form.productCategories.map((cat) => (
+                <Badge key={cat} variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm">
+                  {cat}
+                  <button
+                    onClick={() => {
+                      handleChange("productCategories", form.productCategories.filter((c) => c !== cat));
+                    }}
+                    className="rounded-full p-0.5 hover:bg-destructive/20 hover:text-destructive"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="اسم الفئة الجديدة..."
+                className="flex-1"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && newCategory.trim() && !form.productCategories.includes(newCategory.trim())) {
+                    handleChange("productCategories", [...form.productCategories, newCategory.trim()]);
+                    setNewCategory("");
+                  }
+                }}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  if (newCategory.trim() && !form.productCategories.includes(newCategory.trim())) {
+                    handleChange("productCategories", [...form.productCategories, newCategory.trim()]);
+                    setNewCategory("");
+                  }
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                إضافة
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Import from Odoo */}
+        <Card className="border border-border/60 shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Database className="h-5 w-5 text-primary" />
               استيراد من Odoo
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               استيراد بيانات العملاء والمنتجات والفواتير والطلبات من ملف JSON المُصدَّر من نظام Odoo.
               يمكنك تصدير البيانات باستخدام الأمر:
             </p>
@@ -283,7 +354,7 @@ export default function SettingsPage() {
                   className="hidden"
                   disabled={importing}
                 />
-                <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border px-4 py-6 text-sm text-muted-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary">
+                <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/60 px-4 py-6 text-base text-muted-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary">
                   {importing ? (
                     <span className="animate-spin">⏳</span>
                   ) : (
@@ -295,8 +366,8 @@ export default function SettingsPage() {
             </div>
 
             {importResult && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-2">
-                <div className="flex items-center gap-2 text-sm font-bold text-emerald-700">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 space-y-2">
+                <div className="flex items-center gap-2 text-base font-bold text-emerald-700">
                   <CheckCircle2 className="h-4 w-4" />
                   تم الاستيراد بنجاح
                 </div>
@@ -309,29 +380,29 @@ export default function SettingsPage() {
                   ].map((item) => (
                     <div key={item.label} className="rounded-lg bg-white p-2.5 text-center">
                       <p className="text-lg font-bold text-emerald-700">{item.count}</p>
-                      <p className="text-[11px] text-muted-foreground">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.label}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               البيانات المُستوردة ستُضاف إلى البيانات الحالية دون حذف أي بيانات موجودة. لن يتم استيراد البيانات المكررة.
             </p>
           </CardContent>
         </Card>
 
         {/* Custom Invoice HTML Template */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Code className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Code className="h-5 w-5 text-primary" />
               قالب HTML مخصص للفاتورة
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               يمكنك كتابة كود HTML مخصص لتصميم الفاتورة. استخدم المتغيرات التالية وسيتم استبدالها تلقائياً:
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -340,7 +411,7 @@ export default function SettingsPage() {
                 "{{invoiceNumber}}", "{{date}}", "{{status}}", "{{clientName}}", "{{clientPhone}}", "{{clientAddress}}",
                 "{{items}}", "{{subtotal}}", "{{discount}}", "{{total}}", "{{notes}}", "{{currencySymbol}}",
               ].map((v) => (
-                <Badge key={v} variant="secondary" className="font-mono text-[10px] cursor-pointer" onClick={() => {
+                <Badge key={v} variant="secondary" className="font-mono text-xs cursor-pointer" onClick={() => {
                   navigator.clipboard.writeText(v);
                   toast.success(`تم نسخ ${v}`);
                 }}>
@@ -348,7 +419,7 @@ export default function SettingsPage() {
                 </Badge>
               ))}
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               المتغير <code className="bg-muted px-1 rounded">{"{{items}}"}</code> يُستبدل بصفوف جدول HTML تحتوي على: رقم، اسم المنتج، الكمية، سعر الوحدة، الإجمالي.
               اضغط على أي متغير لنسخه.
             </p>
@@ -385,8 +456,8 @@ export default function SettingsPage() {
               )}
             </div>
             {showHtmlPreview && form.customInvoiceHtml && (
-              <div className="rounded-xl border border-border bg-white p-4 overflow-auto max-h-[500px]">
-                <p className="text-xs text-muted-foreground mb-2">معاينة (بيانات تجريبية):</p>
+              <div className="rounded-xl border border-border/60 bg-white p-6 overflow-auto max-h-[500px]">
+                <p className="text-sm text-muted-foreground mb-2">معاينة (بيانات تجريبية):</p>
                 <div
                   dangerouslySetInnerHTML={{
                     __html: form.customInvoiceHtml
@@ -415,20 +486,20 @@ export default function SettingsPage() {
         </Card>
 
         {/* Danger zone */}
-        <Card className="border border-red-200 shadow-sm">
+        <Card className="border border-red-200/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold text-red-600">
-              <Trash2 className="h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-600">
+              <Trash2 className="h-5 w-5" />
               منطقة الخطر
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium">إعادة تعيين جميع البيانات</p>
-                <p className="text-xs text-muted-foreground">حذف جميع البيانات المحلية والعودة للبيانات الافتراضية</p>
+                <p className="text-base font-medium">إعادة تعيين جميع البيانات</p>
+                <p className="text-sm text-muted-foreground">حذف جميع البيانات المحلية والعودة للبيانات الافتراضية</p>
               </div>
-              <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleReset}>
+              <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => setResetDialogOpen(true)}>
                 <RotateCcw className="h-4 w-4" />
                 إعادة تعيين
               </Button>
@@ -446,6 +517,24 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      <ResetDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <ResetDialogContent className="max-w-sm" dir="rtl">
+          <ResetDialogHeader>
+            <ResetDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              إعادة تعيين جميع البيانات
+            </ResetDialogTitle>
+          </ResetDialogHeader>
+          <p className="text-base text-muted-foreground">
+            سيتم حذف جميع البيانات المحلية والعودة للبيانات الافتراضية. هذا الإجراء لا يمكن التراجع عنه.
+          </p>
+          <ResetDialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setResetDialogOpen(false)}>إلغاء</Button>
+            <Button variant="destructive" onClick={handleReset}>حذف جميع البيانات</Button>
+          </ResetDialogFooter>
+        </ResetDialogContent>
+      </ResetDialog>
     </AppShell>
   );
 }

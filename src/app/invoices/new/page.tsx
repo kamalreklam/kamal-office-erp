@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import {
   ArrowRight, Plus, Trash2, Search, User, Package, Calculator,
-  Save, Printer, FileText, GripVertical, Layers,
+  Save, Printer, FileText, Layers, ChevronDown,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { type InvoiceStatus, formatCurrency } from "@/lib/data";
@@ -32,7 +31,12 @@ interface LineItem {
 
 export default function NewInvoicePage() {
   const router = useRouter();
-  const { clients, products, bundles, addInvoice, getProductImage, settings, nextInvoiceNumber } = useStore();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+  const { clients, products, bundles, invoices, addInvoice, updateInvoice, getProductImage, settings, nextInvoiceNumber } = useStore();
+
+  const editingInvoice = editId ? invoices.find((inv) => inv.id === editId) : null;
+  const isEdit = !!editingInvoice;
 
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<(typeof clients)[0] | null>(null);
@@ -49,6 +53,37 @@ export default function NewInvoicePage() {
   const [discountType, setDiscountType] = useState<"percentage" | "fixed">("percentage");
   const [discountValue, setDiscountValue] = useState(0);
   const [notes, setNotes] = useState("");
+  const [showExtras, setShowExtras] = useState(false);
+  const [prefilled, setPrefilled] = useState(false);
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editingInvoice && !prefilled) {
+      const client = clients.find((c) => c.id === editingInvoice.clientId);
+      if (client) {
+        setSelectedClient(client);
+        setClientSearch(client.name);
+      }
+      const items: LineItem[] = editingInvoice.items.map((item) => ({
+        id: item.id,
+        productId: item.productId,
+        productName: item.productName,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.total,
+      }));
+      setLineItems(items.length > 0 ? items : [{ id: "li1", productId: "", productName: "", description: "", quantity: 1, unitPrice: 0, total: 0 }]);
+      const searches: Record<string, string> = {};
+      items.forEach((item) => { searches[item.id] = item.productName; });
+      setProductSearch(searches);
+      setDiscountType(editingInvoice.discountType);
+      setDiscountValue(editingInvoice.discountValue);
+      setNotes(editingInvoice.notes);
+      if (editingInvoice.discountValue > 0 || editingInvoice.notes) setShowExtras(true);
+      setPrefilled(true);
+    }
+  }, [editingInvoice, clients, prefilled]);
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
   const discountAmount = discountType === "percentage" ? (subtotal * discountValue) / 100 : discountValue;
@@ -139,8 +174,11 @@ export default function NewInvoicePage() {
       };
     });
     setLineItems((prev) => {
-      const filtered = prev.filter((li) => li.productId !== "");
-      return [...filtered, ...newItems];
+      // Keep all existing items that have a product selected;
+      // only drop the empty default row if it's the sole item
+      const hasRealItems = prev.some((li) => li.productId !== "");
+      const kept = hasRealItems ? prev.filter((li) => li.productId !== "") : [];
+      return [...kept, ...newItems];
     });
     newItems.forEach((item) => {
       setProductSearch((prev) => ({ ...prev, [item.id]: item.productName }));
@@ -159,7 +197,7 @@ export default function NewInvoicePage() {
       return;
     }
 
-    addInvoice({
+    const invoiceData = {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
       items: validItems.map((li) => ({
@@ -178,33 +216,40 @@ export default function NewInvoicePage() {
       total,
       status,
       notes,
-    });
+    };
 
-    toast.success(`تم حفظ الفاتورة بنجاح (${status})`);
-    router.push("/invoices");
+    if (isEdit && editId) {
+      updateInvoice(editId, invoiceData);
+      toast.success("تم تحديث الفاتورة بنجاح");
+      router.push(`/invoices/${editId}`);
+    } else {
+      addInvoice(invoiceData);
+      toast.success(`تم حفظ الفاتورة بنجاح (${status})`);
+      router.push("/invoices");
+    }
   }
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-6 page-enter">
+      <div className="mx-auto max-w-4xl space-y-8 page-enter">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/invoices")} className="rounded-lg p-2 text-muted-foreground hover:bg-accent">
+            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent">
               <ArrowRight className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">فاتورة جديدة</h1>
-              <p className="mt-0.5 text-sm text-muted-foreground">رقم الفاتورة: {nextInvoiceNumber()}</p>
+              <h1 className="text-3xl font-extrabold text-foreground">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
+              <p className="mt-0.5 text-base text-muted-foreground">رقم الفاتورة: {isEdit ? editingInvoice?.invoiceNumber : nextInvoiceNumber()}</p>
             </div>
           </div>
         </div>
 
         {/* Client Selection */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm !overflow-visible">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <User className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <User className="h-5 w-5 text-primary" />
               بيانات العميل
             </CardTitle>
           </CardHeader>
@@ -226,10 +271,10 @@ export default function NewInvoicePage() {
               </div>
 
               {showClientDropdown && !selectedClient && (
-                <div className="absolute top-full z-20 mt-1 w-full rounded-xl border border-border bg-white shadow-xl">
-                  <div className="max-h-64 overflow-y-auto p-2">
+                <div className="absolute top-full z-50 mt-2 w-full rounded-xl border border-border bg-white shadow-2xl">
+                  <div className="max-h-80 overflow-y-auto p-2">
                     {filteredClients.length === 0 ? (
-                      <p className="p-4 text-center text-sm text-muted-foreground">لا يوجد عملاء مطابقين</p>
+                      <p className="p-4 text-center text-base text-muted-foreground">لا يوجد عملاء مطابقين</p>
                     ) : (
                       filteredClients.map((client) => (
                         <button
@@ -242,11 +287,11 @@ export default function NewInvoicePage() {
                               {client.name.charAt(0)}
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-foreground">{client.name}</p>
-                              <p className="text-xs text-muted-foreground">{client.phone} · {client.address}</p>
+                              <p className="text-base font-medium text-foreground">{client.name}</p>
+                              <p className="text-sm text-muted-foreground"><span dir="ltr">{client.phone}</span> · {client.address}</p>
                             </div>
                           </div>
-                          <Badge variant="secondary" className="text-[10px]">{formatCurrency(client.totalSpent)}</Badge>
+                          <Badge variant="secondary" className="text-xs">{formatCurrency(client.totalSpent)}</Badge>
                         </button>
                       ))
                     )}
@@ -255,19 +300,19 @@ export default function NewInvoicePage() {
               )}
 
               {selectedClient && (
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-6">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
                       {selectedClient.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-foreground">{selectedClient.name}</p>
-                      <p className="text-xs text-muted-foreground">{selectedClient.phone} · {selectedClient.address}</p>
+                      <p className="text-base font-bold text-foreground">{selectedClient.name}</p>
+                      <p className="text-sm text-muted-foreground">{selectedClient.phone} · {selectedClient.address}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                    className="rounded-lg p-2 text-muted-foreground hover:bg-accent"
+                    className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -280,7 +325,7 @@ export default function NewInvoicePage() {
         {/* Bundles quick-add */}
         {bundles.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
-            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-muted-foreground">
+            <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground">
               <Layers className="h-3.5 w-3.5" />
               مجموعات:
             </span>
@@ -288,7 +333,7 @@ export default function NewInvoicePage() {
               <button
                 key={bundle.id}
                 onClick={() => addBundle(bundle)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <Plus className="h-3 w-3" />
                 {bundle.name}
@@ -298,23 +343,23 @@ export default function NewInvoicePage() {
         )}
 
         {/* Line Items */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Package className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Package className="h-5 w-5 text-primary" />
               المنتجات
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             {lineItems.map((item, index) => (
               <div
                 key={item.id}
                 data-product-row
-                className="group rounded-xl border border-border bg-white p-4 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
+                className="group rounded-xl border border-border/60 bg-white p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
               >
                 <div className="flex items-start gap-3">
                   {/* Row number */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
                     {index + 1}
                   </div>
 
@@ -346,7 +391,7 @@ export default function NewInvoicePage() {
                         <div className="absolute top-full z-20 mt-1 w-full rounded-xl border border-border bg-white shadow-xl">
                           <div className="max-h-64 overflow-y-auto p-2">
                             {getFilteredProducts(item.id).length === 0 ? (
-                              <p className="p-4 text-center text-sm text-muted-foreground">لا توجد منتجات</p>
+                              <p className="p-4 text-center text-base text-muted-foreground">لا توجد منتجات</p>
                             ) : (
                               getFilteredProducts(item.id).map((product) => {
                                 const img = getProductImage(product.id);
@@ -357,19 +402,19 @@ export default function NewInvoicePage() {
                                     className="flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors hover:bg-accent"
                                   >
                                     {img ? (
-                                      <Image src={img} alt="" width={36} height={36} className="h-9 w-9 rounded-lg object-cover border border-border" />
+                                      <img src={img} alt="" className="h-12 w-12 rounded-xl object-cover border border-border/60" />
                                     ) : (
-                                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                                        <Package className="h-4 w-4" />
+                                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                                        <Package className="h-5 w-5" />
                                       </div>
                                     )}
                                     <div className="flex-1 text-right">
-                                      <p className="text-sm font-medium">{product.name}</p>
-                                      <p className="text-xs text-muted-foreground">
+                                      <p className="text-base font-medium">{product.name}</p>
+                                      <p className="text-sm text-muted-foreground">
                                         {product.category} · المخزون: {product.stock} {product.unit}
                                       </p>
                                     </div>
-                                    <span className="text-sm font-bold text-primary">{formatCurrency(product.price)}</span>
+                                    <span className="text-base font-bold text-primary">{formatCurrency(product.price)}</span>
                                   </button>
                                 );
                               })
@@ -380,13 +425,13 @@ export default function NewInvoicePage() {
                     </div>
 
                     {item.description && (
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
                     )}
 
                     {/* Quantity, price, total */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">الكمية</label>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">الكمية</label>
                         <Input
                           type="number" min={1} value={item.quantity}
                           onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
@@ -394,7 +439,7 @@ export default function NewInvoicePage() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">سعر الوحدة ($)</label>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">سعر الوحدة ($)</label>
                         <Input
                           type="number" min={0} step={0.5} value={item.unitPrice}
                           onChange={(e) => updateUnitPrice(item.id, parseFloat(e.target.value) || 0)}
@@ -402,8 +447,8 @@ export default function NewInvoicePage() {
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-[11px] font-medium text-muted-foreground">الإجمالي</label>
-                        <div className="flex h-10 items-center rounded-lg bg-muted/60 px-3 text-sm font-bold text-foreground">
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">الإجمالي</label>
+                        <div className="flex h-10 items-center rounded-lg bg-muted/60 px-3 text-base font-bold text-foreground">
                           {formatCurrency(item.total)}
                         </div>
                       </div>
@@ -414,7 +459,7 @@ export default function NewInvoicePage() {
                   <button
                     onClick={() => removeRow(item.id)}
                     disabled={lineItems.length <= 1}
-                    className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                    className="shrink-0 rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -430,54 +475,66 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Summary */}
-        <Card className="border shadow-sm">
+        <Card className="border border-border/60 shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base font-bold">
-              <Calculator className="h-4 w-4 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg font-bold">
+              <Calculator className="h-5 w-5 text-primary" />
               ملخص الفاتورة
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              {/* Discount */}
-              <div className="rounded-xl border border-border p-4 space-y-3">
-                <p className="text-sm font-medium">الخصم</p>
-                <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
-                  <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
-                    <SelectItem value="fixed">مبلغ ثابت ($)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  type="number" min={0} max={discountType === "percentage" ? 100 : subtotal}
-                  value={discountValue}
-                  onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                  className="h-10"
-                />
-              </div>
+          <CardContent className="space-y-5">
+            {/* Collapsible Discount & Notes */}
+            <button
+              type="button"
+              onClick={() => setShowExtras(!showExtras)}
+              className="flex w-full items-center justify-between rounded-xl border border-dashed border-border/60 px-5 py-3.5 text-base font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+            >
+              <span>خصم وملاحظات (اختياري)</span>
+              <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${showExtras ? "rotate-180" : ""}`} />
+            </button>
 
-              {/* Notes */}
-              <div className="rounded-xl border border-border p-4 space-y-3">
-                <p className="text-sm font-medium">ملاحظات</p>
-                <Textarea
-                  placeholder="ملاحظات إضافية على الفاتورة..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={3}
-                  className="resize-none"
-                />
+            {showExtras && (
+              <div className="grid gap-5 sm:grid-cols-2 animate-fade-in-up" style={{ animationDuration: "0.3s" }}>
+                {/* Discount */}
+                <div className="rounded-xl border border-border/60 p-6 space-y-3">
+                  <p className="text-base font-medium">الخصم</p>
+                  <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
+                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
+                      <SelectItem value="fixed">مبلغ ثابت ($)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number" min={0} max={discountType === "percentage" ? 100 : subtotal}
+                    value={discountValue}
+                    onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                    className="h-10"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="rounded-xl border border-border/60 p-6 space-y-3">
+                  <p className="text-base font-medium">ملاحظات</p>
+                  <Textarea
+                    placeholder="ملاحظات إضافية على الفاتورة..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    className="resize-none"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Totals */}
-            <div className="rounded-xl bg-muted/30 p-5 space-y-3">
-              <div className="flex justify-between text-sm">
+            <div className="rounded-xl bg-muted/30 p-6 space-y-3">
+              <div className="flex justify-between text-base">
                 <span className="text-muted-foreground">المجموع الفرعي</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-base">
                   <span className="text-muted-foreground">
                     الخصم {discountType === "percentage" ? `(${discountValue}%)` : ""}
                   </span>
@@ -485,12 +542,12 @@ export default function NewInvoicePage() {
                 </div>
               )}
               {settings.taxEnabled && taxAmount > 0 && (
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-base">
                   <span className="text-muted-foreground">الضريبة ({settings.taxRate}%)</span>
                   <span className="font-medium">+{formatCurrency(taxAmount)}</span>
                 </div>
               )}
-              <div className="border-t border-border pt-3">
+              <div className="border-t border-border/60 pt-3">
                 <div className="flex justify-between text-xl">
                   <span className="font-bold text-foreground">الإجمالي النهائي</span>
                   <span className="font-extrabold text-primary">{formatCurrency(total)}</span>

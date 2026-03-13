@@ -103,68 +103,68 @@ export default function BundlesPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 page-enter">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">مجموعات المنتجات</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              أنشئ مجموعات جاهزة من المنتجات (مثل طقم تونر CMYK) لإضافتها بسرعة للفواتير
-            </p>
+      <div className="space-y-8 page-enter">
+        <div className="animate-fade-in-up text-center">
+          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">مجموعات المنتجات</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
+            أنشئ مجموعات جاهزة من المنتجات لإضافتها بسرعة للفواتير
+          </p>
+          <div className="mt-4 flex justify-center">
+            <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
+              <Plus className="h-5 w-5" />
+              مجموعة جديدة
+            </Button>
           </div>
-          <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
-            <Plus className="h-4 w-4" />
-            مجموعة جديدة
-          </Button>
         </div>
 
         {bundles.length === 0 ? (
-          <Card className="border shadow-sm">
+          <Card className="border border-border/60 shadow-sm">
             <CardContent className="flex flex-col items-center py-20 text-muted-foreground">
-              <Layers className="mb-3 h-12 w-12 opacity-30" />
-              <p className="text-base font-medium">لا توجد مجموعات بعد</p>
-              <p className="mt-1 text-sm">أنشئ مجموعة لتسهيل إضافة المنتجات للفواتير</p>
+              <Layers className="mb-3 h-14 w-14 opacity-30" />
+              <p className="text-lg font-medium">لا توجد مجموعات بعد</p>
+              <p className="mt-2 text-base">أنشئ مجموعة لتسهيل إضافة المنتجات للفواتير</p>
               <Button className="mt-4 gap-1.5" onClick={openAddDialog}>
-                <Plus className="h-4 w-4" />
-                إنشاء أول مجموعة
+                <Plus className="h-5 w-5" />
+                إضافة مجموعة
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 stagger-children">
+          <div className="grid gap-5 sm:grid-cols-2 stagger-children">
             {bundles.map((bundle) => {
               const total = getBundleTotal(bundle);
               const discounted = total * (1 - bundle.discount / 100);
               return (
-                <Card key={bundle.id} className="border shadow-sm transition-all hover:shadow-md">
-                  <CardContent className="p-5">
+                <Card key={bundle.id} className="border border-border/60 shadow-sm transition-all hover:shadow-md">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                          <Layers className="h-5 w-5" />
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                          <Layers className="h-6 w-6" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold text-foreground">{bundle.name}</h3>
+                          <h3 className="text-lg font-bold text-foreground">{bundle.name}</h3>
                           {bundle.description && (
-                            <p className="text-xs text-muted-foreground">{bundle.description}</p>
+                            <p className="text-sm text-muted-foreground">{bundle.description}</p>
                           )}
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => openEditDialog(bundle)} className="rounded-lg p-2 text-muted-foreground hover:bg-accent"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => confirmDelete(bundle)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => openEditDialog(bundle)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => confirmDelete(bundle)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
 
-                    <div className="mt-4 space-y-2">
+                    <div className="mt-4 space-y-3">
                       {bundle.items.map((item, idx) => {
                         const product = products.find((p) => p.id === item.productId);
                         return (
                           <div key={idx} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                             <div className="flex items-center gap-2">
                               <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-medium">{item.productName}</span>
+                              <span className="text-sm font-medium">{item.productName}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-2 text-sm">
                               <span className="text-muted-foreground">×{item.quantity}</span>
                               <span className="font-bold">{formatCurrency((product?.price || 0) * item.quantity)}</span>
                             </div>
@@ -173,18 +173,18 @@ export default function BundlesPage() {
                       })}
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                    <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3">
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px]">{bundle.items.length} منتجات</Badge>
+                        <Badge variant="secondary" className="text-xs">{bundle.items.length} منتجات</Badge>
                         {bundle.discount > 0 && (
-                          <Badge variant="outline" className="text-[10px] border-emerald-200 bg-emerald-50 text-emerald-700">خصم {bundle.discount}%</Badge>
+                          <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">خصم {bundle.discount}%</Badge>
                         )}
                       </div>
                       <div className="text-left">
                         {bundle.discount > 0 && (
-                          <span className="text-xs text-muted-foreground line-through ml-2">{formatCurrency(total)}</span>
+                          <span className="text-sm text-muted-foreground line-through ml-2">{formatCurrency(total)}</span>
                         )}
-                        <span className="text-sm font-bold text-primary">{formatCurrency(discounted)}</span>
+                        <span className="text-base font-bold text-primary">{formatCurrency(discounted)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -198,7 +198,7 @@ export default function BundlesPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader><DialogTitle>{editingBundle ? "تعديل المجموعة" : "مجموعة جديدة"}</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-2">
+          <div className="grid gap-5 py-2">
             <div className="grid gap-1.5">
               <label className="text-sm font-medium">اسم المجموعة</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="مثال: طقم تونر HP CMYK" />
@@ -218,7 +218,7 @@ export default function BundlesPage() {
                 <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={addItem}><Plus className="h-3 w-3" />إضافة</Button>
               </div>
               {items.map((item, index) => (
-                <div key={index} className="flex items-center gap-2 rounded-lg border border-border p-3">
+                <div key={index} className="flex items-center gap-2 rounded-lg border border-border/60 p-3">
                   <div className="flex-1">
                     <Select value={item.productId} onValueChange={(v) => v && updateItem(index, "productId", v)}>
                       <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="اختر منتج..." /></SelectTrigger>
@@ -243,7 +243,7 @@ export default function BundlesPage() {
                 </div>
               ))}
               {items.length === 0 && (
-                <p className="py-4 text-center text-xs text-muted-foreground">لم تتم إضافة منتجات بعد</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">لم تتم إضافة منتجات بعد</p>
               )}
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function BundlesPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">
           <DialogHeader><DialogTitle className="text-red-600">حذف المجموعة</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingBundle?.name}&quot;؟</p>
+          <p className="text-base text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingBundle?.name}&quot;؟</p>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
             <Button variant="destructive" onClick={handleDelete}>حذف</Button>

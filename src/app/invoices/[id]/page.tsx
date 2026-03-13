@@ -2,7 +2,6 @@
 
 import { use } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   ArrowRight, MessageCircle, FileText,
-  Download, CheckCircle2, XCircle,
+  Download, CheckCircle2, XCircle, Pencil,
 } from "lucide-react";
+import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import { exportInvoicePDF, shareInvoiceWhatsApp } from "@/lib/pdf";
@@ -106,19 +106,25 @@ export default function InvoiceDetailPage({
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-6 print:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mx-auto max-w-3xl space-y-8 print:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/invoices")} className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-accent hover:scale-105">
+            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground transition-all hover:bg-accent hover:scale-105">
               <ArrowRight className="h-5 w-5" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{invoice.invoiceNumber}</h1>
-              <p className="text-sm text-muted-foreground">تفاصيل الفاتورة</p>
+              <h1 className="text-3xl font-extrabold text-foreground">{invoice.invoiceNumber}</h1>
+              <p className="text-base text-muted-foreground">تفاصيل الفاتورة</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href={`/invoices/new?edit=${invoice.id}`}>
+              <Button variant="outline" size="sm" className="gap-1.5 transition-all hover:scale-105">
+                <Pencil className="h-4 w-4 text-primary" />
+                <span className="hidden sm:inline">تعديل</span>
+              </Button>
+            </Link>
             <Button variant="outline" size="sm" className="gap-1.5 transition-all hover:scale-105" onClick={togglePaid}>
               {invoice.status === "مدفوعة" ? (
                 <><XCircle className="h-4 w-4 text-amber-500" /><span className="hidden sm:inline">غير مدفوعة</span></>
@@ -138,7 +144,7 @@ export default function InvoiceDetailPage({
         </div>
 
         {/* Invoice Document */}
-        <Card className="border shadow-sm print:border-0 print:shadow-none animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100" id="invoice-document">
+        <Card className="border border-border/60 shadow-sm print:border-0 print:shadow-none animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100" id="invoice-document">
           <CardContent className="p-6 md:p-8">
             {hasCustomTemplate ? (
               <div dangerouslySetInnerHTML={{ __html: renderCustomTemplate() }} />
@@ -147,36 +153,36 @@ export default function InvoiceDetailPage({
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="flex items-center gap-3">
                     {settings.logo ? (
-                      <Image src={settings.logo} alt="Logo" width={56} height={56} className="h-14 w-14 rounded-xl object-cover" />
+                      <img src={settings.logo} alt="Logo" className="h-14 w-14 rounded-xl object-cover" />
                     ) : null}
                     <div>
                       <h2 className="text-xl font-extrabold text-foreground">{settings.businessName}</h2>
-                      <p className="text-sm text-muted-foreground">{settings.address}</p>
-                      <p className="text-sm text-muted-foreground">هاتف: {settings.phone}</p>
+                      <p className="text-base text-muted-foreground">{settings.address}</p>
+                      <p className="text-base text-muted-foreground">هاتف: <span dir="ltr">{settings.phone}</span></p>
                     </div>
                   </div>
                   <div className="text-left sm:text-left">
                     <p className="text-lg font-bold text-foreground">{invoice.invoiceNumber}</p>
-                    <p className="text-sm text-muted-foreground">التاريخ: {invoice.createdAt}</p>
-                    <Badge variant="outline" className={`mt-1 ${getStatusColor(invoice.status)}`}>{invoice.status}</Badge>
+                    <p className="text-base text-muted-foreground">التاريخ: {invoice.createdAt}</p>
+                    <Badge variant="outline" className={`mt-2 ${getStatusColor(invoice.status)}`}>{invoice.status}</Badge>
                   </div>
                 </div>
 
                 <Separator className="my-6" />
 
-                <div className="rounded-xl bg-muted/30 p-4">
-                  <p className="text-xs font-bold text-muted-foreground">فاتورة إلى</p>
-                  <p className="mt-1 text-base font-bold text-foreground">{invoice.clientName}</p>
+                <div className="rounded-xl bg-muted/30 p-6">
+                  <p className="text-sm font-bold text-muted-foreground">فاتورة إلى</p>
+                  <p className="mt-2 text-base font-bold text-foreground">{invoice.clientName}</p>
                   {client && (
                     <>
-                      <p className="text-sm text-muted-foreground">{client.phone}</p>
-                      <p className="text-sm text-muted-foreground">{client.address}</p>
+                      <p className="text-base text-muted-foreground" dir="ltr">{client.phone}</p>
+                      <p className="text-base text-muted-foreground">{client.address}</p>
                     </>
                   )}
                 </div>
 
                 <div className="mt-6 overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-base">
                     <thead>
                       <tr className="border-b-2 border-foreground/15">
                         <th className="pb-3 text-right font-bold text-muted-foreground">#</th>
@@ -193,11 +199,11 @@ export default function InvoiceDetailPage({
                           <tr key={item.id} className="border-b border-border/60">
                             <td className="py-4 text-muted-foreground">{index + 1}</td>
                             <td className="py-4">
-                              <div className="flex items-center gap-2">
-                                {img && <Image src={img} alt="" width={32} height={32} className="h-8 w-8 rounded-lg object-cover border border-border print:hidden" />}
+                              <div className="flex items-center gap-3">
+                                {img && <img src={img} alt="" className="h-14 w-14 rounded-xl object-cover border border-border/60 print:hidden" />}
                                 <div>
                                   <p className="font-medium">{item.productName}</p>
-                                  {item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}
+                                  {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}
                                 </div>
                               </div>
                             </td>
@@ -212,13 +218,13 @@ export default function InvoiceDetailPage({
                 </div>
 
                 <div className="mt-6 flex justify-start">
-                  <div className="w-full max-w-sm space-y-2 rounded-xl bg-muted/20 p-4">
-                    <div className="flex justify-between text-sm">
+                  <div className="w-full max-w-sm space-y-2 rounded-xl bg-muted/20 p-6">
+                    <div className="flex justify-between text-base">
                       <span className="text-muted-foreground">المجموع الفرعي</span>
                       <span>{formatCurrency(invoice.subtotal)}</span>
                     </div>
                     {invoice.discountAmount > 0 && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-base">
                         <span className="text-muted-foreground">الخصم {invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</span>
                         <span className="text-red-600">-{formatCurrency(invoice.discountAmount)}</span>
                       </div>
@@ -232,14 +238,14 @@ export default function InvoiceDetailPage({
                 </div>
 
                 {invoice.notes && (
-                  <div className="mt-6 rounded-xl bg-muted/20 p-4">
-                    <p className="text-xs font-bold text-muted-foreground">ملاحظات</p>
-                    <p className="mt-1 text-sm">{invoice.notes}</p>
+                  <div className="mt-6 rounded-xl bg-muted/20 p-6">
+                    <p className="text-sm font-bold text-muted-foreground">ملاحظات</p>
+                    <p className="mt-2 text-base">{invoice.notes}</p>
                   </div>
                 )}
 
                 {settings.invoiceNotes && (
-                  <p className="mt-6 text-center text-sm text-muted-foreground">{settings.invoiceNotes}</p>
+                  <p className="mt-6 text-center text-base text-muted-foreground">{settings.invoiceNotes}</p>
                 )}
               </>
             )}

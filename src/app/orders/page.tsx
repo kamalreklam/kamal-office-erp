@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import {
   Search, ClipboardList, Plus, Pencil, Trash2, MessageCircle,
-  Clock, Loader2, CheckCircle2, PackageCheck, Copy,
+  Clock, Loader2, CheckCircle2, PackageCheck, Copy, LayoutGrid, List,
+  ChevronLeft, ChevronRight, CalendarDays, X,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { type OrderStatus, getOrderStatusColor } from "@/lib/data";
@@ -22,18 +24,18 @@ import { toast } from "sonner";
 
 const statusOptions: OrderStatus[] = ["قيد الانتظار", "قيد التنفيذ", "جاهز للاستلام", "مكتمل"];
 
-function getStatusIcon(status: OrderStatus) {
-  switch (status) {
-    case "قيد الانتظار": return Clock;
-    case "قيد التنفيذ": return Loader2;
-    case "جاهز للاستلام": return PackageCheck;
-    case "مكتمل": return CheckCircle2;
-  }
-}
+const statusConfig: Record<OrderStatus, { icon: typeof Clock; bg: string; border: string; header: string }> = {
+  "قيد الانتظار": { icon: Clock, bg: "bg-amber-50 text-amber-600", border: "border-amber-200", header: "bg-amber-50" },
+  "قيد التنفيذ": { icon: Loader2, bg: "bg-blue-50 text-blue-600", border: "border-blue-200", header: "bg-blue-50" },
+  "جاهز للاستلام": { icon: PackageCheck, bg: "bg-emerald-50 text-emerald-600", border: "border-emerald-200", header: "bg-emerald-50" },
+  "مكتمل": { icon: CheckCircle2, bg: "bg-slate-100 text-slate-600", border: "border-slate-200", header: "bg-slate-50" },
+};
 
 export default function OrdersPage() {
   const { orders, clients, addOrder, updateOrder, deleteOrder, settings } = useStore();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
+  const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [statusFilter, setStatusFilter] = useState("الكل");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -41,14 +43,18 @@ export default function OrdersPage() {
   const [deletingOrder, setDeletingOrder] = useState<(typeof orders)[0] | null>(null);
   const [formData, setFormData] = useState({ clientId: "", description: "", status: "قيد الانتظار" as OrderStatus });
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
-      const matchSearch = search === "" || o.trackingId.toLowerCase().includes(search.toLowerCase()) || o.clientName.includes(search) || o.description.includes(search);
+      const matchSearch = debouncedSearch === "" || o.trackingId.toLowerCase().includes(debouncedSearch.toLowerCase()) || o.clientName.includes(debouncedSearch) || o.description.includes(debouncedSearch);
       const matchStatus = statusFilter === "الكل" || o.status === statusFilter;
-      return matchSearch && matchStatus;
+      const matchDateFrom = !dateFrom || o.createdAt >= dateFrom;
+      const matchDateTo = !dateTo || o.createdAt <= dateTo;
+      return matchSearch && matchStatus && matchDateFrom && matchDateTo;
     });
-  }, [orders, search, statusFilter]);
+  }, [orders, debouncedSearch, statusFilter, dateFrom, dateTo]);
 
   function openAddDialog() {
     setEditingOrder(null);
@@ -98,86 +104,190 @@ export default function OrdersPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   }
 
+  function moveOrder(order: (typeof orders)[0], direction: "next" | "prev") {
+    const idx = statusOptions.indexOf(order.status);
+    const newIdx = direction === "next" ? idx + 1 : idx - 1;
+    if (newIdx < 0 || newIdx >= statusOptions.length) return;
+    updateOrder(order.id, { status: statusOptions[newIdx] });
+    toast.success(`تم نقل الطلب إلى: ${statusOptions[newIdx]}`);
+  }
+
   const allStatuses = ["الكل", ...statusOptions];
+
+  function renderOrderCard(order: (typeof orders)[0], compact = false) {
+    const config = statusConfig[order.status];
+    const Icon = config.icon;
+    const statusIdx = statusOptions.indexOf(order.status);
+    return (
+      <Card key={order.id} className={`border border-border/60 shadow-sm transition-all hover:shadow-md ${compact ? "" : ""}`}>
+        <CardContent className={compact ? "p-4" : "p-6"}>
+          <div className={compact ? "space-y-3" : "flex items-start gap-5"}>
+            {!compact && (
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.bg}`}>
+                <Icon className="h-6 w-6" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={`font-mono font-bold ${compact ? "text-sm" : "text-base"}`}>{order.trackingId}</span>
+                <button onClick={() => copyTrackingId(order.trackingId)} className="rounded p-1 text-muted-foreground hover:bg-accent">
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+                {!compact && (
+                  <Badge variant="outline" className={`gap-1 text-xs ${getOrderStatusColor(order.status)}`}>{order.status}</Badge>
+                )}
+              </div>
+              <p className={`mt-1.5 font-medium text-foreground ${compact ? "text-sm" : "text-base"}`}>{order.clientName}</p>
+              <p className={`mt-0.5 text-muted-foreground leading-relaxed ${compact ? "text-xs line-clamp-2" : "text-sm"}`}>{order.description}</p>
+              <p className={`mt-2 text-muted-foreground ${compact ? "text-[10px]" : "text-xs"}`}>
+                {order.updatedAt}
+              </p>
+            </div>
+          </div>
+          {/* Actions */}
+          <div className={`flex items-center gap-1 ${compact ? "mt-3 border-t border-border/60 pt-3" : "mt-4 border-t border-border/60 pt-4"}`}>
+            {/* Move status buttons */}
+            {statusIdx < statusOptions.length - 1 && (
+              <button
+                onClick={() => moveOrder(order, "next")}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+              >
+                <ChevronLeft className="h-3 w-3" />
+                {statusOptions[statusIdx + 1]}
+              </button>
+            )}
+            {statusIdx > 0 && (
+              <button
+                onClick={() => moveOrder(order, "prev")}
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent"
+              >
+                {statusOptions[statusIdx - 1]}
+                <ChevronRight className="h-3 w-3" />
+              </button>
+            )}
+            <div className="mr-auto flex gap-0.5">
+              <button onClick={() => openEditDialog(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-accent"><Pencil className="h-3.5 w-3.5" /></button>
+              <button onClick={() => shareOrderWhatsApp(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-green-50 hover:text-green-600"><MessageCircle className="h-3.5 w-3.5" /></button>
+              <button onClick={() => confirmDelete(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <AppShell>
-      <div className="space-y-6 page-enter">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">تتبع الطلبات</h1>
-            <p className="mt-1 text-sm text-muted-foreground">متابعة طلبات الصيانة والطباعة ({orders.length} طلب)</p>
-          </div>
-          <Button size="sm" className="gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />طلب جديد</Button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-children">
-          {statusOptions.map((status) => {
-            const Icon = getStatusIcon(status);
-            const count = orders.filter((o) => o.status === status).length;
-            const colorMap: Record<string, string> = { "قيد الانتظار": "bg-amber-50 text-amber-600", "قيد التنفيذ": "bg-blue-50 text-blue-600", "جاهز للاستلام": "bg-emerald-50 text-emerald-600", "مكتمل": "bg-slate-100 text-slate-600" };
-            return (
-              <Card key={status} className="cursor-pointer border shadow-sm hover-lift" onClick={() => setStatusFilter(statusFilter === status ? "الكل" : status)}>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${colorMap[status]}`}><Icon className="h-5 w-5" /></div>
-                  <div><p className="text-xs text-muted-foreground">{status}</p><p className="text-lg font-bold">{count}</p></div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="بحث برقم التتبع، اسم العميل، أو الوصف..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
-        </div>
-
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {allStatuses.map((s) => {
-            const isActive = statusFilter === s;
-            const count = s === "الكل" ? orders.length : orders.filter((o) => o.status === s).length;
-            return (
-              <button key={s} onClick={() => setStatusFilter(s)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-white text-muted-foreground hover:bg-accent"}`}>
-                {s}<span className={`mr-1 rounded-full px-1.5 py-0.5 text-[11px] ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+      <div className="space-y-8 page-enter">
+        <div className="animate-fade-in-up text-center">
+          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">تتبع الطلبات</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">متابعة طلبات الصيانة والطباعة ({orders.length} طلب)</p>
+          <div className="mt-4 flex justify-center gap-2">
+            {/* View toggle */}
+            <div className="flex rounded-xl border border-border/60 bg-white p-1">
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${viewMode === "kanban" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">كانبان</span>
               </button>
-            );
-          })}
+              <button
+                onClick={() => setViewMode("list")}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                <List className="h-4 w-4" />
+                <span className="hidden sm:inline">قائمة</span>
+              </button>
+            </div>
+            <Button size="sm" className="gap-1.5" onClick={openAddDialog}><Plus className="h-5 w-5" />طلب جديد</Button>
+          </div>
         </div>
 
-        <div className="space-y-3 stagger-list">
-          {filtered.length === 0 ? (
-            <Card className="border shadow-sm"><CardContent className="flex flex-col items-center py-16 text-muted-foreground"><ClipboardList className="mb-3 h-10 w-10 opacity-30" /><p>لا توجد طلبات مطابقة</p></CardContent></Card>
-          ) : (
-            filtered.map((order) => {
-              const Icon = getStatusIcon(order.status);
-              const bgMap: Record<string, string> = { "قيد الانتظار": "bg-amber-50 text-amber-600", "قيد التنفيذ": "bg-blue-50 text-blue-600", "جاهز للاستلام": "bg-emerald-50 text-emerald-600", "مكتمل": "bg-slate-100 text-slate-600" };
+        {/* Search & Date Filter */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="بحث برقم التتبع، اسم العميل، أو الوصف..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+          </div>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[140px] text-sm" />
+            <span className="text-sm text-muted-foreground">إلى</span>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[140px] text-sm" />
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {viewMode === "kanban" ? (
+          /* ===== KANBAN VIEW ===== */
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {statusOptions.map((status) => {
+              const config = statusConfig[status];
+              const Icon = config.icon;
+              const statusOrders = ((debouncedSearch || dateFrom || dateTo) ? filtered : orders).filter((o) => o.status === status);
               return (
-                <Card key={order.id} className="border shadow-sm transition-all hover:shadow-md">
-                  <CardContent className="p-5">
-                    <div className="flex items-start gap-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${bgMap[order.status]}`}><Icon className="h-6 w-6" /></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-mono text-sm font-bold">{order.trackingId}</span>
-                          <button onClick={() => copyTrackingId(order.trackingId)} className="rounded p-1 text-muted-foreground hover:bg-accent"><Copy className="h-3.5 w-3.5" /></button>
-                          <Badge variant="outline" className={`gap-1 text-xs ${getOrderStatusColor(order.status)}`}>{order.status}</Badge>
-                        </div>
-                        <p className="mt-1.5 text-sm font-medium text-foreground">{order.clientName}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">{order.description}</p>
-                        <p className="mt-2 text-[11px] text-muted-foreground">أنشئ: {order.createdAt} · آخر تحديث: {order.updatedAt}</p>
-                      </div>
-                      <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:items-center">
-                        <button onClick={() => openEditDialog(order)} className="rounded-lg p-2 text-muted-foreground hover:bg-accent"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => shareOrderWhatsApp(order)} className="rounded-lg p-2 text-muted-foreground hover:bg-green-50 hover:text-green-600"><MessageCircle className="h-4 w-4" /></button>
-                        <button onClick={() => confirmDelete(order)} className="rounded-lg p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
-                      </div>
+                <div key={status} className={`rounded-2xl border ${config.border} bg-white`}>
+                  {/* Column header */}
+                  <div className={`flex items-center gap-2.5 rounded-t-2xl px-4 py-3 ${config.header}`}>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${config.bg}`}>
+                      <Icon className="h-4 w-4" />
                     </div>
+                    <span className="text-sm font-bold text-foreground">{status}</span>
+                    <span className="mr-auto rounded-full bg-white/80 px-2 py-0.5 text-xs font-bold text-muted-foreground shadow-sm">
+                      {statusOrders.length}
+                    </span>
+                  </div>
+                  {/* Cards */}
+                  <div className="space-y-3 p-3">
+                    {statusOrders.length === 0 ? (
+                      <div className="flex flex-col items-center py-8 text-muted-foreground">
+                        <ClipboardList className="mb-2 h-8 w-8 opacity-15" />
+                        <p className="text-xs">لا توجد طلبات</p>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" onClick={openAddDialog}><Plus className="h-3.5 w-3.5" />طلب جديد</Button>
+                      </div>
+                    ) : (
+                      statusOrders.map((order) => renderOrderCard(order, true))
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* ===== LIST VIEW ===== */
+          <>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {allStatuses.map((s) => {
+                const isActive = statusFilter === s;
+                const count = s === "الكل" ? orders.length : orders.filter((o) => o.status === s).length;
+                return (
+                  <button key={s} onClick={() => setStatusFilter(s)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-white text-muted-foreground hover:bg-accent"}`}>
+                    {s}<span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-4 stagger-list">
+              {filtered.length === 0 ? (
+                <Card className="border border-border/60 shadow-sm">
+                  <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
+                    <ClipboardList className="mb-3 h-10 w-10 opacity-30" />
+                    <p className="text-base">لا توجد طلبات مطابقة</p>
+                    <Button size="sm" className="mt-4 gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />طلب جديد</Button>
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
-        </div>
+              ) : (
+                filtered.map((order) => renderOrderCard(order, false))
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -199,7 +309,7 @@ export default function OrdersPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">
           <DialogHeader><DialogTitle className="text-red-600">حذف الطلب</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingOrder?.trackingId}&quot;؟</p>
+          <p className="text-base text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingOrder?.trackingId}&quot;؟</p>
           <DialogFooter className="gap-2 sm:gap-0"><Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button><Button variant="destructive" onClick={handleDelete}>حذف</Button></DialogFooter>
         </DialogContent>
       </Dialog>

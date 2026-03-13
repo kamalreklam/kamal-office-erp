@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,28 +11,55 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, FileText, Eye, Trash2, DollarSign } from "lucide-react";
+import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { toast } from "sonner";
+import { exportCSV } from "@/lib/export";
 
 export default function InvoicesPage() {
   const { invoices, deleteInvoice } = useStore();
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [sortBy, setSortBy] = useState("date-desc");
+  const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const filtered = useMemo(() => {
-    return invoices.filter((inv) => {
-      const matchSearch = search === "" || inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) || inv.clientName.includes(search);
+    const list = invoices.filter((inv) => {
+      const matchSearch = debouncedSearch === "" || inv.invoiceNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) || inv.clientName.includes(debouncedSearch);
       const matchStatus = statusFilter === "الكل" || inv.status === statusFilter;
-      return matchSearch && matchStatus;
+      const matchDateFrom = !dateFrom || inv.createdAt >= dateFrom;
+      const matchDateTo = !dateTo || inv.createdAt <= dateTo;
+      return matchSearch && matchStatus && matchDateFrom && matchDateTo;
     });
-  }, [invoices, search, statusFilter]);
+    switch (sortBy) {
+      case "date-asc": return [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      case "date-desc": return [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      case "amount-asc": return [...list].sort((a, b) => a.total - b.total);
+      case "amount-desc": return [...list].sort((a, b) => b.total - a.total);
+      case "client": return [...list].sort((a, b) => a.clientName.localeCompare(b.clientName, "ar"));
+      default: return list;
+    }
+  }, [invoices, debouncedSearch, statusFilter, dateFrom, dateTo, sortBy]);
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
+
+  // Reset page when filters change
+  const filterKey = `${search}|${statusFilter}|${dateFrom}|${dateTo}|${sortBy}`;
+  useEffect(() => { setPage(1); }, [filterKey]);
 
   const statuses = ["الكل", "مدفوعة", "غير مدفوعة", "مسودة", "ملغاة"];
 
@@ -49,27 +77,64 @@ export default function InvoicesPage() {
     setDeleteDialogOpen(false);
   }
 
+  function handleExport() {
+    exportCSV("invoices", ["رقم الفاتورة", "العميل", "التاريخ", "المنتجات", "الإجمالي", "الحالة"],
+      filtered.map((inv) => [inv.invoiceNumber, inv.clientName, inv.createdAt, String(inv.items.length), String(inv.total), inv.status])
+    );
+    toast.success("تم تصدير الفواتير");
+  }
+
   return (
     <AppShell>
-      <div className="space-y-6 page-enter">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">الفواتير</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {invoices.length} فاتورة · إجمالي الإيرادات: {formatCurrency(totalRevenue)}
-            </p>
-          </div>
-          <Link href="/invoices/new">
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              فاتورة جديدة
+      <div className="space-y-8 page-enter">
+        <div className="animate-fade-in-up text-center">
+          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الفواتير</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
+            {invoices.length} فاتورة · إجمالي الإيرادات: {formatCurrency(totalRevenue)}
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">تصدير CSV</span>
             </Button>
-          </Link>
+            <Link href="/invoices/new">
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-5 w-5" />
+                فاتورة جديدة
+              </Button>
+            </Link>
+          </div>
         </div>
 
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="بحث برقم الفاتورة أو اسم العميل..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="بحث برقم الفاتورة أو اسم العميل..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+          </div>
+          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
+            <SelectTrigger className="w-[160px] gap-1.5">
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date-desc">الأحدث أولاً</SelectItem>
+              <SelectItem value="date-asc">الأقدم أولاً</SelectItem>
+              <SelectItem value="amount-desc">المبلغ: الأعلى</SelectItem>
+              <SelectItem value="amount-asc">المبلغ: الأقل</SelectItem>
+              <SelectItem value="client">العميل (أ-ي)</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[140px] text-sm" />
+            <span className="text-sm text-muted-foreground">إلى</span>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[140px] text-sm" />
+            {(dateFrom || dateTo) && (
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -85,14 +150,14 @@ export default function InvoicesPage() {
                 }`}
               >
                 {s}
-                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-[11px] ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
               </button>
             );
           })}
         </div>
 
         {/* Desktop */}
-        <Card className="hidden border shadow-sm md:block">
+        <Card className="hidden border border-border/60 shadow-sm md:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/30">
@@ -106,15 +171,18 @@ export default function InvoicesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {paged.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="py-16 text-center text-muted-foreground">
                     <FileText className="mx-auto mb-3 h-10 w-10 opacity-30" />
                     <p>لا توجد فواتير مطابقة</p>
+                    <Link href="/invoices/new" className="mt-4 inline-block">
+                      <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />فاتورة جديدة</Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((inv) => (
+                paged.map((inv) => (
                   <TableRow key={inv.id} className="transition-colors hover:bg-accent/30">
                     <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
                     <TableCell>{inv.clientName}</TableCell>
@@ -127,11 +195,11 @@ export default function InvoicesPage() {
                     <TableCell>
                       <div className="flex gap-1">
                         <Link href={`/invoices/${inv.id}`}>
-                          <button className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                          <button className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
                             <Eye className="h-4 w-4" />
                           </button>
                         </Link>
-                        <button onClick={() => confirmDelete(inv)} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
+                        <button onClick={() => confirmDelete(inv)} className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -144,29 +212,32 @@ export default function InvoicesPage() {
         </Card>
 
         {/* Mobile */}
-        <div className="space-y-3 md:hidden stagger-list">
-          {filtered.length === 0 ? (
-            <Card className="border shadow-sm">
+        <div className="flex flex-col gap-4 md:hidden stagger-list">
+          {paged.length === 0 ? (
+            <Card className="border border-border/60 shadow-sm">
               <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
                 <FileText className="mb-3 h-10 w-10 opacity-30" />
                 لا توجد فواتير مطابقة
+                <Link href="/invoices/new" className="mt-4 inline-block">
+                  <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />فاتورة جديدة</Button>
+                </Link>
               </CardContent>
             </Card>
           ) : (
-            filtered.map((inv) => (
-              <Link key={inv.id} href={`/invoices/${inv.id}`}>
-                <Card className="border shadow-sm hover-lift">
-                  <CardContent className="p-4">
+            paged.map((inv) => (
+              <Link key={inv.id} href={`/invoices/${inv.id}`} className="block">
+                <Card className="border border-border/60 shadow-sm hover-lift">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm font-bold text-foreground">{inv.invoiceNumber}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">{inv.clientName}</p>
+                        <p className="text-base font-bold text-foreground">{inv.invoiceNumber}</p>
+                        <p className="mt-1.5 text-sm text-muted-foreground">{inv.clientName}</p>
                       </div>
-                      <Badge variant="outline" className={`text-[11px] ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
+                      <Badge variant="outline" className={`text-xs ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
                     </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                      <span className="text-xs text-muted-foreground">{inv.createdAt} · {inv.items.length} عناصر</span>
-                      <span className="font-bold text-foreground">{formatCurrency(inv.total)}</span>
+                    <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
+                      <span className="text-sm text-muted-foreground">{inv.createdAt} · {inv.items.length} عناصر</span>
+                      <span className="text-base font-bold text-foreground">{formatCurrency(inv.total)}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -174,12 +245,35 @@ export default function InvoicesPage() {
             ))
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <span className="text-sm text-muted-foreground">
+              صفحة {page} من {totalPages} ({filtered.length} نتيجة)
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">
           <DialogHeader><DialogTitle className="text-red-600">حذف الفاتورة</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف الفاتورة &quot;{deletingInvoice?.invoiceNumber}&quot;؟</p>
+          <p className="text-base text-muted-foreground">هل أنت متأكد من حذف الفاتورة &quot;{deletingInvoice?.invoiceNumber}&quot;؟</p>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
             <Button variant="destructive" onClick={handleDelete}>حذف</Button>

@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Image from "next/image";
+import { useState, useMemo, useEffect } from "react";
+import { useDebounce } from "@/lib/use-debounce";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -18,25 +15,25 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  Printer, Droplets, FileStack, Cable, Archive,
+  Printer, Droplets, FileStack, Cable, Archive, ArrowUpDown, ChevronLeft, ChevronRight, Download,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
 import { useStore } from "@/lib/store";
 import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
+import { exportCSV } from "@/lib/export";
 
-const categories = [
-  { value: "الكل", label: "الكل", icon: Package },
-  { value: "طابعة", label: "طابعات", icon: Printer },
-  { value: "حبر", label: "أحبار", icon: Droplets },
-  { value: "تونر", label: "تونر", icon: Archive },
-  { value: "ورق", label: "ورق", icon: FileStack },
-  { value: "ملحقات", label: "ملحقات", icon: Cable },
-] as const;
+const categoryIcons: Record<string, typeof Package> = {
+  "طابعة": Printer,
+  "حبر": Droplets,
+  "تونر": Archive,
+  "ورق": FileStack,
+  "ملحقات": Cable,
+};
 
 const emptyForm = {
   name: "",
-  category: "طابعة" as Product["category"],
+  category: "طابعة",
   sku: "",
   description: "",
   price: 0,
@@ -48,25 +45,43 @@ const emptyForm = {
 
 export default function InventoryPage() {
   const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings } = useStore();
+  const categories = ["الكل", ...settings.productCategories];
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search);
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+  const [sortBy, setSortBy] = useState("default");
+  const [page, setPage] = useState(1);
+  const perPage = 12;
 
   const filtered = useMemo(() => {
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       const matchSearch =
-        search === "" ||
-        p.name.includes(search) ||
-        p.sku.toLowerCase().includes(search.toLowerCase()) ||
-        p.description.includes(search);
+        debouncedSearch === "" ||
+        p.name.includes(debouncedSearch) ||
+        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        p.description.includes(debouncedSearch);
       const matchCategory = activeCategory === "الكل" || p.category === activeCategory;
       return matchSearch && matchCategory;
     });
-  }, [products, search, activeCategory]);
+    switch (sortBy) {
+      case "price-asc": return [...list].sort((a, b) => a.price - b.price);
+      case "price-desc": return [...list].sort((a, b) => b.price - a.price);
+      case "stock-asc": return [...list].sort((a, b) => a.stock - b.stock);
+      case "stock-desc": return [...list].sort((a, b) => b.stock - a.stock);
+      case "name": return [...list].sort((a, b) => a.name.localeCompare(b.name, "ar"));
+      default: return list;
+    }
+  }, [products, debouncedSearch, activeCategory, sortBy]);
+
+  const totalPages = Math.ceil(filtered.length / perPage);
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
+  const filterKey = `${search}|${activeCategory}|${sortBy}`;
+  useEffect(() => { setPage(1); }, [filterKey]);
 
   const lowStock = getLowStockProducts(products);
 
@@ -159,22 +174,29 @@ export default function InventoryPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 page-enter">
+      <div className="space-y-8 page-enter">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in-up">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">المخزون</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              إدارة ومتابعة جميع المنتجات ({products.length} منتج)
-            </p>
-          </div>
-          <div className="flex gap-2">
+        <div className="animate-fade-in-up text-center">
+          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المخزون</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
+            إدارة ومتابعة جميع المنتجات ({products.length} منتج)
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              exportCSV("inventory", ["الاسم", "الكود", "الفئة", "السعر", "المخزون", "الوحدة", "الحد الأدنى"],
+                filtered.map((p) => [p.name, p.sku, p.category, String(p.price), String(p.stock), p.unit, String(p.minStock)])
+              );
+              toast.success("تم تصدير المخزون");
+            }}>
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">تصدير CSV</span>
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
-              <MessageCircle className="h-4 w-4 text-green-600" />
+              <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
             </Button>
             <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5" />
               إضافة منتج
             </Button>
           </div>
@@ -182,17 +204,17 @@ export default function InventoryPage() {
 
         {/* Low stock banner */}
         {lowStock.length > 0 && (
-          <Card className="border-amber-200 bg-gradient-to-l from-amber-50/80 to-orange-50/40">
-            <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <Card className="border border-border/60 border-amber-200 bg-gradient-to-l from-amber-50/80 to-orange-50/40">
+            <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-amber-800">
+                  <p className="text-base font-bold text-amber-800">
                     {lowStock.length} منتجات بمخزون منخفض
                   </p>
-                  <p className="text-xs text-amber-600">
+                  <p className="text-sm text-amber-600">
                     {lowStock.slice(0, 3).map((p) => p.name).join("، ")}
                     {lowStock.length > 3 && ` و ${lowStock.length - 3} آخرين`}
                   </p>
@@ -211,37 +233,54 @@ export default function InventoryPage() {
           </Card>
         )}
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="بحث بالاسم، الكود، أو الوصف..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pr-9"
-          />
+        {/* Search & Sort */}
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="بحث بالاسم، الكود، أو الوصف..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pr-9"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
+            <SelectTrigger className="w-[160px] gap-1.5">
+              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+              <SelectValue placeholder="ترتيب" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="default">الافتراضي</SelectItem>
+              <SelectItem value="name">الاسم (أ-ي)</SelectItem>
+              <SelectItem value="price-asc">السعر: الأقل</SelectItem>
+              <SelectItem value="price-desc">السعر: الأعلى</SelectItem>
+              <SelectItem value="stock-asc">المخزون: الأقل</SelectItem>
+              <SelectItem value="stock-desc">المخزون: الأعلى</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Category tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {categories.map((cat) => {
-            const isActive = activeCategory === cat.value;
-            const count = cat.value === "الكل"
+            const isActive = activeCategory === cat;
+            const count = cat === "الكل"
               ? products.length
-              : products.filter((p) => p.category === cat.value).length;
+              : products.filter((p) => p.category === cat).length;
+            const Icon = categoryIcons[cat] || Package;
             return (
               <button
-                key={cat.value}
-                onClick={() => setActiveCategory(cat.value)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-[15px] font-medium transition-all ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-white text-muted-foreground border border-border hover:bg-accent"
+                    : "bg-white text-muted-foreground border border-border/60 hover:bg-accent"
                 }`}
               >
-                <cat.icon className="h-4 w-4" />
-                {cat.label}
-                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-[11px] ${
+                <Icon className="h-4 w-4" />
+                {cat}
+                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${
                   isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
                   {count}
@@ -251,174 +290,123 @@ export default function InventoryPage() {
           })}
         </div>
 
-        {/* Desktop Table */}
-        <Card className="hidden border shadow-sm md:block">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-muted/30">
-                <TableHead className="text-right font-bold w-12"></TableHead>
-                <TableHead className="text-right font-bold">المنتج</TableHead>
-                <TableHead className="text-right font-bold">الفئة</TableHead>
-                <TableHead className="text-right font-bold">الكود</TableHead>
-                <TableHead className="text-right font-bold">السعر</TableHead>
-                <TableHead className="text-right font-bold">المخزون</TableHead>
-                <TableHead className="text-right font-bold">الحالة</TableHead>
-                <TableHead className="text-right font-bold">إجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} className="py-16 text-center text-muted-foreground">
-                    <Package className="mx-auto mb-3 h-10 w-10 opacity-30" />
-                    <p className="text-sm">لا توجد منتجات مطابقة</p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((product) => {
-                  const isLow = product.stock <= product.minStock;
-                  const img = getProductImage(product.id);
-                  return (
-                    <TableRow key={product.id} className="transition-colors hover:bg-accent/30">
-                      <TableCell className="py-3">
-                        {img ? (
-                          <Image
-                            src={img}
-                            alt={product.name}
-                            width={40}
-                            height={40}
-                            className="h-10 w-10 rounded-lg object-cover border border-border"
-                          />
-                        ) : (
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-                            <Package className="h-5 w-5" />
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="py-3">
-                        <div>
-                          <p className="font-medium text-foreground">{product.name}</p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">{product.description}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="text-xs">{product.category}</Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{product.sku}</TableCell>
-                      <TableCell className="font-bold">{formatCurrency(product.price)}</TableCell>
-                      <TableCell>
-                        <span className={`font-bold ${isLow ? "text-red-600" : "text-foreground"}`}>
-                          {product.stock}
-                        </span>{" "}
-                        <span className="text-xs text-muted-foreground">{product.unit}</span>
-                      </TableCell>
-                      <TableCell>
-                        {isLow ? (
-                          <Badge variant="destructive" className="gap-1 text-xs">
-                            <AlertTriangle className="h-3 w-3" />
-                            منخفض
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="border-emerald-200 bg-emerald-50 text-xs text-emerald-700">
-                            متوفر
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <button onClick={() => openEditDialog(product)} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
-                            <Pencil className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => confirmDelete(product)} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-
-        {/* Mobile Cards */}
-        <div className="space-y-3 md:hidden stagger-list">
-          {filtered.length === 0 ? (
-            <Card className="border shadow-sm">
-              <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
-                <Package className="mb-3 h-10 w-10 opacity-30" />
-                <p className="text-sm">لا توجد منتجات مطابقة</p>
-              </CardContent>
-            </Card>
-          ) : (
-            filtered.map((product) => {
+        {/* Product Cards Grid */}
+        {filtered.length === 0 ? (
+          <Card className="border border-border/60 shadow-sm">
+            <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
+              <Package className="mb-3 h-10 w-10 opacity-30" />
+              <p className="text-base">لا توجد منتجات مطابقة</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 stagger-list">
+            {paged.map((product) => {
               const isLow = product.stock <= product.minStock;
               const img = getProductImage(product.id);
               return (
-                <Card key={product.id} className={`border shadow-sm transition-all hover:shadow-md ${isLow ? "border-red-200" : ""}`}>
-                  <CardContent className="p-4">
-                    <div className="flex gap-3">
-                      {img ? (
-                        <Image
-                          src={img}
-                          alt={product.name}
-                          width={56}
-                          height={56}
-                          className="h-14 w-14 shrink-0 rounded-xl object-cover border border-border"
-                        />
+                <Card key={product.id} className={`group border border-border/60 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${isLow ? "border-red-200" : ""}`}>
+                  {/* Image Header */}
+                  <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl bg-muted/30">
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={product.name}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <Package className="h-16 w-16 text-muted-foreground/20" />
+                      </div>
+                    )}
+                    {/* Status badge overlay */}
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                      {isLow ? (
+                        <Badge variant="destructive" className="gap-0.5 text-[10px] px-1.5 py-0.5 shadow-sm sm:gap-1 sm:text-xs sm:px-2.5 sm:py-0.5">
+                          <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          منخفض
+                        </Badge>
                       ) : (
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground">
-                          <Package className="h-6 w-6" />
-                        </div>
+                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50/90 text-[10px] px-1.5 py-0.5 text-emerald-700 shadow-sm backdrop-blur-sm sm:text-xs sm:px-2.5 sm:py-0.5">
+                          متوفر
+                        </Badge>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-bold text-foreground truncate">{product.name}</h3>
-                            <p className="mt-0.5 text-xs text-muted-foreground truncate">{product.description}</p>
-                          </div>
-                          {isLow && (
-                            <Badge variant="destructive" className="shrink-0 gap-1 text-[10px]">
-                              <AlertTriangle className="h-3 w-3" />
-                              منخفض
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs">
-                          <Badge variant="secondary" className="text-[10px]">{product.category}</Badge>
-                          <span className="text-muted-foreground">{product.sku}</span>
-                        </div>
+                    </div>
+                    {/* Category badge */}
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm bg-white/80 sm:text-xs sm:px-2.5 sm:py-0.5">{product.category}</Badge>
+                    </div>
+                  </div>
+
+                  {/* Card Body */}
+                  <CardContent className="p-3 sm:p-5">
+                    <div className="mb-2 sm:mb-3">
+                      <h3 className="text-sm font-bold text-foreground leading-snug sm:text-base">{product.name}</h3>
+                      {product.description && (
+                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 sm:mt-1 sm:text-sm sm:line-clamp-2">{product.description}</p>
+                      )}
+                      <p className="mt-1 font-mono text-[10px] text-muted-foreground sm:mt-1.5 sm:text-xs">{product.sku}</p>
+                    </div>
+
+                    {/* Price & Stock */}
+                    <div className="flex items-center justify-between border-t border-border/60 pt-2 sm:pt-3">
+                      <div>
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">السعر</p>
+                        <p className="text-sm font-extrabold text-primary sm:text-lg">{formatCurrency(product.price)}</p>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">المخزون</p>
+                        <p className={`text-sm font-extrabold sm:text-lg ${isLow ? "text-red-600" : "text-foreground"}`}>
+                          {product.stock} <span className="text-xs font-medium text-muted-foreground sm:text-sm">{product.unit}</span>
+                        </p>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <span className="text-xs text-muted-foreground">السعر: </span>
-                          <span className="font-bold">{formatCurrency(product.price)}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-muted-foreground">المخزون: </span>
-                          <span className={`font-bold ${isLow ? "text-red-600" : "text-foreground"}`}>
-                            {product.stock} {product.unit}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <button onClick={() => openEditDialog(product)} className="rounded-md p-1.5 text-muted-foreground hover:bg-accent">
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button onClick={() => confirmDelete(product)} className="rounded-md p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+
+                    {/* Actions */}
+                    <div className="mt-2 flex gap-1 border-t border-border/60 pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
+                      <button
+                        onClick={() => openEditDialog(product)}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                      >
+                        <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        تعديل
+                      </button>
+                      <button
+                        onClick={() => confirmDelete(product)}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                      >
+                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        حذف
+                      </button>
                     </div>
                   </CardContent>
                 </Card>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <span className="text-sm text-muted-foreground">
+              صفحة {page} من {totalPages} ({filtered.length} منتج)
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Dialog */}
@@ -427,7 +415,7 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle>{editingProduct ? "تعديل المنتج" : "إضافة منتج جديد"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-5 py-2">
+          <div className="grid gap-6 py-2">
             {/* Image upload */}
             <div className="flex items-center gap-4">
               <ImageUpload
@@ -461,15 +449,13 @@ export default function InventoryPage() {
                 <label className="text-sm font-medium">الفئة</label>
                 <Select
                   value={formData.category}
-                  onValueChange={(v) => v && setFormData({ ...formData, category: v as Product["category"] })}
+                  onValueChange={(v) => v && setFormData({ ...formData, category: v })}
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="طابعة">طابعة</SelectItem>
-                    <SelectItem value="حبر">حبر</SelectItem>
-                    <SelectItem value="تونر">تونر</SelectItem>
-                    <SelectItem value="ورق">ورق</SelectItem>
-                    <SelectItem value="ملحقات">ملحقات</SelectItem>
+                    {settings.productCategories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -537,7 +523,7 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle className="text-red-600">حذف المنتج</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             هل أنت متأكد من حذف &quot;{deletingProduct?.name}&quot;؟ لا يمكن التراجع عن هذا الإجراء.
           </p>
           <DialogFooter className="gap-2 sm:gap-0">

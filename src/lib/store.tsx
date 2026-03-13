@@ -21,6 +21,14 @@ import {
   type OrderStatus,
 } from "./data";
 import { supabase } from "./supabase";
+import { toast } from "sonner";
+
+// Fire-and-forget Supabase call with error toast
+function dbExec(promise: PromiseLike<{ error: { message: string } | null }>) {
+  promise.then((res) => {
+    if (res.error) toast.error(`خطأ في المزامنة: ${res.error.message}`);
+  });
+}
 
 // ==========================================
 // Settings Interface
@@ -40,6 +48,7 @@ export interface AppSettings {
   lowStockWarning: boolean;
   primaryColor: string;
   customInvoiceHtml: string;
+  productCategories: string[];
 }
 
 const defaultSettings: AppSettings = {
@@ -57,6 +66,7 @@ const defaultSettings: AppSettings = {
   lowStockWarning: true,
   primaryColor: "#2563eb",
   customInvoiceHtml: "",
+  productCategories: ["طابعة", "حبر", "تونر", "ورق", "ملحقات"],
 };
 
 // ==========================================
@@ -166,6 +176,7 @@ interface StoreContextType {
 
   // Invoice CRUD
   addInvoice: (invoice: Omit<Invoice, "id" | "invoiceNumber" | "createdAt">) => Invoice;
+  updateInvoice: (id: string, data: Omit<Invoice, "id" | "invoiceNumber" | "createdAt">) => void;
   updateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   deleteInvoice: (id: string) => void;
 
@@ -201,6 +212,7 @@ function clientToRow(c: Client) {
     name: c.name,
     phone: c.phone,
     address: c.address,
+    notes: c.notes || "",
     total_spent: c.totalSpent,
     created_at: c.createdAt,
   };
@@ -212,6 +224,7 @@ function rowToClient(r: Record<string, unknown>): Client {
     name: r.name as string,
     phone: r.phone as string,
     address: r.address as string,
+    notes: (r.notes || "") as string,
     totalSpent: Number(r.total_spent) || 0,
     createdAt: r.created_at as string,
   };
@@ -236,7 +249,7 @@ function rowToProduct(r: Record<string, unknown>): Product {
   return {
     id: r.id as string,
     name: r.name as string,
-    category: (r.category || "ملحقات") as Product["category"],
+    category: (r.category || "ملحقات") as string,
     sku: (r.sku || "") as string,
     description: (r.description || "") as string,
     price: Number(r.price) || 0,
@@ -356,6 +369,7 @@ function settingsToRow(s: AppSettings) {
     low_stock_warning: s.lowStockWarning,
     primary_color: s.primaryColor,
     custom_invoice_html: s.customInvoiceHtml,
+    product_categories: JSON.stringify(s.productCategories),
   };
 }
 
@@ -375,6 +389,9 @@ function rowToSettings(r: Record<string, unknown>): AppSettings {
     lowStockWarning: r.low_stock_warning as boolean ?? true,
     primaryColor: (r.primary_color || "#2563eb") as string,
     customInvoiceHtml: (r.custom_invoice_html || "") as string,
+    productCategories: (() => {
+      try { const v = r.product_categories; return typeof v === "string" ? JSON.parse(v) : (v as string[]) || defaultSettings.productCategories; } catch { return defaultSettings.productCategories; }
+    })(),
   };
 }
 
@@ -467,27 +484,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
           // Migrate to Supabase in background
           if (lsClients.length > 0) {
-            supabase.from("clients").upsert(lsClients.map(clientToRow)).then(() => {});
+            dbExec(supabase.from("clients").upsert(lsClients.map(clientToRow)));
           }
           if (lsProducts.length > 0) {
-            supabase.from("products").upsert(lsProducts.map(productToRow)).then(() => {});
+            dbExec(supabase.from("products").upsert(lsProducts.map(productToRow)));
           }
           if (lsInvoices.length > 0) {
-            supabase.from("invoices").upsert(lsInvoices.map(invoiceToRow)).then(() => {});
+            dbExec(supabase.from("invoices").upsert(lsInvoices.map(invoiceToRow)));
           }
           if (lsOrders.length > 0) {
-            supabase.from("orders").upsert(lsOrders.map(orderToRow)).then(() => {});
+            dbExec(supabase.from("orders").upsert(lsOrders.map(orderToRow)));
           }
           if (lsBundles.length > 0) {
-            supabase.from("bundles").upsert(lsBundles.map(bundleToRow)).then(() => {});
+            dbExec(supabase.from("bundles").upsert(lsBundles.map(bundleToRow)));
           }
-          supabase.from("app_settings").upsert(settingsToRow(lsSettings)).then(() => {});
+          dbExec(supabase.from("app_settings").upsert(settingsToRow(lsSettings)));
           if (Object.keys(lsImages).length > 0) {
             const imageRows = Object.entries(lsImages).map(([productId, imageData]) => ({
               product_id: productId,
               image_data: imageData,
             }));
-            supabase.from("product_images").upsert(imageRows).then(() => {});
+            dbExec(supabase.from("product_images").upsert(imageRows));
           }
         }
       } catch {
@@ -512,12 +529,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (data: Omit<Client, "id" | "createdAt" | "totalSpent">): Client => {
       const newClient: Client = {
         ...data,
+        notes: data.notes || "",
         id: `c${Date.now()}`,
         totalSpent: 0,
         createdAt: new Date().toISOString().split("T")[0],
       };
       setClients((prev) => [newClient, ...prev]);
-      supabase.from("clients").insert(clientToRow(newClient)).then(() => {});
+      dbExec(supabase.from("clients").insert(clientToRow(newClient)));
       return newClient;
     },
     []
@@ -529,13 +547,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (data.name !== undefined) row.name = data.name;
     if (data.phone !== undefined) row.phone = data.phone;
     if (data.address !== undefined) row.address = data.address;
+    if (data.notes !== undefined) row.notes = data.notes;
     if (data.totalSpent !== undefined) row.total_spent = data.totalSpent;
-    supabase.from("clients").update(row).eq("id", id).then(() => {});
+    dbExec(supabase.from("clients").update(row).eq("id", id));
   }, []);
 
   const deleteClient = useCallback((id: string) => {
     setClients((prev) => prev.filter((c) => c.id !== id));
-    supabase.from("clients").delete().eq("id", id).then(() => {});
+    dbExec(supabase.from("clients").delete().eq("id", id));
   }, []);
 
   // --- Product CRUD ---
@@ -548,10 +567,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setProducts((prev) => [newProduct, ...prev]);
-      supabase.from("products").insert(productToRow(newProduct)).then(() => {});
+      dbExec(supabase.from("products").insert(productToRow(newProduct)));
       if (image) {
         setProductImages((prev) => ({ ...prev, [newProduct.id]: image }));
-        supabase.from("product_images").upsert({ product_id: newProduct.id, image_data: image }).then(() => {});
+        dbExec(supabase.from("product_images").upsert({ product_id: newProduct.id, image_data: image }));
       }
       return newProduct;
     },
@@ -574,11 +593,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (productData.minStock !== undefined) row.min_stock = productData.minStock;
       if (productData.unit !== undefined) row.unit = productData.unit;
       if (Object.keys(row).length > 0) {
-        supabase.from("products").update(row).eq("id", id).then(() => {});
+        dbExec(supabase.from("products").update(row).eq("id", id));
       }
       if (image !== undefined) {
         setProductImages((prev) => ({ ...prev, [id]: image }));
-        supabase.from("product_images").upsert({ product_id: id, image_data: image }).then(() => {});
+        dbExec(supabase.from("product_images").upsert({ product_id: id, image_data: image }));
       }
     },
     []
@@ -591,8 +610,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       delete copy[id];
       return copy;
     });
-    supabase.from("products").delete().eq("id", id).then(() => {});
-    supabase.from("product_images").delete().eq("product_id", id).then(() => {});
+    dbExec(supabase.from("products").delete().eq("id", id));
+    dbExec(supabase.from("product_images").delete().eq("product_id", id));
   }, []);
 
   const getProductImage = useCallback(
@@ -623,7 +642,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
 
       setInvoices((prev) => [newInvoice, ...prev]);
-      supabase.from("invoices").insert(invoiceToRow(newInvoice)).then(() => {});
+      dbExec(supabase.from("invoices").insert(invoiceToRow(newInvoice)));
 
       // Auto-deduct stock
       if (data.status !== "مسودة" && data.status !== "ملغاة") {
@@ -634,7 +653,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             );
             if (invoiceItem) {
               const newStock = Math.max(0, product.stock - invoiceItem.quantity);
-              supabase.from("products").update({ stock: newStock }).eq("id", product.id).then(() => {});
+              dbExec(supabase.from("products").update({ stock: newStock }).eq("id", product.id));
               return { ...product, stock: newStock };
             }
             return product;
@@ -649,7 +668,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           prev.map((c) => {
             if (c.id === data.clientId) {
               const newTotal = c.totalSpent + data.total;
-              supabase.from("clients").update({ total_spent: newTotal }).eq("id", c.id).then(() => {});
+              dbExec(supabase.from("clients").update({ total_spent: newTotal }).eq("id", c.id));
               return { ...c, totalSpent: newTotal };
             }
             return c;
@@ -662,19 +681,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [nextInvoiceNumber]
   );
 
+  const updateInvoice = useCallback(
+    (id: string, data: Omit<Invoice, "id" | "invoiceNumber" | "createdAt">) => {
+      setInvoices((prev) =>
+        prev.map((inv) =>
+          inv.id === id ? { ...inv, ...data } : inv
+        )
+      );
+      const row = {
+        client_id: data.clientId,
+        client_name: data.clientName,
+        items: JSON.stringify(data.items),
+        subtotal: data.subtotal,
+        discount_type: data.discountType,
+        discount_value: data.discountValue,
+        discount_amount: data.discountAmount,
+        total: data.total,
+        status: data.status,
+        notes: data.notes,
+      };
+      dbExec(supabase.from("invoices").update(row).eq("id", id));
+    },
+    []
+  );
+
   const updateInvoiceStatus = useCallback(
     (id: string, status: InvoiceStatus) => {
       setInvoices((prev) =>
         prev.map((inv) => (inv.id === id ? { ...inv, status } : inv))
       );
-      supabase.from("invoices").update({ status }).eq("id", id).then(() => {});
+      dbExec(supabase.from("invoices").update({ status }).eq("id", id));
     },
     []
   );
 
   const deleteInvoice = useCallback((id: string) => {
     setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-    supabase.from("invoices").delete().eq("id", id).then(() => {});
+    dbExec(supabase.from("invoices").delete().eq("id", id));
   }, []);
 
   // --- Order CRUD ---
@@ -692,7 +735,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updatedAt: now,
       };
       setOrders((prev) => [newOrder, ...prev]);
-      supabase.from("orders").insert(orderToRow(newOrder)).then(() => {});
+      dbExec(supabase.from("orders").insert(orderToRow(newOrder)));
       return newOrder;
     },
     [orders.length]
@@ -710,12 +753,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (data.clientName !== undefined) row.client_name = data.clientName;
     if (data.description !== undefined) row.description = data.description;
     if (data.status !== undefined) row.status = data.status;
-    supabase.from("orders").update(row).eq("id", id).then(() => {});
+    dbExec(supabase.from("orders").update(row).eq("id", id));
   }, []);
 
   const deleteOrder = useCallback((id: string) => {
     setOrders((prev) => prev.filter((o) => o.id !== id));
-    supabase.from("orders").delete().eq("id", id).then(() => {});
+    dbExec(supabase.from("orders").delete().eq("id", id));
   }, []);
 
   // --- Bundles ---
@@ -727,7 +770,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setBundles((prev) => [newBundle, ...prev]);
-      supabase.from("bundles").insert(bundleToRow(newBundle)).then(() => {});
+      dbExec(supabase.from("bundles").insert(bundleToRow(newBundle)));
       return newBundle;
     },
     []
@@ -744,7 +787,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (data.items !== undefined) row.items = JSON.stringify(data.items);
       if (data.discount !== undefined) row.discount = data.discount;
       if (Object.keys(row).length > 0) {
-        supabase.from("bundles").update(row).eq("id", id).then(() => {});
+        dbExec(supabase.from("bundles").update(row).eq("id", id));
       }
     },
     []
@@ -752,7 +795,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const deleteBundle = useCallback((id: string) => {
     setBundles((prev) => prev.filter((b) => b.id !== id));
-    supabase.from("bundles").delete().eq("id", id).then(() => {});
+    dbExec(supabase.from("bundles").delete().eq("id", id));
   }, []);
 
   // --- Import Odoo Data ---
@@ -770,12 +813,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               name: c.name,
               phone: c.phone || "",
               address: c.address || "",
+              notes: "",
               totalSpent: c.totalSpent || 0,
               createdAt: c.createdAt || new Date().toISOString().split("T")[0],
             }));
           counts.clients = newClients.length;
           if (newClients.length > 0) {
-            supabase.from("clients").upsert(newClients.map(clientToRow)).then(() => {});
+            dbExec(supabase.from("clients").upsert(newClients.map(clientToRow)));
           }
           return [...newClients, ...prev];
         });
@@ -789,7 +833,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             .map((p) => ({
               id: p.id,
               name: p.name,
-              category: (p.category || "ملحقات") as Product["category"],
+              category: (p.category || "ملحقات") as string,
               sku: p.sku || "",
               description: p.nameEn || "",
               price: p.price || 0,
@@ -800,7 +844,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }));
           counts.products = newProducts.length;
           if (newProducts.length > 0) {
-            supabase.from("products").upsert(newProducts.map(productToRow)).then(() => {});
+            dbExec(supabase.from("products").upsert(newProducts.map(productToRow)));
           }
           return [...newProducts, ...prev];
         });
@@ -836,7 +880,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }));
           counts.invoices = newInvoices.length;
           if (newInvoices.length > 0) {
-            supabase.from("invoices").upsert(newInvoices.map(invoiceToRow)).then(() => {});
+            dbExec(supabase.from("invoices").upsert(newInvoices.map(invoiceToRow)));
           }
           return [...newInvoices, ...prev];
         });
@@ -859,7 +903,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             }));
           counts.orders = newOrders.length;
           if (newOrders.length > 0) {
-            supabase.from("orders").upsert(newOrders.map(orderToRow)).then(() => {});
+            dbExec(supabase.from("orders").upsert(newOrders.map(orderToRow)));
           }
           return [...newOrders, ...prev];
         });
@@ -874,15 +918,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback((data: Partial<AppSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...data };
-      supabase.from("app_settings").upsert(settingsToRow(updated)).then(() => {});
+      dbExec(supabase.from("app_settings").upsert(settingsToRow(updated)));
       return updated;
     });
   }, []);
 
   if (!initialized) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="min-h-screen bg-background">
+        <div className="lg:mr-[272px]">
+          {/* Skeleton header */}
+          <div className="sticky top-0 z-30 border-b border-border/60 bg-white/80 backdrop-blur-md">
+            <div className="flex h-16 items-center justify-between px-5 md:px-7 lg:px-10">
+              <div className="h-5 w-40 animate-pulse rounded-lg bg-muted" />
+              <div className="h-9 w-9 animate-pulse rounded-xl bg-muted" />
+            </div>
+          </div>
+          {/* Skeleton content */}
+          <div className="p-5 md:p-7 lg:p-10 space-y-6">
+            <div className="h-8 w-48 animate-pulse rounded-lg bg-muted" />
+            <div className="h-4 w-72 animate-pulse rounded-lg bg-muted" />
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 animate-pulse rounded-2xl bg-muted" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+              <div className="h-64 animate-pulse rounded-2xl bg-muted" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -904,6 +970,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteProduct,
         getProductImage,
         addInvoice,
+        updateInvoice,
         updateInvoiceStatus,
         deleteInvoice,
         addOrder,

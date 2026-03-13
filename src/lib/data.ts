@@ -7,6 +7,7 @@ export interface Client {
   name: string;
   phone: string;
   address: string;
+  notes: string;
   totalSpent: number;
   createdAt: string;
 }
@@ -14,7 +15,7 @@ export interface Client {
 export interface Product {
   id: string;
   name: string;
-  category: "طابعة" | "حبر" | "تونر" | "ورق" | "ملحقات";
+  category: string;
   sku: string;
   description: string;
   price: number;
@@ -74,7 +75,7 @@ export const clients: Client[] = [
     "name": "مازن مقدم",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-04"
   },
   {
@@ -82,7 +83,7 @@ export const clients: Client[] = [
     "name": "محمد حنظل",
     "phone": "+90 531 200 28 71",
     "address": "الجميلية",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-05"
   },
   {
@@ -90,7 +91,7 @@ export const clients: Client[] = [
     "name": "نزير ورد",
     "phone": "",
     "address": "",
-    "totalSpent": 2257.5,
+    "notes": "", "totalSpent": 2257.5,
     "createdAt": "2025-11-04"
   },
   {
@@ -98,7 +99,7 @@ export const clients: Client[] = [
     "name": "شركة حنظل التجارية",
     "phone": "+90 531 200 28 71",
     "address": "الجميلية",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-05"
   },
   {
@@ -106,7 +107,7 @@ export const clients: Client[] = [
     "name": "فراس",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-12-03"
   },
   {
@@ -114,7 +115,7 @@ export const clients: Client[] = [
     "name": "مركز البيان",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-22"
   },
   {
@@ -122,7 +123,7 @@ export const clients: Client[] = [
     "name": "عبدالرحمن جنيد",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-12-30"
   },
   {
@@ -130,7 +131,7 @@ export const clients: Client[] = [
     "name": "ايهاب محبك",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-22"
   },
   {
@@ -138,7 +139,7 @@ export const clients: Client[] = [
     "name": "احمد زيدان",
     "phone": "+963 965 345 864",
     "address": "الجميلية",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-05"
   },
   {
@@ -146,7 +147,7 @@ export const clients: Client[] = [
     "name": "شركة زيدان وضبيط",
     "phone": "+963 965 345 864",
     "address": "الجميلية",
-    "totalSpent": 800,
+    "notes": "", "totalSpent": 800,
     "createdAt": "2025-11-05"
   },
   {
@@ -154,7 +155,7 @@ export const clients: Client[] = [
     "name": "مركز المقدم",
     "phone": "",
     "address": "ادلب",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-05"
   },
   {
@@ -162,7 +163,7 @@ export const clients: Client[] = [
     "name": "مازن مقدم",
     "phone": "+90 555 100 23 25",
     "address": "ادلب",
-    "totalSpent": 4331.5,
+    "notes": "", "totalSpent": 4331.5,
     "createdAt": "2025-11-05"
   },
   {
@@ -170,7 +171,7 @@ export const clients: Client[] = [
     "name": "مركز خلدان",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-12-30"
   },
   {
@@ -178,7 +179,7 @@ export const clients: Client[] = [
     "name": "عيسى العيسى",
     "phone": "+963 940 378 403",
     "address": "",
-    "totalSpent": 835,
+    "notes": "", "totalSpent": 835,
     "createdAt": "2025-11-05"
   },
   {
@@ -186,7 +187,7 @@ export const clients: Client[] = [
     "name": "مصطفى شعار",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-12-30"
   },
   {
@@ -194,7 +195,7 @@ export const clients: Client[] = [
     "name": "رامي دحروج",
     "phone": "+90 539 792 67 13",
     "address": "",
-    "totalSpent": 2047.5,
+    "notes": "", "totalSpent": 2047.5,
     "createdAt": "2025-11-05"
   },
   {
@@ -202,7 +203,7 @@ export const clients: Client[] = [
     "name": "محمد حسون",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2025-11-22"
   },
   {
@@ -210,7 +211,7 @@ export const clients: Client[] = [
     "name": "أبو تيم منبج",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-03-05"
   },
   {
@@ -218,7 +219,7 @@ export const clients: Client[] = [
     "name": "ياسر أشمر",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-01-31"
   },
   {
@@ -226,7 +227,7 @@ export const clients: Client[] = [
     "name": "نزار ريحاوي",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-02-09"
   },
   {
@@ -234,7 +235,7 @@ export const clients: Client[] = [
     "name": "أيمن الكايا",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-01-31"
   },
   {
@@ -242,7 +243,7 @@ export const clients: Client[] = [
     "name": "شركة بيت الطباعة",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-02-18"
   },
   {
@@ -250,7 +251,7 @@ export const clients: Client[] = [
     "name": "حمزة حرستاني",
     "phone": "",
     "address": "",
-    "totalSpent": 0,
+    "notes": "", "totalSpent": 0,
     "createdAt": "2026-02-18"
   }
 ];
