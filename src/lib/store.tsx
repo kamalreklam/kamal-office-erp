@@ -20,6 +20,7 @@ import {
   type InvoiceStatus,
   type OrderStatus,
 } from "./data";
+import { supabase } from "./supabase";
 
 // ==========================================
 // Settings Interface
@@ -29,7 +30,7 @@ export interface AppSettings {
   businessNameEn: string;
   phone: string;
   address: string;
-  logo: string; // base64 data URL
+  logo: string;
   currency: string;
   currencySymbol: string;
   taxRate: number;
@@ -72,7 +73,7 @@ export interface ProductBundle {
   name: string;
   description: string;
   items: BundleItem[];
-  discount: number; // percentage discount on total
+  discount: number;
   createdAt: string;
 }
 
@@ -191,7 +192,194 @@ interface StoreContextType {
 const StoreContext = createContext<StoreContextType | null>(null);
 
 // ==========================================
-// localStorage helpers
+// Supabase helpers — map between camelCase (app) and snake_case (DB)
+// ==========================================
+
+function clientToRow(c: Client) {
+  return {
+    id: c.id,
+    name: c.name,
+    phone: c.phone,
+    address: c.address,
+    total_spent: c.totalSpent,
+    created_at: c.createdAt,
+  };
+}
+
+function rowToClient(r: Record<string, unknown>): Client {
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    phone: r.phone as string,
+    address: r.address as string,
+    totalSpent: Number(r.total_spent) || 0,
+    createdAt: r.created_at as string,
+  };
+}
+
+function productToRow(p: Product) {
+  return {
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    sku: p.sku,
+    description: p.description,
+    price: p.price,
+    stock: p.stock,
+    min_stock: p.minStock,
+    unit: p.unit,
+    created_at: p.createdAt,
+  };
+}
+
+function rowToProduct(r: Record<string, unknown>): Product {
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    category: (r.category || "ملحقات") as Product["category"],
+    sku: (r.sku || "") as string,
+    description: (r.description || "") as string,
+    price: Number(r.price) || 0,
+    stock: Number(r.stock) || 0,
+    minStock: Number(r.min_stock) || 5,
+    unit: (r.unit || "قطعة") as string,
+    createdAt: r.created_at as string,
+  };
+}
+
+function invoiceToRow(inv: Invoice) {
+  return {
+    id: inv.id,
+    invoice_number: inv.invoiceNumber,
+    client_id: inv.clientId,
+    client_name: inv.clientName,
+    items: JSON.stringify(inv.items),
+    subtotal: inv.subtotal,
+    discount_type: inv.discountType,
+    discount_value: inv.discountValue,
+    discount_amount: inv.discountAmount,
+    total: inv.total,
+    status: inv.status,
+    notes: inv.notes,
+    created_at: inv.createdAt,
+  };
+}
+
+function rowToInvoice(r: Record<string, unknown>): Invoice {
+  let items = r.items;
+  if (typeof items === "string") {
+    try { items = JSON.parse(items); } catch { items = []; }
+  }
+  return {
+    id: r.id as string,
+    invoiceNumber: r.invoice_number as string,
+    clientId: r.client_id as string,
+    clientName: r.client_name as string,
+    items: (items as Invoice["items"]) || [],
+    subtotal: Number(r.subtotal) || 0,
+    discountType: (r.discount_type || "fixed") as "percentage" | "fixed",
+    discountValue: Number(r.discount_value) || 0,
+    discountAmount: Number(r.discount_amount) || 0,
+    total: Number(r.total) || 0,
+    status: (r.status || "غير مدفوعة") as InvoiceStatus,
+    notes: (r.notes || "") as string,
+    createdAt: r.created_at as string,
+  };
+}
+
+function orderToRow(o: Order) {
+  return {
+    id: o.id,
+    tracking_id: o.trackingId,
+    client_id: o.clientId,
+    client_name: o.clientName,
+    description: o.description,
+    status: o.status,
+    created_at: o.createdAt,
+    updated_at: o.updatedAt,
+  };
+}
+
+function rowToOrder(r: Record<string, unknown>): Order {
+  return {
+    id: r.id as string,
+    trackingId: r.tracking_id as string,
+    clientId: r.client_id as string,
+    clientName: r.client_name as string,
+    description: (r.description || "") as string,
+    status: (r.status || "قيد الانتظار") as OrderStatus,
+    createdAt: r.created_at as string,
+    updatedAt: r.updated_at as string,
+  };
+}
+
+function bundleToRow(b: ProductBundle) {
+  return {
+    id: b.id,
+    name: b.name,
+    description: b.description,
+    items: JSON.stringify(b.items),
+    discount: b.discount,
+    created_at: b.createdAt,
+  };
+}
+
+function rowToBundle(r: Record<string, unknown>): ProductBundle {
+  let items = r.items;
+  if (typeof items === "string") {
+    try { items = JSON.parse(items); } catch { items = []; }
+  }
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    description: (r.description || "") as string,
+    items: (items as BundleItem[]) || [],
+    discount: Number(r.discount) || 0,
+    createdAt: r.created_at as string,
+  };
+}
+
+function settingsToRow(s: AppSettings) {
+  return {
+    id: "default",
+    business_name: s.businessName,
+    business_name_en: s.businessNameEn,
+    phone: s.phone,
+    address: s.address,
+    logo: s.logo,
+    currency: s.currency,
+    currency_symbol: s.currencySymbol,
+    tax_rate: s.taxRate,
+    tax_enabled: s.taxEnabled,
+    invoice_prefix: s.invoicePrefix,
+    invoice_notes: s.invoiceNotes,
+    low_stock_warning: s.lowStockWarning,
+    primary_color: s.primaryColor,
+    custom_invoice_html: s.customInvoiceHtml,
+  };
+}
+
+function rowToSettings(r: Record<string, unknown>): AppSettings {
+  return {
+    businessName: (r.business_name || defaultSettings.businessName) as string,
+    businessNameEn: (r.business_name_en || defaultSettings.businessNameEn) as string,
+    phone: (r.phone || defaultSettings.phone) as string,
+    address: (r.address || defaultSettings.address) as string,
+    logo: (r.logo || "") as string,
+    currency: (r.currency || "USD") as string,
+    currencySymbol: (r.currency_symbol || "$") as string,
+    taxRate: Number(r.tax_rate) || 0,
+    taxEnabled: r.tax_enabled as boolean ?? false,
+    invoicePrefix: (r.invoice_prefix || "INV") as string,
+    invoiceNotes: (r.invoice_notes || defaultSettings.invoiceNotes) as string,
+    lowStockWarning: r.low_stock_warning as boolean ?? true,
+    primaryColor: (r.primary_color || "#2563eb") as string,
+    customInvoiceHtml: (r.custom_invoice_html || "") as string,
+  };
+}
+
+// ==========================================
+// localStorage helpers (for migration fallback)
 // ==========================================
 function loadFromStorage<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -200,15 +388,6 @@ function loadFromStorage<T>(key: string, fallback: T): T {
     return stored ? JSON.parse(stored) : fallback;
   } catch {
     return fallback;
-  }
-}
-
-function saveToStorage(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // storage full or not available
   }
 }
 
@@ -225,53 +404,108 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [productImages, setProductImages] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState(false);
 
-  // Load from localStorage on mount
+  // Load from Supabase on mount, fallback to localStorage for migration
   useEffect(() => {
-    setClients(loadFromStorage("kamal_clients", defaultClients));
-    setProducts(loadFromStorage("kamal_products", defaultProducts));
-    setInvoices(loadFromStorage("kamal_invoices", defaultInvoices));
-    setOrders(loadFromStorage("kamal_orders", defaultOrders));
-    setBundles(loadFromStorage("kamal_bundles", []));
-    setSettings(loadFromStorage("kamal_settings", defaultSettings));
-    setProductImages(loadFromStorage("kamal_product_images", {}));
-    setInitialized(true);
+    async function loadData() {
+      try {
+        // Fetch all data from Supabase in parallel
+        const [
+          clientsRes,
+          productsRes,
+          invoicesRes,
+          ordersRes,
+          bundlesRes,
+          settingsRes,
+          imagesRes,
+        ] = await Promise.all([
+          supabase.from("clients").select("*"),
+          supabase.from("products").select("*"),
+          supabase.from("invoices").select("*"),
+          supabase.from("orders").select("*"),
+          supabase.from("bundles").select("*"),
+          supabase.from("app_settings").select("*").eq("id", "default").single(),
+          supabase.from("product_images").select("*"),
+        ]);
+
+        const dbClients = (clientsRes.data || []).map(rowToClient);
+        const dbProducts = (productsRes.data || []).map(rowToProduct);
+        const dbInvoices = (invoicesRes.data || []).map(rowToInvoice);
+        const dbOrders = (ordersRes.data || []).map(rowToOrder);
+        const dbBundles = (bundlesRes.data || []).map(rowToBundle);
+        const dbSettings = settingsRes.data ? rowToSettings(settingsRes.data) : null;
+        const dbImages: Record<string, string> = {};
+        (imagesRes.data || []).forEach((row: { product_id: string; image_data: string }) => {
+          dbImages[row.product_id] = row.image_data;
+        });
+
+        // If Supabase has data, use it
+        if (dbClients.length > 0 || dbProducts.length > 0 || dbInvoices.length > 0) {
+          setClients(dbClients);
+          setProducts(dbProducts);
+          setInvoices(dbInvoices);
+          setOrders(dbOrders);
+          setBundles(dbBundles);
+          setSettings(dbSettings || defaultSettings);
+          setProductImages(dbImages);
+        } else {
+          // Supabase is empty — migrate from localStorage
+          const lsClients = loadFromStorage("kamal_clients", defaultClients);
+          const lsProducts = loadFromStorage("kamal_products", defaultProducts);
+          const lsInvoices = loadFromStorage("kamal_invoices", defaultInvoices);
+          const lsOrders = loadFromStorage("kamal_orders", defaultOrders);
+          const lsBundles = loadFromStorage<ProductBundle[]>("kamal_bundles", []);
+          const lsSettings = loadFromStorage("kamal_settings", defaultSettings);
+          const lsImages = loadFromStorage<Record<string, string>>("kamal_product_images", {});
+
+          setClients(lsClients);
+          setProducts(lsProducts);
+          setInvoices(lsInvoices);
+          setOrders(lsOrders);
+          setBundles(lsBundles);
+          setSettings(lsSettings);
+          setProductImages(lsImages);
+
+          // Migrate to Supabase in background
+          if (lsClients.length > 0) {
+            supabase.from("clients").upsert(lsClients.map(clientToRow)).then(() => {});
+          }
+          if (lsProducts.length > 0) {
+            supabase.from("products").upsert(lsProducts.map(productToRow)).then(() => {});
+          }
+          if (lsInvoices.length > 0) {
+            supabase.from("invoices").upsert(lsInvoices.map(invoiceToRow)).then(() => {});
+          }
+          if (lsOrders.length > 0) {
+            supabase.from("orders").upsert(lsOrders.map(orderToRow)).then(() => {});
+          }
+          if (lsBundles.length > 0) {
+            supabase.from("bundles").upsert(lsBundles.map(bundleToRow)).then(() => {});
+          }
+          supabase.from("app_settings").upsert(settingsToRow(lsSettings)).then(() => {});
+          if (Object.keys(lsImages).length > 0) {
+            const imageRows = Object.entries(lsImages).map(([productId, imageData]) => ({
+              product_id: productId,
+              image_data: imageData,
+            }));
+            supabase.from("product_images").upsert(imageRows).then(() => {});
+          }
+        }
+      } catch {
+        // Supabase unavailable — fall back to localStorage
+        setClients(loadFromStorage("kamal_clients", defaultClients));
+        setProducts(loadFromStorage("kamal_products", defaultProducts));
+        setInvoices(loadFromStorage("kamal_invoices", defaultInvoices));
+        setOrders(loadFromStorage("kamal_orders", defaultOrders));
+        setBundles(loadFromStorage("kamal_bundles", []));
+        setSettings(loadFromStorage("kamal_settings", defaultSettings));
+        setProductImages(loadFromStorage("kamal_product_images", {}));
+      }
+
+      setInitialized(true);
+    }
+
+    loadData();
   }, []);
-
-  // Save to localStorage on changes
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_clients", clients);
-  }, [clients, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_products", products);
-  }, [products, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_invoices", invoices);
-  }, [invoices, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_orders", orders);
-  }, [orders, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_bundles", bundles);
-  }, [bundles, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_settings", settings);
-  }, [settings, initialized]);
-
-  useEffect(() => {
-    if (!initialized) return;
-    saveToStorage("kamal_product_images", productImages);
-  }, [productImages, initialized]);
 
   // --- Client CRUD ---
   const addClient = useCallback(
@@ -283,6 +517,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setClients((prev) => [newClient, ...prev]);
+      supabase.from("clients").insert(clientToRow(newClient)).then(() => {});
       return newClient;
     },
     []
@@ -290,10 +525,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateClient = useCallback((id: string, data: Partial<Client>) => {
     setClients((prev) => prev.map((c) => (c.id === id ? { ...c, ...data } : c)));
+    const row: Record<string, unknown> = {};
+    if (data.name !== undefined) row.name = data.name;
+    if (data.phone !== undefined) row.phone = data.phone;
+    if (data.address !== undefined) row.address = data.address;
+    if (data.totalSpent !== undefined) row.total_spent = data.totalSpent;
+    supabase.from("clients").update(row).eq("id", id).then(() => {});
   }, []);
 
   const deleteClient = useCallback((id: string) => {
     setClients((prev) => prev.filter((c) => c.id !== id));
+    supabase.from("clients").delete().eq("id", id).then(() => {});
   }, []);
 
   // --- Product CRUD ---
@@ -306,8 +548,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setProducts((prev) => [newProduct, ...prev]);
+      supabase.from("products").insert(productToRow(newProduct)).then(() => {});
       if (image) {
         setProductImages((prev) => ({ ...prev, [newProduct.id]: image }));
+        supabase.from("product_images").upsert({ product_id: newProduct.id, image_data: image }).then(() => {});
       }
       return newProduct;
     },
@@ -320,8 +564,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setProducts((prev) =>
         prev.map((p) => (p.id === id ? { ...p, ...productData } : p))
       );
+      const row: Record<string, unknown> = {};
+      if (productData.name !== undefined) row.name = productData.name;
+      if (productData.category !== undefined) row.category = productData.category;
+      if (productData.sku !== undefined) row.sku = productData.sku;
+      if (productData.description !== undefined) row.description = productData.description;
+      if (productData.price !== undefined) row.price = productData.price;
+      if (productData.stock !== undefined) row.stock = productData.stock;
+      if (productData.minStock !== undefined) row.min_stock = productData.minStock;
+      if (productData.unit !== undefined) row.unit = productData.unit;
+      if (Object.keys(row).length > 0) {
+        supabase.from("products").update(row).eq("id", id).then(() => {});
+      }
       if (image !== undefined) {
         setProductImages((prev) => ({ ...prev, [id]: image }));
+        supabase.from("product_images").upsert({ product_id: id, image_data: image }).then(() => {});
       }
     },
     []
@@ -334,6 +591,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       delete copy[id];
       return copy;
     });
+    supabase.from("products").delete().eq("id", id).then(() => {});
+    supabase.from("product_images").delete().eq("product_id", id).then(() => {});
   }, []);
 
   const getProductImage = useCallback(
@@ -364,33 +623,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       };
 
       setInvoices((prev) => [newInvoice, ...prev]);
+      supabase.from("invoices").insert(invoiceToRow(newInvoice)).then(() => {});
 
       // Auto-deduct stock
       if (data.status !== "مسودة" && data.status !== "ملغاة") {
-        setProducts((prev) =>
-          prev.map((product) => {
+        setProducts((prev) => {
+          const updated = prev.map((product) => {
             const invoiceItem = data.items.find(
               (item) => item.productId === product.id
             );
             if (invoiceItem) {
-              return {
-                ...product,
-                stock: Math.max(0, product.stock - invoiceItem.quantity),
-              };
+              const newStock = Math.max(0, product.stock - invoiceItem.quantity);
+              supabase.from("products").update({ stock: newStock }).eq("id", product.id).then(() => {});
+              return { ...product, stock: newStock };
             }
             return product;
-          })
-        );
+          });
+          return updated;
+        });
       }
 
       // Update client totalSpent
       if (data.status === "مدفوعة") {
         setClients((prev) =>
-          prev.map((c) =>
-            c.id === data.clientId
-              ? { ...c, totalSpent: c.totalSpent + data.total }
-              : c
-          )
+          prev.map((c) => {
+            if (c.id === data.clientId) {
+              const newTotal = c.totalSpent + data.total;
+              supabase.from("clients").update({ total_spent: newTotal }).eq("id", c.id).then(() => {});
+              return { ...c, totalSpent: newTotal };
+            }
+            return c;
+          })
         );
       }
 
@@ -404,12 +667,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setInvoices((prev) =>
         prev.map((inv) => (inv.id === id ? { ...inv, status } : inv))
       );
+      supabase.from("invoices").update({ status }).eq("id", id).then(() => {});
     },
     []
   );
 
   const deleteInvoice = useCallback((id: string) => {
     setInvoices((prev) => prev.filter((inv) => inv.id !== id));
+    supabase.from("invoices").delete().eq("id", id).then(() => {});
   }, []);
 
   // --- Order CRUD ---
@@ -427,23 +692,30 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updatedAt: now,
       };
       setOrders((prev) => [newOrder, ...prev]);
+      supabase.from("orders").insert(orderToRow(newOrder)).then(() => {});
       return newOrder;
     },
     [orders.length]
   );
 
   const updateOrder = useCallback((id: string, data: Partial<Order>) => {
+    const updatedAt = new Date().toISOString().split("T")[0];
     setOrders((prev) =>
       prev.map((o) =>
-        o.id === id
-          ? { ...o, ...data, updatedAt: new Date().toISOString().split("T")[0] }
-          : o
+        o.id === id ? { ...o, ...data, updatedAt } : o
       )
     );
+    const row: Record<string, unknown> = { updated_at: updatedAt };
+    if (data.clientId !== undefined) row.client_id = data.clientId;
+    if (data.clientName !== undefined) row.client_name = data.clientName;
+    if (data.description !== undefined) row.description = data.description;
+    if (data.status !== undefined) row.status = data.status;
+    supabase.from("orders").update(row).eq("id", id).then(() => {});
   }, []);
 
   const deleteOrder = useCallback((id: string) => {
     setOrders((prev) => prev.filter((o) => o.id !== id));
+    supabase.from("orders").delete().eq("id", id).then(() => {});
   }, []);
 
   // --- Bundles ---
@@ -455,6 +727,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString().split("T")[0],
       };
       setBundles((prev) => [newBundle, ...prev]);
+      supabase.from("bundles").insert(bundleToRow(newBundle)).then(() => {});
       return newBundle;
     },
     []
@@ -465,12 +738,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setBundles((prev) =>
         prev.map((b) => (b.id === id ? { ...b, ...data } : b))
       );
+      const row: Record<string, unknown> = {};
+      if (data.name !== undefined) row.name = data.name;
+      if (data.description !== undefined) row.description = data.description;
+      if (data.items !== undefined) row.items = JSON.stringify(data.items);
+      if (data.discount !== undefined) row.discount = data.discount;
+      if (Object.keys(row).length > 0) {
+        supabase.from("bundles").update(row).eq("id", id).then(() => {});
+      }
     },
     []
   );
 
   const deleteBundle = useCallback((id: string) => {
     setBundles((prev) => prev.filter((b) => b.id !== id));
+    supabase.from("bundles").delete().eq("id", id).then(() => {});
   }, []);
 
   // --- Import Odoo Data ---
@@ -478,7 +760,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (data: OdooImportData) => {
       const counts = { clients: 0, products: 0, invoices: 0, orders: 0 };
 
-      // Import clients (merge by id, skip duplicates)
       if (data.clients?.length) {
         setClients((prev) => {
           const existingIds = new Set(prev.map((c) => c.id));
@@ -493,11 +774,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               createdAt: c.createdAt || new Date().toISOString().split("T")[0],
             }));
           counts.clients = newClients.length;
+          if (newClients.length > 0) {
+            supabase.from("clients").upsert(newClients.map(clientToRow)).then(() => {});
+          }
           return [...newClients, ...prev];
         });
       }
 
-      // Import products
       if (data.products?.length) {
         setProducts((prev) => {
           const existingIds = new Set(prev.map((p) => p.id));
@@ -516,11 +799,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               createdAt: p.createdAt || new Date().toISOString().split("T")[0],
             }));
           counts.products = newProducts.length;
+          if (newProducts.length > 0) {
+            supabase.from("products").upsert(newProducts.map(productToRow)).then(() => {});
+          }
           return [...newProducts, ...prev];
         });
       }
 
-      // Import invoices
       if (data.invoices?.length) {
         setInvoices((prev) => {
           const existingIds = new Set(prev.map((i) => i.id));
@@ -550,11 +835,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               createdAt: i.createdAt || new Date().toISOString().split("T")[0],
             }));
           counts.invoices = newInvoices.length;
+          if (newInvoices.length > 0) {
+            supabase.from("invoices").upsert(newInvoices.map(invoiceToRow)).then(() => {});
+          }
           return [...newInvoices, ...prev];
         });
       }
 
-      // Import orders
       if (data.orders?.length) {
         setOrders((prev) => {
           const existingIds = new Set(prev.map((o) => o.id));
@@ -571,6 +858,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               updatedAt: o.updatedAt || new Date().toISOString().split("T")[0],
             }));
           counts.orders = newOrders.length;
+          if (newOrders.length > 0) {
+            supabase.from("orders").upsert(newOrders.map(orderToRow)).then(() => {});
+          }
           return [...newOrders, ...prev];
         });
       }
@@ -582,7 +872,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // --- Settings ---
   const updateSettings = useCallback((data: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...data }));
+    setSettings((prev) => {
+      const updated = { ...prev, ...data };
+      supabase.from("app_settings").upsert(settingsToRow(updated)).then(() => {});
+      return updated;
+    });
   }, []);
 
   if (!initialized) {
