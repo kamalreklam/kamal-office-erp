@@ -13,8 +13,8 @@ import type { DateRange } from "./date-range-picker";
 Font.register({
   family: "IBM Plex Arabic",
   fonts: [
-    { src: "/fonts/ibm-plex-arabic-regular.ttf", fontWeight: 400 },
-    { src: "/fonts/ibm-plex-arabic-bold.ttf", fontWeight: 700 },
+    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400 },
+    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700 },
   ],
 });
 Font.registerHyphenationCallback((word) => [word]);

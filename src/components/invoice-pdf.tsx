@@ -12,12 +12,12 @@ import {
 import type { Invoice } from "@/lib/data";
 import type { AppSettings } from "@/lib/store";
 
-// Register IBM Plex Sans Arabic
+// Register IBM Plex Sans Arabic from GitHub (works in browser + server)
 Font.register({
   family: "IBM Plex Arabic",
   fonts: [
-    { src: "/fonts/ibm-plex-arabic-regular.ttf", fontWeight: 400 },
-    { src: "/fonts/ibm-plex-arabic-bold.ttf", fontWeight: 700 },
+    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400 },
+    { src: "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700 },
   ],
 });
 
