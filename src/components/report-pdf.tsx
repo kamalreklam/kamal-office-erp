@@ -35,7 +35,7 @@ interface ReportPDFProps {
   companyName: string;
   companyNameEn: string;
   accentColor?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function ReportPDF({

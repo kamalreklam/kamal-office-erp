@@ -4,7 +4,8 @@ import { createElement } from "react";
 import { Text, View, StyleSheet } from "@react-pdf/renderer";
 import { ReportPDF, ReportTable, ReportStatRow, fmtNum, fmtInt } from "@/components/report-pdf";
 import type { DateRange } from "@/components/date-range-picker";
-import type { Product, Invoice, Client, Order, AppSettings } from "@/lib/data";
+import type { Product, Invoice, Client, Order } from "@/lib/data";
+import type { AppSettings } from "@/lib/store";
 
 const currency = (settings: AppSettings) => settings.currencySymbol || "$";
 

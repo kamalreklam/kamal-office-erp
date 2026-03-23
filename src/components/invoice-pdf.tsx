@@ -9,7 +9,8 @@ import {
   Font,
   StyleSheet,
 } from "@react-pdf/renderer";
-import type { Invoice, AppSettings } from "@/lib/data";
+import type { Invoice } from "@/lib/data";
+import type { AppSettings } from "@/lib/store";
 
 // Register IBM Plex Sans Arabic
 Font.register({

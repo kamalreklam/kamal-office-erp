@@ -1,9 +1,10 @@
 "use client";
 
 import { pdf } from "@react-pdf/renderer";
-import { createElement } from "react";
+import { createElement, type ReactElement } from "react";
 import { InvoicePDF, type InvoicePDFSettings } from "@/components/invoice-pdf";
-import type { Invoice, AppSettings } from "@/lib/data";
+import type { Invoice } from "@/lib/data";
+import type { AppSettings } from "@/lib/store";
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_");
@@ -22,7 +23,7 @@ export async function exportInvoicePDF(
     pdfSettings,
   });
 
-  const blob = await pdf(doc).toBlob();
+  const blob = await pdf(doc as any).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -42,7 +43,7 @@ export async function exportReportPDF(
   reportType: string,
   dateRange?: { from: string; to: string }
 ) {
-  const blob = await pdf(doc).toBlob();
+  const blob = await pdf(doc as any).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -61,7 +62,7 @@ export async function exportClientSheetPDF(
   doc: React.ReactElement,
   clientName: string
 ) {
-  const blob = await pdf(doc).toBlob();
+  const blob = await pdf(doc as any).toBlob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

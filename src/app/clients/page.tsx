@@ -47,7 +47,7 @@ function getAvatarColor(id: string) {
 }
 
 export default function ClientsPage() {
-  const { clients, invoices, orders, addClient, updateClient, deleteClient: removeClient } = useStore();
+  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [dialogOpen, setDialogOpen] = useState(false);

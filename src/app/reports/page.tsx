@@ -37,7 +37,7 @@ function getMonthKey(dateStr: string) {
 }
 
 export default function ReportsPage() {
-  const { invoices, clients, products, orders } = useStore();
+  const { invoices, clients, products, orders, settings } = useStore();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
