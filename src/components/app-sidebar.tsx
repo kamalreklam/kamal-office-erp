@@ -41,14 +41,12 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const { settings } = useStore();
 
-  // Track mounted state so overlay can animate out before unmounting
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMounted(true);
-      // Trigger enter animation on next frame
       requestAnimationFrame(() => setVisible(true));
     } else {
       setVisible(false);
@@ -59,7 +57,7 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
 
   return (
     <>
-      {/* Overlay with fade animation */}
+      {/* Overlay */}
       {mounted && (
         <div
           className={cn(
@@ -72,50 +70,48 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
 
       <aside
         className={cn(
-          "fixed top-0 right-0 z-50 flex h-full w-[272px] flex-col border-l border-border bg-sidebar shadow-xl transition-all duration-300 lg:shadow-none",
-          open
-            ? "translate-x-0 lg:translate-x-0"
-            : "translate-x-full lg:translate-x-0",
-          open
-            ? "ease-[cubic-bezier(0.22,1,0.36,1)]"
-            : "ease-[cubic-bezier(0.55,0,1,0.45)]"
+          "fixed top-0 right-0 z-50 flex h-full w-[260px] flex-col transition-all duration-300 lg:shadow-none",
+          open ? "translate-x-0" : "translate-x-full lg:translate-x-0",
+          open ? "ease-[cubic-bezier(0.22,1,0.36,1)]" : "ease-[cubic-bezier(0.55,0,1,0.45)]"
         )}
+        style={{
+          background: "var(--surface-1)",
+          borderLeft: "1px solid var(--border-default)",
+        }}
       >
+        {/* Accent edge gradient on left border */}
+        <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: "var(--gradient-brand)", opacity: 0.4 }} />
+
         {/* Logo */}
-        <div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-5">
+        <div className="flex h-[68px] shrink-0 items-center justify-between px-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
           <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             {settings.logo ? (
-              <Image
-                src={settings.logo}
-                alt="Logo"
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-xl object-cover"
-              />
+              <Image src={settings.logo} alt="Logo" width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl avatar-gradient shadow-sm">
                 <Printer className="h-5 w-5" />
               </div>
             )}
             <div>
-              <h1 className="text-base font-bold leading-tight text-foreground">
+              <h1 className="text-sm font-bold leading-tight text-gradient-brand">
                 {settings.businessName.split(" ")[0] || "كمال"}
               </h1>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
                 {settings.businessName.split(" ").slice(1).join(" ") || "للتجهيزات المكتبية"}
               </p>
             </div>
           </Link>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent lg:hidden"
+            className="rounded-lg p-1.5 transition-colors hover:text-foreground lg:hidden"
+            style={{ color: "var(--text-muted)" }}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto p-4">
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
           {navItems.map((item, i) => {
             const isActive =
               item.href === "/"
@@ -128,19 +124,26 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
                 onClick={onClose}
                 style={{
                   transitionDelay: open ? `${50 + i * 30}ms` : "0ms",
+                  ...(isActive ? {
+                    background: "var(--accent-soft)",
+                    color: "var(--primary)",
+                  } : {
+                    color: "var(--text-secondary)",
+                  }),
                 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium transition-all duration-300",
-                  isActive
-                    ? "bg-primary/10 text-primary shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
-                  // Stagger slide-in on mobile open
-                  open
-                    ? "translate-x-0 opacity-100"
-                    : "lg:translate-x-0 lg:opacity-100"
+                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200",
+                  !isActive && "hover:text-foreground",
+                  open ? "translate-x-0 opacity-100" : "lg:translate-x-0 lg:opacity-100"
                 )}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
               >
-                <item.icon className="h-5 w-5" />
+                {/* Active indicator bar */}
+                {isActive && (
+                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-full" style={{ background: "var(--gradient-brand)" }} />
+                )}
+                <item.icon className="h-[18px] w-[18px]" />
                 {item.label}
               </Link>
             );
@@ -148,10 +151,10 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-border p-5">
-          <div className="text-center text-xs text-muted-foreground">
+        <div className="shrink-0 p-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          <div className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
             <p className="font-medium">{settings.businessName}</p>
-            <p className="mt-1">{settings.address}</p>
+            <p className="mt-0.5">{settings.address}</p>
           </div>
         </div>
       </aside>

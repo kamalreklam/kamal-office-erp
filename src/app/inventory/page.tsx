@@ -16,12 +16,16 @@ import {
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
   Printer, Droplets, FileStack, Cable, Archive, ArrowUpDown, ChevronLeft, ChevronRight, Download,
+  LayoutGrid, List,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
 import { useStore } from "@/lib/store";
 import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
+import { exportReportPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createInventoryReport } from "@/lib/report-generators";
 
 const categoryIcons: Record<string, typeof Package> = {
   "طابعة": Printer,
@@ -55,8 +59,9 @@ export default function InventoryPage() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState(emptyForm);
   const [sortBy, setSortBy] = useState("default");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [page, setPage] = useState(1);
-  const perPage = 12;
+  const perPage = viewMode === "grid" ? 12 : 20;
 
   const filtered = useMemo(() => {
     const list = products.filter((p) => {
@@ -80,7 +85,7 @@ export default function InventoryPage() {
 
   const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
-  const filterKey = `${search}|${activeCategory}|${sortBy}`;
+  const filterKey = `${search}|${activeCategory}|${sortBy}|${viewMode}`;
   useEffect(() => { setPage(1); }, [filterKey]);
 
   const lowStock = getLowStockProducts(products);
@@ -191,6 +196,14 @@ export default function InventoryPage() {
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">تصدير CSV</span>
             </Button>
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createInventoryReport(filtered, range, settings);
+                await exportReportPDF(doc, "تقرير_المخزون", range);
+                toast.success("تم تصدير تقرير المخزون");
+              }}
+            />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
               <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
@@ -204,7 +217,7 @@ export default function InventoryPage() {
 
         {/* Low stock banner */}
         {lowStock.length > 0 && (
-          <Card className="border border-border/60 border-amber-200 bg-gradient-to-l from-amber-50/80 to-orange-50/40">
+          <Card className="border border-[var(--glass-border)] border-amber-200 bg-gradient-to-l from-amber-50/80 to-orange-50/40">
             <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
@@ -258,6 +271,20 @@ export default function InventoryPage() {
               <SelectItem value="stock-desc">المخزون: الأعلى</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex rounded-xl border border-[var(--glass-border)] overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Category tabs */}
@@ -275,13 +302,13 @@ export default function InventoryPage() {
                 className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-[15px] font-medium transition-all ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-white text-muted-foreground border border-border/60 hover:bg-accent"
+                    : "bg-[var(--surface-1)] text-muted-foreground border border-[var(--glass-border)] hover:bg-[var(--surface-2)]"
                 }`}
               >
                 <Icon className="h-4 w-4" />
                 {cat}
                 <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${
-                  isActive ? "bg-white/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                  isActive ? "bg-[var(--surface-1)]/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
                   {count}
                 </span>
@@ -290,23 +317,118 @@ export default function InventoryPage() {
           })}
         </div>
 
-        {/* Product Cards Grid */}
+        {/* Product Display */}
         {filtered.length === 0 ? (
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
               <Package className="mb-3 h-10 w-10 opacity-30" />
               <p className="text-base">لا توجد منتجات مطابقة</p>
             </CardContent>
           </Card>
+        ) : viewMode === "list" ? (
+          /* ===== LIST VIEW ===== */
+          <Card className="border border-[var(--glass-border)] shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--glass-border)] bg-[var(--surface-2)]">
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">#</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">المنتج</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الفئة</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">السعر</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">المخزون</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">القيمة</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الحالة</th>
+                    <th className="px-4 py-3 text-center font-semibold text-muted-foreground">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map((product, idx) => {
+                    const isLow = product.stock <= product.minStock;
+                    return (
+                      <tr key={product.id} className={`border-b border-border/40 transition-colors hover:bg-[var(--surface-2)] ${isLow ? "bg-red-50/50" : ""}`}>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{(page - 1) * perPage + idx + 1}</td>
+                        <td className="px-4 py-3">
+                          <div>
+                            <p className="font-semibold text-foreground">{product.name}</p>
+                            {product.sku && <p className="font-mono text-xs text-muted-foreground mt-0.5">{product.sku}</p>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-primary">{formatCurrency(product.price)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`font-semibold ${isLow ? "text-red-600" : "text-foreground"}`}>
+                            {product.stock}
+                          </span>
+                          <span className="text-xs text-muted-foreground mr-1">{product.unit}</span>
+                        </td>
+                        <td className="px-4 py-3 font-medium text-muted-foreground">
+                          {formatCurrency(product.price * product.stock)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {isLow ? (
+                            <Badge variant="destructive" className="gap-1 text-xs">
+                              <AlertTriangle className="h-3 w-3" />
+                              منخفض
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="status-badge status-badge--success text-xs">
+                              متوفر
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => openEditDialog(product)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => confirmDelete(product)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[var(--surface-2)] border-t border-[var(--glass-border)]">
+                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-muted-foreground">
+                      الإجمالي ({filtered.length} منتج)
+                    </td>
+                    <td className="px-4 py-3 text-sm font-bold text-primary">
+                      {formatCurrency(filtered.reduce((s, p) => s + p.price, 0))}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-bold">
+                      {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-bold text-primary">
+                      {formatCurrency(filtered.reduce((s, p) => s + p.price * p.stock, 0))}
+                    </td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
         ) : (
+          /* ===== GRID VIEW ===== */
           <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 stagger-list">
             {paged.map((product) => {
               const isLow = product.stock <= product.minStock;
               const img = getProductImage(product.id);
               return (
-                <Card key={product.id} className={`group border border-border/60 shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${isLow ? "border-red-200" : ""}`}>
+                <Card key={product.id} className={`group border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${isLow ? "border-red-200" : ""}`}>
                   {/* Image Header */}
-                  <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl bg-muted/30">
+                  <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl bg-[var(--surface-2)]">
                     {img ? (
                       <img
                         src={img}
@@ -326,14 +448,14 @@ export default function InventoryPage() {
                           منخفض
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="border-emerald-200 bg-emerald-50/90 text-[10px] px-1.5 py-0.5 text-emerald-700 shadow-sm backdrop-blur-sm sm:text-xs sm:px-2.5 sm:py-0.5">
+                        <Badge variant="outline" className="status-badge status-badge--success text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm sm:text-xs sm:px-2.5 sm:py-0.5">
                           متوفر
                         </Badge>
                       )}
                     </div>
                     {/* Category badge */}
                     <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm bg-white/80 sm:text-xs sm:px-2.5 sm:py-0.5">{product.category}</Badge>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm bg-[var(--surface-1)]/80 sm:text-xs sm:px-2.5 sm:py-0.5">{product.category}</Badge>
                     </div>
                   </div>
 
@@ -348,7 +470,7 @@ export default function InventoryPage() {
                     </div>
 
                     {/* Price & Stock */}
-                    <div className="flex items-center justify-between border-t border-border/60 pt-2 sm:pt-3">
+                    <div className="flex items-center justify-between border-t border-[var(--glass-border)] pt-2 sm:pt-3">
                       <div>
                         <p className="text-[10px] text-muted-foreground sm:text-xs">السعر</p>
                         <p className="text-sm font-extrabold text-primary sm:text-lg">{formatCurrency(product.price)}</p>
@@ -362,10 +484,10 @@ export default function InventoryPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-2 flex gap-1 border-t border-border/60 pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
+                    <div className="mt-2 flex gap-1 border-t border-[var(--glass-border)] pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
                       <button
                         onClick={() => openEditDialog(product)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
                       >
                         <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         تعديل
@@ -391,7 +513,7 @@ export default function InventoryPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -401,7 +523,7 @@ export default function InventoryPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -468,6 +590,7 @@ export default function InventoryPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="قطعة">قطعة</SelectItem>
+                    <SelectItem value="قنينة">قنينة</SelectItem>
                     <SelectItem value="عبوة">عبوة</SelectItem>
                     <SelectItem value="مجموعة">مجموعة</SelectItem>
                     <SelectItem value="رزمة">رزمة</SelectItem>

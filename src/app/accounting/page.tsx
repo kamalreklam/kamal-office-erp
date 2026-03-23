@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 import { exportCSV } from "@/lib/export";
 import { toast } from "sonner";
+import { exportReportPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createAccountingReport } from "@/lib/report-generators";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
@@ -196,7 +199,15 @@ export default function AccountingPage() {
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             قائمة الأرباح والخسائر · المستحقات · الضرائب
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex justify-center gap-2">
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createAccountingReport(invoices, range, settings);
+                await exportReportPDF(doc, "التقرير_المحاسبي", range);
+                toast.success("تم تصدير التقرير المحاسبي");
+              }}
+            />
             <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
@@ -213,7 +224,7 @@ export default function AccountingPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 stagger-list">
           {kpis.map((kpi) => (
-            <Card key={kpi.label} className="border border-border/60 shadow-sm hover-lift">
+            <Card key={kpi.label} className="border border-[var(--glass-border)] shadow-sm hover-lift">
               <CardContent className="flex flex-col items-center p-4 sm:p-6">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl sm:h-12 sm:w-12 ${kpi.color}`}>
                   <kpi.icon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -226,7 +237,7 @@ export default function AccountingPage() {
         </div>
 
         {/* P&L Statement */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
@@ -239,7 +250,7 @@ export default function AccountingPage() {
               </Button>
             </div>
             <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-xl bg-muted/30 p-4">
+              <div className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] p-4">
                 <span className="text-sm font-medium text-foreground">إجمالي الإيرادات (قبل الخصم)</span>
                 <span className="text-lg font-bold text-foreground">{formatCurrency(pnl.grossRevenue)}</span>
               </div>
@@ -271,7 +282,7 @@ export default function AccountingPage() {
         </Card>
 
         {/* Monthly Revenue Trend */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardContent className="p-6">
             <h2 className="mb-6 text-lg font-bold text-foreground">الإيرادات والخصومات الشهرية</h2>
             <div className="h-[300px]" dir="ltr">
@@ -299,13 +310,13 @@ export default function AccountingPage() {
         </Card>
 
         {/* Accounts Receivable */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-amber-600" />
                 <h2 className="text-lg font-bold text-foreground">المستحقات (فواتير غير مدفوعة)</h2>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                <Badge variant="outline" className="status-badge--warning">
                   {receivables.unpaid.length} فاتورة
                 </Badge>
               </div>
@@ -321,7 +332,7 @@ export default function AccountingPage() {
                 <div key={bucket} className={`rounded-xl p-4 text-center ${
                   bucket === "+90 يوم" ? "bg-red-50 border border-red-100" :
                   bucket === "61-90 يوم" ? "bg-amber-50 border border-amber-100" :
-                  "bg-muted/40 border border-border/60"
+                  "bg-muted/40 border border-[var(--glass-border)]"
                 }`}>
                   <p className="text-xs text-muted-foreground">{bucket}</p>
                   <p className={`mt-1 text-lg font-bold ${
@@ -357,7 +368,7 @@ export default function AccountingPage() {
               <div className="hidden md:block">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/30">
+                    <TableRow className="bg-[var(--surface-2)]">
                       <TableHead className="text-right font-bold">رقم الفاتورة</TableHead>
                       <TableHead className="text-right font-bold">العميل</TableHead>
                       <TableHead className="text-right font-bold">التاريخ</TableHead>
@@ -368,7 +379,7 @@ export default function AccountingPage() {
                   </TableHeader>
                   <TableBody>
                     {receivables.unpaid.slice(0, 20).map((inv) => (
-                      <TableRow key={inv.id} className="transition-colors hover:bg-accent/30">
+                      <TableRow key={inv.id} className="transition-colors hover:bg-[var(--surface-2)]/30">
                         <TableCell>
                           <Link href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">
                             {inv.invoiceNumber}
@@ -384,8 +395,8 @@ export default function AccountingPage() {
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={`text-xs ${
-                            inv.agingBucket === "+90 يوم" ? "bg-red-50 text-red-700 border-red-200" :
-                            inv.agingBucket === "61-90 يوم" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                            inv.agingBucket === "+90 يوم" ? "status-badge--danger" :
+                            inv.agingBucket === "61-90 يوم" ? "status-badge--warning" :
                             "bg-slate-50 text-slate-600 border-slate-200"
                           }`}>
                             {inv.agingBucket}
@@ -412,14 +423,14 @@ export default function AccountingPage() {
             <div className="flex flex-col gap-3 md:hidden">
               {receivables.unpaid.slice(0, 10).map((inv) => (
                 <Link key={inv.id} href={`/invoices/${inv.id}`} className="block">
-                  <div className="rounded-xl border border-border/60 p-4 hover:bg-accent/30 transition-colors">
+                  <div className="rounded-xl border border-[var(--glass-border)] p-4 hover:bg-[var(--surface-2)]/30 transition-colors">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-bold text-foreground">{inv.invoiceNumber}</p>
                         <p className="text-sm text-muted-foreground">{inv.clientName}</p>
                       </div>
                       <Badge variant="outline" className={`text-xs ${
-                        inv.agingBucket === "+90 يوم" ? "bg-red-50 text-red-700 border-red-200" : "bg-amber-50 text-amber-700 border-amber-200"
+                        inv.agingBucket === "+90 يوم" ? "status-badge--danger" : "status-badge--warning"
                       }`}>
                         {inv.daysOverdue} يوم
                       </Badge>
@@ -437,7 +448,7 @@ export default function AccountingPage() {
 
         {/* Client Balances */}
         {clientBalances.length > 0 && (
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -471,18 +482,18 @@ export default function AccountingPage() {
 
         {/* Tax Summary */}
         {taxSummary && (
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-6">
                 <Calculator className="h-5 w-5 text-violet-600" />
                 <h2 className="text-lg font-bold text-foreground">ملخص الضريبة — {selectedYear}</h2>
               </div>
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
-                <div className="rounded-xl bg-muted/30 p-4 text-center border border-border/60">
+                <div className="rounded-xl bg-[var(--surface-2)] p-4 text-center border border-[var(--glass-border)]">
                   <p className="text-xs text-muted-foreground">نسبة الضريبة</p>
                   <p className="mt-1 text-2xl font-extrabold text-foreground">{taxSummary.rate}%</p>
                 </div>
-                <div className="rounded-xl bg-muted/30 p-4 text-center border border-border/60">
+                <div className="rounded-xl bg-[var(--surface-2)] p-4 text-center border border-[var(--glass-border)]">
                   <p className="text-xs text-muted-foreground">الإيرادات الخاضعة للضريبة</p>
                   <p className="mt-1 text-lg font-bold text-foreground">{formatCurrency(taxSummary.totalTaxable)}</p>
                 </div>

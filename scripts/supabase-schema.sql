@@ -69,7 +69,7 @@ create table if not exists bundles (
 create table if not exists app_settings (
   id text primary key default 'default',
   business_name text not null default 'كمال للتجهيزات المكتبية',
-  business_name_en text not null default 'Kamal Office Equipment',
+  business_name_en text not null default 'Kamal Copy Center',
   phone text not null default '0912345678',
   address text not null default 'حلب - سوريا',
   logo text not null default '',
@@ -81,7 +81,8 @@ create table if not exists app_settings (
   invoice_notes text not null default 'شكراً لتعاملكم معنا',
   low_stock_warning boolean not null default true,
   primary_color text not null default '#2563eb',
-  custom_invoice_html text not null default ''
+  custom_invoice_html text not null default '',
+  product_categories jsonb not null default '["طابعة","حبر","تونر","ورق","ملحقات"]'::jsonb
 );
 
 -- Product Images (base64 stored as text)

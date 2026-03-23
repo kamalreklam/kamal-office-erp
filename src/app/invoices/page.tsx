@@ -22,9 +22,12 @@ import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
+import { exportReportPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createSalesReport } from "@/lib/report-generators";
 
 export default function InvoicesPage() {
-  const { invoices, deleteInvoice } = useStore();
+  const { invoices, deleteInvoice, settings } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
@@ -97,6 +100,14 @@ export default function InvoicesPage() {
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">تصدير CSV</span>
             </Button>
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createSalesReport(invoices, range, settings);
+                await exportReportPDF(doc, "تقرير_الفواتير", range);
+                toast.success("تم تصدير تقرير الفواتير");
+              }}
+            />
             <Link href="/invoices/new">
               <Button size="sm" className="gap-1.5">
                 <Plus className="h-5 w-5" />
@@ -130,7 +141,7 @@ export default function InvoicesPage() {
             <span className="text-sm text-muted-foreground">إلى</span>
             <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[140px] text-sm" />
             {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--surface-2)]">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -146,21 +157,21 @@ export default function InvoicesPage() {
                 key={s}
                 onClick={() => setStatusFilter(s)}
                 className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${
-                  isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-white text-muted-foreground hover:bg-accent"
+                  isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"
                 }`}
               >
                 {s}
-                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-[var(--surface-1)]/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
               </button>
             );
           })}
         </div>
 
         {/* Desktop */}
-        <Card className="hidden border border-border/60 shadow-sm md:block">
+        <Card className="hidden border border-[var(--glass-border)] shadow-sm md:block">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/30">
+              <TableRow className="bg-[var(--surface-2)]">
                 <TableHead className="text-right font-bold">رقم الفاتورة</TableHead>
                 <TableHead className="text-right font-bold">العميل</TableHead>
                 <TableHead className="text-right font-bold">التاريخ</TableHead>
@@ -183,7 +194,7 @@ export default function InvoicesPage() {
                 </TableRow>
               ) : (
                 paged.map((inv) => (
-                  <TableRow key={inv.id} className="transition-colors hover:bg-accent/30">
+                  <TableRow key={inv.id} className="transition-colors hover:bg-[var(--surface-2)]/30">
                     <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
                     <TableCell>{inv.clientName}</TableCell>
                     <TableCell className="text-muted-foreground">{inv.createdAt}</TableCell>
@@ -195,7 +206,7 @@ export default function InvoicesPage() {
                     <TableCell>
                       <div className="flex gap-1">
                         <Link href={`/invoices/${inv.id}`}>
-                          <button className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
+                          <button className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
                             <Eye className="h-4 w-4" />
                           </button>
                         </Link>
@@ -214,7 +225,7 @@ export default function InvoicesPage() {
         {/* Mobile */}
         <div className="flex flex-col gap-4 md:hidden stagger-list">
           {paged.length === 0 ? (
-            <Card className="border border-border/60 shadow-sm">
+            <Card className="border border-[var(--glass-border)] shadow-sm">
               <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
                 <FileText className="mb-3 h-10 w-10 opacity-30" />
                 لا توجد فواتير مطابقة
@@ -226,7 +237,7 @@ export default function InvoicesPage() {
           ) : (
             paged.map((inv) => (
               <Link key={inv.id} href={`/invoices/${inv.id}`} className="block">
-                <Card className="border border-border/60 shadow-sm hover-lift">
+                <Card className="border border-[var(--glass-border)] shadow-sm hover-lift">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div>
@@ -235,7 +246,7 @@ export default function InvoicesPage() {
                       </div>
                       <Badge variant="outline" className={`text-xs ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4">
+                    <div className="mt-4 flex items-center justify-between border-t border-[var(--glass-border)] pt-4">
                       <span className="text-sm text-muted-foreground">{inv.createdAt} · {inv.items.length} عناصر</span>
                       <span className="text-base font-bold text-foreground">{formatCurrency(inv.total)}</span>
                     </div>
@@ -252,7 +263,7 @@ export default function InvoicesPage() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -262,7 +273,7 @@ export default function InvoicesPage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors hover:bg-accent disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>

@@ -118,7 +118,7 @@ export default function BundlesPage() {
         </div>
 
         {bundles.length === 0 ? (
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center py-20 text-muted-foreground">
               <Layers className="mb-3 h-14 w-14 opacity-30" />
               <p className="text-lg font-medium">لا توجد مجموعات بعد</p>
@@ -135,7 +135,7 @@ export default function BundlesPage() {
               const total = getBundleTotal(bundle);
               const discounted = total * (1 - bundle.discount / 100);
               return (
-                <Card key={bundle.id} className="border border-border/60 shadow-sm transition-all hover:shadow-md">
+                <Card key={bundle.id} className="border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-md">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function BundlesPage() {
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <button onClick={() => openEditDialog(bundle)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent"><Pencil className="h-4 w-4" /></button>
+                        <button onClick={() => openEditDialog(bundle)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-4 w-4" /></button>
                         <button onClick={() => confirmDelete(bundle)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
                       </div>
                     </div>
@@ -159,7 +159,7 @@ export default function BundlesPage() {
                       {bundle.items.map((item, idx) => {
                         const product = products.find((p) => p.id === item.productId);
                         return (
-                          <div key={idx} className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                          <div key={idx} className="flex items-center justify-between rounded-lg bg-[var(--surface-2)] px-3 py-2">
                             <div className="flex items-center gap-2">
                               <Package className="h-3.5 w-3.5 text-muted-foreground" />
                               <span className="text-sm font-medium">{item.productName}</span>
@@ -173,11 +173,11 @@ export default function BundlesPage() {
                       })}
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3">
+                    <div className="mt-3 flex items-center justify-between border-t border-[var(--glass-border)] pt-3">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">{bundle.items.length} منتجات</Badge>
                         {bundle.discount > 0 && (
-                          <Badge variant="outline" className="text-xs border-emerald-200 bg-emerald-50 text-emerald-700">خصم {bundle.discount}%</Badge>
+                          <Badge variant="outline" className="text-xs status-badge--success">خصم {bundle.discount}%</Badge>
                         )}
                       </div>
                       <div className="text-left">
@@ -218,7 +218,7 @@ export default function BundlesPage() {
                 <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={addItem}><Plus className="h-3 w-3" />إضافة</Button>
               </div>
               {items.map((item, index) => (
-                <div key={index} className="flex items-center gap-2 rounded-lg border border-border/60 p-3">
+                <div key={index} className="flex items-center gap-2 rounded-lg border border-[var(--glass-border)] p-3">
                   <div className="flex-1">
                     <Select value={item.productId} onValueChange={(v) => v && updateItem(index, "productId", v)}>
                       <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="اختر منتج..." /></SelectTrigger>

@@ -1,7 +1,8 @@
 "use client";
 
-import { use } from "react";
+import { use, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import DOMPurify from "dompurify";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import { exportInvoicePDF, shareInvoiceWhatsApp } from "@/lib/pdf";
+import type { InvoicePDFSettings } from "@/components/invoice-pdf";
 import { toast } from "sonner";
 
 export default function InvoiceDetailPage({
@@ -76,26 +78,17 @@ export default function InvoiceDetailPage({
 
   async function handleExportPDF() {
     toast.success("جاري تصدير الفاتورة كـ PDF...");
-    await exportInvoicePDF("invoice-document", invoice.invoiceNumber);
+    try {
+      await exportInvoicePDF(invoice, settings, {}, {
+        accentColor: settings.primaryColor || "#2563eb",
+      });
+    } catch {
+      toast.error("فشل تصدير الفاتورة");
+    }
   }
 
   function shareWhatsApp() {
-    const lines = [
-      `📄 *فاتورة ${invoice.invoiceNumber}*`,
-      `👤 العميل: ${invoice.clientName}`,
-      `📅 التاريخ: ${invoice.createdAt}`,
-      "",
-      "*المنتجات:*",
-    ];
-    invoice.items.forEach((item, i) => {
-      lines.push(`${i + 1}. ${item.productName} × ${item.quantity} = ${formatCurrency(item.total)}`);
-    });
-    lines.push("");
-    lines.push(`المجموع: ${formatCurrency(invoice.subtotal)}`);
-    if (invoice.discountAmount > 0) lines.push(`الخصم: -${formatCurrency(invoice.discountAmount)}`);
-    lines.push(`*الإجمالي: ${formatCurrency(invoice.total)}*`);
-    lines.push(`الحالة: ${invoice.status}`);
-    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+    shareInvoiceWhatsApp(invoice, settings);
   }
 
   function togglePaid() {
@@ -110,7 +103,7 @@ export default function InvoiceDetailPage({
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground transition-all hover:bg-accent hover:scale-105">
+            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground transition-all hover:bg-[var(--surface-2)] hover:scale-105">
               <ArrowRight className="h-5 w-5" />
             </button>
             <div>
@@ -144,10 +137,10 @@ export default function InvoiceDetailPage({
         </div>
 
         {/* Invoice Document */}
-        <Card className="border border-border/60 shadow-sm print:border-0 print:shadow-none animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100" id="invoice-document">
+        <Card className="border border-[var(--glass-border)] shadow-sm print:border-0 print:shadow-none animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100" id="invoice-document">
           <CardContent className="p-6 md:p-8">
             {hasCustomTemplate ? (
-              <div dangerouslySetInnerHTML={{ __html: renderCustomTemplate() }} />
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderCustomTemplate(), { FORBID_TAGS: ['script', 'style'], FORBID_ATTR: ['onerror', 'onload', 'onclick'] }) }} />
             ) : (
               <>
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -170,7 +163,7 @@ export default function InvoiceDetailPage({
 
                 <Separator className="my-6" />
 
-                <div className="rounded-xl bg-muted/30 p-6">
+                <div className="rounded-xl bg-[var(--surface-2)] p-6">
                   <p className="text-sm font-bold text-muted-foreground">فاتورة إلى</p>
                   <p className="mt-2 text-base font-bold text-foreground">{invoice.clientName}</p>
                   {client && (
@@ -196,11 +189,11 @@ export default function InvoiceDetailPage({
                       {invoice.items.map((item, index) => {
                         const img = getProductImage(item.productId);
                         return (
-                          <tr key={item.id} className="border-b border-border/60">
+                          <tr key={item.id} className="border-b border-[var(--glass-border)]">
                             <td className="py-4 text-muted-foreground">{index + 1}</td>
                             <td className="py-4">
                               <div className="flex items-center gap-3">
-                                {img && <img src={img} alt="" className="h-14 w-14 rounded-xl object-cover border border-border/60 print:hidden" />}
+                                {img && <img src={img} alt="" className="h-14 w-14 rounded-xl object-cover border border-[var(--glass-border)] print:hidden" />}
                                 <div>
                                   <p className="font-medium">{item.productName}</p>
                                   {item.description && <p className="text-sm text-muted-foreground">{item.description}</p>}

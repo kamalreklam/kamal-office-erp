@@ -9,9 +9,22 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       type={type}
       data-slot="input"
       className={cn(
-        "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "h-[42px] w-full min-w-0 rounded-xl px-3 py-1.5 text-base transition-all outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:opacity-50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         className
       )}
+      style={{
+        background: "var(--surface-2)",
+        border: "1px solid var(--border-default)",
+        color: "var(--text-primary)",
+      }}
+      onFocus={e => {
+        e.currentTarget.style.borderColor = "var(--teal-700)";
+        e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-soft), 0 0 16px rgba(0, 228, 184, 0.08)";
+      }}
+      onBlur={e => {
+        e.currentTarget.style.borderColor = "var(--border-default)";
+        e.currentTarget.style.boxShadow = "none";
+      }}
       {...props}
     />
   )

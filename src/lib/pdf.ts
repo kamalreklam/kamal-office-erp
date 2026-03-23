@@ -1,85 +1,103 @@
 "use client";
 
-import html2canvas from "html2canvas-pro";
-import { jsPDF } from "jspdf";
+import { pdf } from "@react-pdf/renderer";
+import { createElement } from "react";
+import { InvoicePDF, type InvoicePDFSettings } from "@/components/invoice-pdf";
+import type { Invoice, AppSettings } from "@/lib/data";
 
-/**
- * Export invoice as PDF — high-quality silent auto-download.
- * Uses PNG (not JPEG) for crisp Arabic text, scale 3x for retina quality,
- * and supports multi-page for long invoices.
- */
-export async function exportInvoicePDF(elementId: string, invoiceNumber: string) {
-  const element = document.getElementById(elementId);
-  if (!element) return;
-
-  // A4 dimensions in mm
-  const a4Width = 210;
-  const a4Height = 297;
-  const margin = 8;
-  const contentWidth = a4Width - margin * 2;
-  const contentHeight = a4Height - margin * 2;
-
-  const canvas = await html2canvas(element, {
-    scale: 3,
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    width: element.scrollWidth,
-    height: element.scrollHeight,
-    logging: false,
-  });
-
-  const imgWidth = contentWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  const pdf = new jsPDF("p", "mm", "a4");
-
-  if (imgHeight <= contentHeight) {
-    // Single page
-    const imgData = canvas.toDataURL("image/png");
-    pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
-  } else {
-    // Multi-page: slice the canvas into page-sized chunks
-    const pageCanvasHeight = (contentHeight * canvas.width) / contentWidth;
-    let remainingHeight = canvas.height;
-    let srcY = 0;
-    let page = 0;
-
-    while (remainingHeight > 0) {
-      if (page > 0) pdf.addPage();
-
-      const sliceHeight = Math.min(pageCanvasHeight, remainingHeight);
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeight;
-
-      const ctx = pageCanvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-        ctx.drawImage(
-          canvas,
-          0, srcY, canvas.width, sliceHeight,
-          0, 0, canvas.width, sliceHeight
-        );
-      }
-
-      const pageImgData = pageCanvas.toDataURL("image/png");
-      const pageImgHeight = (sliceHeight * imgWidth) / canvas.width;
-      pdf.addImage(pageImgData, "PNG", margin, margin, imgWidth, pageImgHeight);
-
-      srcY += sliceHeight;
-      remainingHeight -= sliceHeight;
-      page++;
-    }
-  }
-
-  pdf.save(`${invoiceNumber}.pdf`);
+function sanitizeFilename(name: string): string {
+  return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_");
 }
 
-/**
- * Share invoice text summary via WhatsApp.
- */
-export function shareInvoiceWhatsApp(message: string) {
-  const text = encodeURIComponent(message);
+export async function exportInvoicePDF(
+  invoice: Invoice,
+  settings: AppSettings,
+  productImages?: Record<string, string>,
+  pdfSettings?: Partial<InvoicePDFSettings>
+) {
+  const doc = createElement(InvoicePDF, {
+    invoice,
+    settings,
+    productImages,
+    pdfSettings,
+  });
+
+  const blob = await pdf(doc).toBlob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  // Filename: clientName_invoiceDate_orderNumber.pdf
+  const clientPart = sanitizeFilename(invoice.clientName);
+  const datePart = invoice.createdAt.replace(/\//g, "-");
+  const orderPart = invoice.invoiceNumber.replace(/^INV-/, "");
+  link.download = `${clientPart}_${datePart}_${orderPart}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function exportReportPDF(
+  doc: React.ReactElement,
+  reportType: string,
+  dateRange?: { from: string; to: string }
+) {
+  const blob = await pdf(doc).toBlob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  const typePart = sanitizeFilename(reportType);
+  const rangePart = dateRange
+    ? `${dateRange.from}_${dateRange.to}`
+    : new Date().toISOString().slice(0, 7);
+  link.download = `${typePart}_${rangePart}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export async function exportClientSheetPDF(
+  doc: React.ReactElement,
+  clientName: string
+) {
+  const blob = await pdf(doc).toBlob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${sanitizeFilename(clientName)}_بيانات.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+export function shareInvoiceWhatsApp(
+  invoice: Invoice,
+  settings: AppSettings
+) {
+  const lines = [
+    `*${settings.businessName}*`,
+    `فاتورة رقم: ${invoice.invoiceNumber}`,
+    `العميل: ${invoice.clientName}`,
+    `التاريخ: ${invoice.createdAt}`,
+    "",
+    "*المنتجات:*",
+    ...invoice.items.map(
+      (item, i) =>
+        `${i + 1}. ${item.productName} × ${item.quantity} = ${settings.currencySymbol}${item.total.toFixed(2)}`
+    ),
+    "",
+    `المجموع: ${settings.currencySymbol}${invoice.subtotal.toFixed(2)}`,
+  ];
+
+  if (invoice.discountAmount > 0) {
+    lines.push(`الخصم: -${settings.currencySymbol}${invoice.discountAmount.toFixed(2)}`);
+  }
+
+  lines.push(`*الإجمالي: ${settings.currencySymbol}${invoice.total.toFixed(2)}*`);
+  lines.push(`الحالة: ${invoice.status}`);
+
+  const text = encodeURIComponent(lines.join("\n"));
   window.open(`https://wa.me/?text=${text}`, "_blank");
 }

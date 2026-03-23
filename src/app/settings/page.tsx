@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DOMPurify from "dompurify";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -97,7 +98,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Business Info */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Building2 className="h-5 w-5 text-primary" />
@@ -126,7 +127,7 @@ export default function SettingsPage() {
                   <Input
                     value={form.businessNameEn}
                     onChange={(e) => handleChange("businessNameEn", e.target.value)}
-                    placeholder="Kamal Office Equipment"
+                    placeholder="Kamal Copy Center"
                     dir="ltr"
                   />
                 </div>
@@ -156,7 +157,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Invoice Settings */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <FileText className="h-5 w-5 text-primary" />
@@ -221,7 +222,7 @@ export default function SettingsPage() {
                 className={`relative h-6 w-11 rounded-full transition-colors ${form.taxEnabled ? "bg-primary" : "bg-muted"}`}
               >
                 <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-[var(--surface-1)] shadow-sm transition-transform ${
                     form.taxEnabled ? "right-0.5" : "right-5"
                   }`}
                 />
@@ -244,7 +245,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Notifications */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Bell className="h-5 w-5 text-primary" />
@@ -262,7 +263,7 @@ export default function SettingsPage() {
                 className={`relative h-6 w-11 rounded-full transition-colors ${form.lowStockWarning ? "bg-primary" : "bg-muted"}`}
               >
                 <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
+                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-[var(--surface-1)] shadow-sm transition-transform ${
                     form.lowStockWarning ? "right-0.5" : "right-5"
                   }`}
                 />
@@ -272,7 +273,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Product Categories */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Package className="h-5 w-5 text-primary" />
@@ -330,7 +331,7 @@ export default function SettingsPage() {
         </Card>
 
         {/* Import from Odoo */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Database className="h-5 w-5 text-primary" />
@@ -354,7 +355,7 @@ export default function SettingsPage() {
                   className="hidden"
                   disabled={importing}
                 />
-                <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/60 px-4 py-6 text-base text-muted-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary">
+                <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--glass-border)] px-4 py-6 text-base text-muted-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary">
                   {importing ? (
                     <span className="animate-spin">⏳</span>
                   ) : (
@@ -378,7 +379,7 @@ export default function SettingsPage() {
                     { label: "فواتير", count: importResult.invoices },
                     { label: "طلبات", count: importResult.orders },
                   ].map((item) => (
-                    <div key={item.label} className="rounded-lg bg-white p-2.5 text-center">
+                    <div key={item.label} className="rounded-lg bg-[var(--surface-1)] p-2.5 text-center">
                       <p className="text-lg font-bold text-emerald-700">{item.count}</p>
                       <p className="text-xs text-muted-foreground">{item.label}</p>
                     </div>
@@ -393,95 +394,74 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Custom Invoice HTML Template */}
-        <Card className="border border-border/60 shadow-sm">
+        {/* Invoice Template Customizer */}
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Code className="h-5 w-5 text-primary" />
-              قالب HTML مخصص للفاتورة
+              <FileText className="h-5 w-5 text-primary" />
+              تخصيص الفاتورة (PDF)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              يمكنك كتابة كود HTML مخصص لتصميم الفاتورة. استخدم المتغيرات التالية وسيتم استبدالها تلقائياً:
+              تحكم في شكل الفاتورة عند التصدير كـ PDF. جميع الإعدادات تُطبق تلقائياً.
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                "{{businessName}}", "{{businessNameEn}}", "{{phone}}", "{{address}}", "{{logo}}",
-                "{{invoiceNumber}}", "{{date}}", "{{status}}", "{{clientName}}", "{{clientPhone}}", "{{clientAddress}}",
-                "{{items}}", "{{subtotal}}", "{{discount}}", "{{total}}", "{{notes}}", "{{currencySymbol}}",
-              ].map((v) => (
-                <Badge key={v} variant="secondary" className="font-mono text-xs cursor-pointer" onClick={() => {
-                  navigator.clipboard.writeText(v);
-                  toast.success(`تم نسخ ${v}`);
-                }}>
-                  {v}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              المتغير <code className="bg-muted px-1 rounded">{"{{items}}"}</code> يُستبدل بصفوف جدول HTML تحتوي على: رقم، اسم المنتج، الكمية، سعر الوحدة، الإجمالي.
-              اضغط على أي متغير لنسخه.
-            </p>
-            <Textarea
-              value={form.customInvoiceHtml}
-              onChange={(e) => handleChange("customInvoiceHtml", e.target.value)}
-              placeholder={'<div style="direction:rtl; font-family: Almarai, sans-serif;">\n  <h1>{{businessName}}</h1>\n  <p>فاتورة: {{invoiceNumber}}</p>\n  <table>\n    {{items}}\n  </table>\n  <p>الإجمالي: {{total}}</p>\n</div>'}
-              rows={10}
-              className="font-mono text-xs resize-y"
-              dir="ltr"
-            />
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setShowHtmlPreview(!showHtmlPreview)}
-              >
-                {showHtmlPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-                {showHtmlPreview ? "إخفاء المعاينة" : "معاينة"}
-              </Button>
-              {form.customInvoiceHtml && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-red-600 hover:bg-red-50"
-                  onClick={() => handleChange("customInvoiceHtml", "")}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  مسح القالب
-                </Button>
-              )}
-            </div>
-            {showHtmlPreview && form.customInvoiceHtml && (
-              <div className="rounded-xl border border-border/60 bg-white p-6 overflow-auto max-h-[500px]">
-                <p className="text-sm text-muted-foreground mb-2">معاينة (بيانات تجريبية):</p>
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: form.customInvoiceHtml
-                      .replace(/\{\{businessName\}\}/g, form.businessName)
-                      .replace(/\{\{businessNameEn\}\}/g, form.businessNameEn)
-                      .replace(/\{\{phone\}\}/g, form.phone)
-                      .replace(/\{\{address\}\}/g, form.address)
-                      .replace(/\{\{logo\}\}/g, form.logo ? `<img src="${form.logo}" style="height:50px" />` : "")
-                      .replace(/\{\{invoiceNumber\}\}/g, "INV-2025-001")
-                      .replace(/\{\{date\}\}/g, new Date().toISOString().split("T")[0])
-                      .replace(/\{\{status\}\}/g, "مدفوعة")
-                      .replace(/\{\{clientName\}\}/g, "عميل تجريبي")
-                      .replace(/\{\{clientPhone\}\}/g, "0912345678")
-                      .replace(/\{\{clientAddress\}\}/g, "حلب - سوريا")
-                      .replace(/\{\{subtotal\}\}/g, `${form.currencySymbol}500.00`)
-                      .replace(/\{\{discount\}\}/g, `${form.currencySymbol}0.00`)
-                      .replace(/\{\{total\}\}/g, `${form.currencySymbol}500.00`)
-                      .replace(/\{\{notes\}\}/g, form.invoiceNotes)
-                      .replace(/\{\{currencySymbol\}\}/g, form.currencySymbol)
-                      .replace(/\{\{items\}\}/g, `<tr><td>1</td><td>منتج تجريبي</td><td>2</td><td>${form.currencySymbol}250.00</td><td>${form.currencySymbol}500.00</td></tr>`),
-                  }}
-                />
+
+            {/* Header Style */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>نمط الترويسة</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: "minimal", label: "بسيط", desc: "بدون خلفية" },
+                  { value: "modern", label: "عصري", desc: "شريط لوني" },
+                  { value: "classic", label: "كلاسيكي", desc: "خلفية كاملة" },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => handleChange("customInvoiceHtml", opt.value)}
+                    className="rounded-xl border p-3 text-center transition-all"
+                    style={{
+                      borderColor: form.customInvoiceHtml === opt.value ? "var(--primary)" : "var(--border-default)",
+                      background: form.customInvoiceHtml === opt.value ? "var(--accent-soft)" : "var(--surface-2)",
+                    }}
+                  >
+                    <p className="text-sm font-semibold" style={{ color: form.customInvoiceHtml === opt.value ? "var(--primary)" : "var(--text-primary)" }}>{opt.label}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                  </button>
+                ))}
               </div>
-            )}
+            </div>
+
+            {/* Accent Color */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>لون الفاتورة</label>
+              <div className="flex gap-2">
+                {["#2563eb", "#7c3aed", "#0d9488", "#dc2626", "#d97706", "#059669", "#db2777"].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => handleChange("primaryColor", color)}
+                    className="h-8 w-8 rounded-full transition-all"
+                    style={{
+                      backgroundColor: color,
+                      outline: form.primaryColor === color ? `3px solid ${color}` : "none",
+                      outlineOffset: "2px",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Text */}
+            <div className="space-y-2">
+              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>نص أسفل الفاتورة</label>
+              <Input
+                value={form.invoiceNotes}
+                onChange={(e) => handleChange("invoiceNotes", e.target.value)}
+                placeholder="شكراً لتعاملكم معنا"
+              />
+            </div>
           </CardContent>
         </Card>
 

@@ -23,11 +23,14 @@ import {
 import { supabase } from "./supabase";
 import { toast } from "sonner";
 
-// Fire-and-forget Supabase call with error toast
-function dbExec(promise: PromiseLike<{ error: { message: string } | null }>) {
-  promise.then((res) => {
-    if (res.error) toast.error(`خطأ في المزامنة: ${res.error.message}`);
-  });
+// Supabase call with error toast — returns promise for awaiting critical ops
+async function dbExec(promise: PromiseLike<{ error: { message: string } | null }>): Promise<boolean> {
+  const res = await promise;
+  if (res.error) {
+    toast.error(`خطأ في المزامنة: ${res.error.message}`);
+    return false;
+  }
+  return true;
 }
 
 // ==========================================
@@ -53,7 +56,7 @@ export interface AppSettings {
 
 const defaultSettings: AppSettings = {
   businessName: "كمال للتجهيزات المكتبية",
-  businessNameEn: "Kamal Office Equipment",
+  businessNameEn: "Kamal Copy Center",
   phone: "0912345678",
   address: "حلب - سوريا",
   logo: "",
@@ -198,6 +201,7 @@ interface StoreContextType {
 
   // Helpers
   nextInvoiceNumber: () => string;
+  connectionStatus: "connected" | "offline" | "loading";
 }
 
 const StoreContext = createContext<StoreContextType | null>(null);
@@ -420,6 +424,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [productImages, setProductImages] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<"connected" | "offline" | "loading">("loading");
 
   // Load from Supabase on mount, fallback to localStorage for migration
   useEffect(() => {
@@ -456,6 +461,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         });
 
         // If Supabase has data, use it
+        setConnectionStatus("connected");
         if (dbClients.length > 0 || dbProducts.length > 0 || dbInvoices.length > 0) {
           setClients(dbClients);
           setProducts(dbProducts);
@@ -509,6 +515,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
       } catch {
         // Supabase unavailable — fall back to localStorage
+        setConnectionStatus("offline");
         setClients(loadFromStorage("kamal_clients", defaultClients));
         setProducts(loadFromStorage("kamal_products", defaultProducts));
         setInvoices(loadFromStorage("kamal_invoices", defaultInvoices));
@@ -530,7 +537,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const newClient: Client = {
         ...data,
         notes: data.notes || "",
-        id: `c${Date.now()}`,
+        id: `c_${crypto.randomUUID()}`,
         totalSpent: 0,
         createdAt: new Date().toISOString().split("T")[0],
       };
@@ -563,7 +570,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const { image, ...productData } = data;
       const newProduct: Product = {
         ...productData,
-        id: `p${Date.now()}`,
+        id: `p_${crypto.randomUUID()}`,
         createdAt: new Date().toISOString().split("T")[0],
       };
       setProducts((prev) => [newProduct, ...prev]);
@@ -623,10 +630,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const nextInvoiceNumber = useCallback(() => {
     const prefix = settings.invoicePrefix || "INV";
     const year = new Date().getFullYear();
-    const count = invoices.filter((inv) =>
-      inv.invoiceNumber.startsWith(`${prefix}-${year}`)
-    ).length;
-    return `${prefix}-${year}-${String(count + 1).padStart(3, "0")}`;
+    const pattern = `${prefix}-${year}-`;
+    const maxNum = invoices.reduce((max, inv) => {
+      if (inv.invoiceNumber.startsWith(pattern)) {
+        const num = parseInt(inv.invoiceNumber.replace(pattern, ""), 10);
+        return isNaN(num) ? max : Math.max(max, num);
+      }
+      return max;
+    }, 0);
+    return `${pattern}${String(maxNum + 1).padStart(3, "0")}`;
   }, [invoices, settings.invoicePrefix]);
 
   const addInvoice = useCallback(
@@ -636,49 +648,70 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const invoiceNumber = nextInvoiceNumber();
       const newInvoice: Invoice = {
         ...data,
-        id: `inv${Date.now()}`,
+        id: `inv_${crypto.randomUUID()}`,
         invoiceNumber,
         createdAt: new Date().toISOString().split("T")[0],
       };
 
       setInvoices((prev) => [newInvoice, ...prev]);
-      dbExec(supabase.from("invoices").insert(invoiceToRow(newInvoice)));
 
-      // Auto-deduct stock
+      // Persist to DB — awaited in async IIFE to not block return
+      (async () => {
+        const insertOk = await dbExec(supabase.from("invoices").insert(invoiceToRow(newInvoice)));
+        if (!insertOk) {
+          toast.error("فشل حفظ الفاتورة في قاعدة البيانات");
+          return;
+        }
+
+        // Auto-deduct stock — await all for consistency
+        if (data.status !== "مسودة" && data.status !== "ملغاة") {
+          const stockUpdates = data.items
+            .filter(item => item.productId)
+            .map(item => {
+              const product = products.find(p => p.id === item.productId);
+              if (!product) return Promise.resolve(true);
+              const newStock = Math.max(0, product.stock - item.quantity);
+              return dbExec(supabase.from("products").update({ stock: newStock }).eq("id", item.productId));
+            });
+          const results = await Promise.all(stockUpdates);
+          if (results.some(r => !r)) {
+            toast.error("تحذير: فشل تحديث بعض كميات المخزون");
+          }
+        }
+
+        // Update client totalSpent
+        if (data.status === "مدفوعة" && data.clientId) {
+          const client = clients.find(c => c.id === data.clientId);
+          if (client) {
+            await dbExec(supabase.from("clients").update({ total_spent: client.totalSpent + data.total }).eq("id", data.clientId));
+          }
+        }
+      })();
+
+      // Optimistic local state updates
       if (data.status !== "مسودة" && data.status !== "ملغاة") {
-        setProducts((prev) => {
-          const updated = prev.map((product) => {
-            const invoiceItem = data.items.find(
-              (item) => item.productId === product.id
-            );
+        setProducts((prev) =>
+          prev.map((product) => {
+            const invoiceItem = data.items.find((item) => item.productId === product.id);
             if (invoiceItem) {
-              const newStock = Math.max(0, product.stock - invoiceItem.quantity);
-              dbExec(supabase.from("products").update({ stock: newStock }).eq("id", product.id));
-              return { ...product, stock: newStock };
+              return { ...product, stock: Math.max(0, product.stock - invoiceItem.quantity) };
             }
             return product;
-          });
-          return updated;
-        });
+          })
+        );
       }
 
-      // Update client totalSpent
       if (data.status === "مدفوعة") {
         setClients((prev) =>
-          prev.map((c) => {
-            if (c.id === data.clientId) {
-              const newTotal = c.totalSpent + data.total;
-              dbExec(supabase.from("clients").update({ total_spent: newTotal }).eq("id", c.id));
-              return { ...c, totalSpent: newTotal };
-            }
-            return c;
-          })
+          prev.map((c) =>
+            c.id === data.clientId ? { ...c, totalSpent: c.totalSpent + data.total } : c
+          )
         );
       }
 
       return newInvoice;
     },
-    [nextInvoiceNumber]
+    [nextInvoiceNumber, products, clients]
   );
 
   const updateInvoice = useCallback(
@@ -725,11 +758,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (
       data: Omit<Order, "id" | "trackingId" | "createdAt" | "updatedAt">
     ): Order => {
-      const trackingId = `TRK-${String(orders.length + 1).padStart(3, "0")}`;
+      const maxNum = orders.reduce((max, o) => {
+        const m = o.trackingId.match(/TRK-(\d+)/);
+        return m ? Math.max(max, parseInt(m[1], 10)) : max;
+      }, 0);
+      const trackingId = `TRK-${String(maxNum + 1).padStart(3, "0")}`;
       const now = new Date().toISOString().split("T")[0];
       const newOrder: Order = {
         ...data,
-        id: `o${Date.now()}`,
+        id: `o_${crypto.randomUUID()}`,
         trackingId,
         createdAt: now,
         updatedAt: now,
@@ -738,7 +775,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       dbExec(supabase.from("orders").insert(orderToRow(newOrder)));
       return newOrder;
     },
-    [orders.length]
+    [orders]
   );
 
   const updateOrder = useCallback((id: string, data: Partial<Order>) => {
@@ -766,7 +803,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     (data: Omit<ProductBundle, "id" | "createdAt">): ProductBundle => {
       const newBundle: ProductBundle = {
         ...data,
-        id: `b${Date.now()}`,
+        id: `b_${crypto.randomUUID()}`,
         createdAt: new Date().toISOString().split("T")[0],
       };
       setBundles((prev) => [newBundle, ...prev]);
@@ -982,6 +1019,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateSettings,
         importOdooData,
         nextInvoiceNumber,
+        connectionStatus,
       }}
     >
       {children}

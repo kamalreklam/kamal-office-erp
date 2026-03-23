@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import {
 import {
   Search, Users, Plus, Pencil, Trash2, Phone, MapPin, DollarSign,
   FileText, ChevronDown, ChevronUp, Clock, CheckCircle2, PackageCheck, Loader2, AlertTriangle, ArrowUpDown, Download,
+  LayoutGrid, List,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -22,6 +23,9 @@ import { useStore } from "@/lib/store";
 import { type Client, formatCurrency, getStatusColor, getOrderStatusColor } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
+import { exportReportPDF, exportClientSheetPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createClientsReport, createClientSheet } from "@/lib/report-generators";
 
 const emptyClient = { name: "", phone: "", address: "", notes: "" };
 
@@ -53,6 +57,7 @@ export default function ClientsPage() {
   const [formData, setFormData] = useState(emptyClient);
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("default");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const filtered = useMemo(() => {
     const list = debouncedSearch.trim()
@@ -146,6 +151,14 @@ export default function ClientsPage() {
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">تصدير CSV</span>
             </Button>
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createClientsReport(filtered, invoices, range, settings);
+                await exportReportPDF(doc, "تقرير_العملاء", range);
+                toast.success("تم تصدير تقرير العملاء");
+              }}
+            />
             <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
               <Plus className="h-5 w-5" />
               إضافة عميل
@@ -154,23 +167,23 @@ export default function ClientsPage() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4 stagger-children">
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center p-4 sm:p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 sm:h-12 sm:w-12"><Users className="h-5 w-5" /></div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--info-soft)] text-[var(--blue-500)] sm:h-12 sm:w-12"><Users className="h-5 w-5" /></div>
               <p className="mt-2.5 text-xs font-medium text-muted-foreground sm:text-sm">العملاء</p>
               <p className="mt-1 text-lg font-bold sm:text-xl">{clients.length}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center p-4 sm:p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 sm:h-12 sm:w-12"><DollarSign className="h-5 w-5" /></div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--success-soft)] text-[var(--green-500)] sm:h-12 sm:w-12"><DollarSign className="h-5 w-5" /></div>
               <p className="mt-2.5 text-xs font-medium text-muted-foreground sm:text-sm">المبيعات</p>
               <p className="mt-1 text-lg font-bold sm:text-xl">{formatCurrency(clients.reduce((s, c) => s + c.totalSpent, 0))}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center p-4 sm:p-6">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 sm:h-12 sm:w-12"><FileText className="h-5 w-5" /></div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(139,92,246,0.1)] text-[var(--purple-500)] sm:h-12 sm:w-12"><FileText className="h-5 w-5" /></div>
               <p className="mt-2.5 text-xs font-medium text-muted-foreground sm:text-sm">الفواتير</p>
               <p className="mt-1 text-lg font-bold sm:text-xl">{invoices.length}</p>
             </CardContent>
@@ -195,75 +208,196 @@ export default function ClientsPage() {
               <SelectItem value="recent">الأحدث</SelectItem>
             </SelectContent>
           </Select>
+          <div className="flex rounded-xl border border-[var(--glass-border)] overflow-hidden">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="space-y-4 stagger-list">
-          {filtered.length === 0 ? (
-            <Card className="border border-border/60 shadow-sm">
-              <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
-                <Users className="mb-3 h-10 w-10 opacity-30" /><p className="text-base">لا يوجد عملاء مطابقين</p>
-                <Button size="sm" className="mt-4 gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />إضافة عميل</Button>
-              </CardContent>
-            </Card>
-          ) : (
-            filtered.map((client) => {
+        {/* Client Display */}
+        {filtered.length === 0 ? (
+          <Card className="border border-[var(--glass-border)] shadow-sm">
+            <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
+              <Users className="mb-3 h-10 w-10 opacity-30" /><p className="text-base">لا يوجد عملاء مطابقين</p>
+              <Button size="sm" className="mt-4 gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />إضافة عميل</Button>
+            </CardContent>
+          </Card>
+        ) : viewMode === "list" ? (
+          /* ===== LIST VIEW ===== */
+          <Card className="border border-[var(--glass-border)] shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-[var(--glass-border)] bg-[var(--surface-2)]">
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">#</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">العميل</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الهاتف</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">العنوان</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الفواتير</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">إجمالي الإنفاق</th>
+                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">تاريخ التسجيل</th>
+                    <th className="px-4 py-3 text-center font-semibold text-muted-foreground">إجراءات</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((client, idx) => {
+                    const invCount = invoices.filter((i) => i.clientId === client.id).length;
+                    const isExpanded = expandedClient === client.id;
+                    const timeline = isExpanded ? getClientTimeline(client.id) : [];
+                    return (
+                      <React.Fragment key={client.id}>
+                        <tr className={`border-b border-border/40 transition-colors hover:bg-[var(--surface-2)] ${isExpanded ? "bg-[var(--surface-2)]/30" : ""}`}>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${getAvatarColor(client.id)}`}>
+                                {client.name.charAt(0)}
+                              </div>
+                              <span className="font-semibold text-foreground">{client.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground" dir="ltr">{client.phone || "—"}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{client.address || "—"}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant="secondary" className="text-xs">{invCount}</Badge>
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-primary">{formatCurrency(client.totalSpent)}</td>
+                          <td className="px-4 py-3 text-muted-foreground text-xs">{client.createdAt}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <button onClick={() => openEditDialog(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => confirmDelete(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)]">
+                                {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan={8} className="bg-muted/10 p-0">
+                              <div className="p-5">
+                                <h4 className="mb-3 text-sm font-bold text-muted-foreground">سجل العمليات</h4>
+                                {timeline.length === 0 ? (
+                                  <p className="py-4 text-center text-sm text-muted-foreground">لا توجد سجلات لهذا العميل</p>
+                                ) : (
+                                  <div className="relative pr-8">
+                                    <div className="absolute right-3 top-2 bottom-2 w-0.5 bg-border" />
+                                    <div className="space-y-3">
+                                      {timeline.map((item, tidx) => {
+                                        const Icon = item.type === "invoice" ? FileText : getOrderIcon(item.status);
+                                        return (
+                                          <Link key={tidx} href={item.href} className="relative flex gap-3 group/tl">
+                                            <div className="absolute -right-6.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15">
+                                              <div className="h-2 w-2 rounded-full bg-primary" />
+                                            </div>
+                                            <div className="flex-1 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-3 transition-colors group-hover/tl:bg-[var(--surface-2)]/30 group-hover/tl:border-primary/20">
+                                              <div className="flex items-center justify-between gap-2">
+                                                <div className="flex items-center gap-2">
+                                                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                                  <span className="text-sm font-medium">{item.title}</span>
+                                                  <Badge variant="outline" className={`text-[10px] ${item.statusColor}`}>{item.status}</Badge>
+                                                </div>
+                                                <span className="shrink-0 text-[10px] text-muted-foreground">{item.date}</span>
+                                              </div>
+                                              <p className="mt-1.5 text-xs text-muted-foreground">{item.subtitle}</p>
+                                            </div>
+                                          </Link>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[var(--surface-2)] border-t border-[var(--glass-border)]">
+                    <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-muted-foreground">
+                      الإجمالي ({filtered.length} عميل)
+                    </td>
+                    <td className="px-4 py-3 text-sm font-bold">
+                      {filtered.reduce((s, c) => s + invoices.filter((i) => i.clientId === c.id).length, 0)}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-bold text-primary">
+                      {formatCurrency(filtered.reduce((s, c) => s + c.totalSpent, 0))}
+                    </td>
+                    <td colSpan={2} />
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          /* ===== GRID (CARD) VIEW ===== */
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 stagger-list">
+            {filtered.map((client) => {
               const isExpanded = expandedClient === client.id;
               const timeline = getClientTimeline(client.id);
               const invCount = invoices.filter((i) => i.clientId === client.id).length;
               const ordCount = orders.filter((o) => o.clientId === client.id).length;
 
               return (
-                <Card key={client.id} className="border border-border/60 shadow-sm transition-all hover:shadow-md">
+                <Card key={client.id} className="border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-md">
                   <CardContent className="p-0">
-                    <div className="flex items-center gap-5 p-6">
-                      <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${getAvatarColor(client.id)}`}>
+                    <div className="flex items-center gap-4 p-4 sm:p-5">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ${getAvatarColor(client.id)}`}>
                         {client.name.charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-foreground">{client.name}</h3>
-                        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Phone className="h-3 w-3" /><span dir="ltr">{client.phone}</span></span>
-                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{client.address}</span>
-                        </div>
-                        {client.notes && (
-                          <p className="mt-1.5 text-sm text-muted-foreground/80 italic">{client.notes}</p>
-                        )}
-                      </div>
-                      <div className="hidden sm:flex shrink-0 flex-col items-end gap-2">
-                        <span className="text-base font-bold">{formatCurrency(client.totalSpent)}</span>
-                        <div className="flex gap-1.5">
-                          <Badge variant="secondary" className="text-xs">{invCount} فاتورة</Badge>
-                          <Badge variant="secondary" className="text-xs">{ordCount} طلب</Badge>
+                        <h3 className="text-sm font-bold text-foreground sm:text-base truncate">{client.name}</h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground sm:text-sm">
+                          {client.phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" /><span dir="ltr">{client.phone}</span></span>}
+                          {client.address && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{client.address}</span>}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
-                        <button onClick={() => openEditDialog(client)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent"><Pencil className="h-4 w-4" /></button>
-                        <button onClick={() => confirmDelete(client)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-4 w-4" /></button>
-                        <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent">
-                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        <button onClick={() => openEditDialog(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => confirmDelete(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]">
+                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                         </button>
                       </div>
                     </div>
 
-                    {/* Mobile stats */}
-                    <div className="flex items-center justify-between border-t border-border/60 px-6 py-3 sm:hidden">
+                    {/* Stats bar */}
+                    <div className="flex items-center justify-between border-t border-[var(--glass-border)] px-4 py-2.5 sm:px-5">
                       <div className="flex gap-1.5">
                         <Badge variant="secondary" className="text-xs">{invCount} فاتورة</Badge>
                         <Badge variant="secondary" className="text-xs">{ordCount} طلب</Badge>
                       </div>
-                      <span className="text-base font-bold">{formatCurrency(client.totalSpent)}</span>
+                      <span className="text-sm font-bold text-primary sm:text-base">{formatCurrency(client.totalSpent)}</span>
                     </div>
 
                     {/* Timeline */}
                     {isExpanded && (
-                      <div className="border-t border-border/60 bg-muted/10 p-6">
-                        <h4 className="mb-4 text-sm font-bold text-muted-foreground">سجل العمليات</h4>
+                      <div className="border-t border-[var(--glass-border)] bg-muted/10 p-4 sm:p-5">
+                        <h4 className="mb-3 text-sm font-bold text-muted-foreground">سجل العمليات</h4>
                         {timeline.length === 0 ? (
-                          <p className="py-6 text-center text-base text-muted-foreground">لا توجد سجلات لهذا العميل</p>
+                          <p className="py-4 text-center text-sm text-muted-foreground">لا توجد سجلات لهذا العميل</p>
                         ) : (
                           <div className="relative pr-8">
                             <div className="absolute right-3 top-2 bottom-2 w-0.5 bg-border" />
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               {timeline.map((item, idx) => {
                                 const Icon = item.type === "invoice" ? FileText : getOrderIcon(item.status);
                                 return (
@@ -271,16 +405,16 @@ export default function ClientsPage() {
                                     <div className="absolute -right-6.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15">
                                       <div className="h-2 w-2 rounded-full bg-primary" />
                                     </div>
-                                    <div className="flex-1 rounded-xl border border-border/60 bg-white p-3.5 transition-colors group-hover/tl:bg-accent/30 group-hover/tl:border-primary/20">
+                                    <div className="flex-1 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-3 transition-colors group-hover/tl:bg-[var(--surface-2)]/30 group-hover/tl:border-primary/20">
                                       <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2">
-                                          <Icon className="h-4 w-4 text-muted-foreground" />
-                                          <span className="text-base font-medium">{item.title}</span>
-                                          <Badge variant="outline" className={`text-xs ${item.statusColor}`}>{item.status}</Badge>
+                                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                          <span className="text-sm font-medium">{item.title}</span>
+                                          <Badge variant="outline" className={`text-[10px] ${item.statusColor}`}>{item.status}</Badge>
                                         </div>
-                                        <span className="shrink-0 text-xs text-muted-foreground">{item.date}</span>
+                                        <span className="shrink-0 text-[10px] text-muted-foreground">{item.date}</span>
                                       </div>
-                                      <p className="mt-2 text-sm text-muted-foreground">{item.subtitle}</p>
+                                      <p className="mt-1.5 text-xs text-muted-foreground">{item.subtitle}</p>
                                     </div>
                                   </Link>
                                 );
@@ -293,9 +427,9 @@ export default function ClientsPage() {
                   </CardContent>
                 </Card>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

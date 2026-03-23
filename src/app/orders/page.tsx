@@ -21,14 +21,17 @@ import {
 import { useStore } from "@/lib/store";
 import { type OrderStatus, getOrderStatusColor } from "@/lib/data";
 import { toast } from "sonner";
+import { exportReportPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createOrdersReport } from "@/lib/report-generators";
 
 const statusOptions: OrderStatus[] = ["قيد الانتظار", "قيد التنفيذ", "جاهز للاستلام", "مكتمل"];
 
-const statusConfig: Record<OrderStatus, { icon: typeof Clock; bg: string; border: string; header: string }> = {
-  "قيد الانتظار": { icon: Clock, bg: "bg-amber-50 text-amber-600", border: "border-amber-200", header: "bg-amber-50" },
-  "قيد التنفيذ": { icon: Loader2, bg: "bg-blue-50 text-blue-600", border: "border-blue-200", header: "bg-blue-50" },
-  "جاهز للاستلام": { icon: PackageCheck, bg: "bg-emerald-50 text-emerald-600", border: "border-emerald-200", header: "bg-emerald-50" },
-  "مكتمل": { icon: CheckCircle2, bg: "bg-slate-100 text-slate-600", border: "border-slate-200", header: "bg-slate-50" },
+const statusConfig: Record<OrderStatus, { icon: typeof Clock; bg: string; borderColor: string; headerBg: string }> = {
+  "قيد الانتظار": { icon: Clock, bg: "bg-[var(--warning-soft)] text-[var(--amber-500)]", borderColor: "rgba(217, 119, 6, 0.2)", headerBg: "var(--warning-soft)" },
+  "قيد التنفيذ": { icon: Loader2, bg: "bg-[var(--info-soft)] text-[var(--blue-500)]", borderColor: "rgba(37, 99, 235, 0.2)", headerBg: "var(--info-soft)" },
+  "جاهز للاستلام": { icon: PackageCheck, bg: "bg-[var(--success-soft)] text-[var(--green-500)]", borderColor: "rgba(5, 150, 105, 0.2)", headerBg: "var(--success-soft)" },
+  "مكتمل": { icon: CheckCircle2, bg: "bg-[var(--accent-soft)] text-[var(--purple-500)]", borderColor: "rgba(139, 92, 246, 0.2)", headerBg: "rgba(139, 92, 246, 0.08)" },
 };
 
 export default function OrdersPage() {
@@ -119,7 +122,7 @@ export default function OrdersPage() {
     const Icon = config.icon;
     const statusIdx = statusOptions.indexOf(order.status);
     return (
-      <Card key={order.id} className={`border border-border/60 shadow-sm transition-all hover:shadow-md ${compact ? "" : ""}`}>
+      <Card key={order.id} className={`border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-md ${compact ? "" : ""}`}>
         <CardContent className={compact ? "p-4" : "p-6"}>
           <div className={compact ? "space-y-3" : "flex items-start gap-5"}>
             {!compact && (
@@ -130,7 +133,7 @@ export default function OrdersPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`font-mono font-bold ${compact ? "text-sm" : "text-base"}`}>{order.trackingId}</span>
-                <button onClick={() => copyTrackingId(order.trackingId)} className="rounded p-1 text-muted-foreground hover:bg-accent">
+                <button onClick={() => copyTrackingId(order.trackingId)} className="rounded p-1 text-muted-foreground hover:bg-[var(--surface-2)]">
                   <Copy className="h-3.5 w-3.5" />
                 </button>
                 {!compact && (
@@ -145,7 +148,7 @@ export default function OrdersPage() {
             </div>
           </div>
           {/* Actions */}
-          <div className={`flex items-center gap-1 ${compact ? "mt-3 border-t border-border/60 pt-3" : "mt-4 border-t border-border/60 pt-4"}`}>
+          <div className={`flex items-center gap-1 ${compact ? "mt-3 border-t border-[var(--glass-border)] pt-3" : "mt-4 border-t border-[var(--glass-border)] pt-4"}`}>
             {/* Move status buttons */}
             {statusIdx < statusOptions.length - 1 && (
               <button
@@ -159,14 +162,14 @@ export default function OrdersPage() {
             {statusIdx > 0 && (
               <button
                 onClick={() => moveOrder(order, "prev")}
-                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent"
+                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)]"
               >
                 {statusOptions[statusIdx - 1]}
                 <ChevronRight className="h-3 w-3" />
               </button>
             )}
             <div className="mr-auto flex gap-0.5">
-              <button onClick={() => openEditDialog(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-accent"><Pencil className="h-3.5 w-3.5" /></button>
+              <button onClick={() => openEditDialog(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
               <button onClick={() => shareOrderWhatsApp(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-green-50 hover:text-green-600"><MessageCircle className="h-3.5 w-3.5" /></button>
               <button onClick={() => confirmDelete(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
@@ -183,8 +186,16 @@ export default function OrdersPage() {
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">تتبع الطلبات</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">متابعة طلبات الصيانة والطباعة ({orders.length} طلب)</p>
           <div className="mt-4 flex justify-center gap-2">
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createOrdersReport(orders, range, settings);
+                await exportReportPDF(doc, "تقرير_الطلبات", range);
+                toast.success("تم تصدير تقرير الطلبات");
+              }}
+            />
             {/* View toggle */}
-            <div className="flex rounded-xl border border-border/60 bg-white p-1">
+            <div className="flex rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-1">
               <button
                 onClick={() => setViewMode("kanban")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${viewMode === "kanban" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
@@ -216,7 +227,7 @@ export default function OrdersPage() {
             <span className="text-sm text-muted-foreground">إلى</span>
             <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[140px] text-sm" />
             {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent">
+              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--surface-2)]">
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -231,14 +242,14 @@ export default function OrdersPage() {
               const Icon = config.icon;
               const statusOrders = ((debouncedSearch || dateFrom || dateTo) ? filtered : orders).filter((o) => o.status === status);
               return (
-                <div key={status} className={`rounded-2xl border ${config.border} bg-white`}>
+                <div key={status} className="rounded-2xl bg-[var(--surface-1)]" style={{ border: `1px solid ${config.borderColor}` }}>
                   {/* Column header */}
-                  <div className={`flex items-center gap-2.5 rounded-t-2xl px-4 py-3 ${config.header}`}>
+                  <div className="flex items-center gap-2.5 rounded-t-2xl px-4 py-3" style={{ background: config.headerBg }}>
                     <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${config.bg}`}>
                       <Icon className="h-4 w-4" />
                     </div>
                     <span className="text-sm font-bold text-foreground">{status}</span>
-                    <span className="mr-auto rounded-full bg-white/80 px-2 py-0.5 text-xs font-bold text-muted-foreground shadow-sm">
+                    <span className="mr-auto rounded-full bg-[var(--surface-1)]/80 px-2 py-0.5 text-xs font-bold text-muted-foreground shadow-sm">
                       {statusOrders.length}
                     </span>
                   </div>
@@ -266,8 +277,8 @@ export default function OrdersPage() {
                 const isActive = statusFilter === s;
                 const count = s === "الكل" ? orders.length : orders.filter((o) => o.status === s).length;
                 return (
-                  <button key={s} onClick={() => setStatusFilter(s)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-white text-muted-foreground hover:bg-accent"}`}>
-                    {s}<span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-white/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                  <button key={s} onClick={() => setStatusFilter(s)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}>
+                    {s}<span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-[var(--surface-1)]/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
                   </button>
                 );
               })}
@@ -275,7 +286,7 @@ export default function OrdersPage() {
 
             <div className="space-y-4 stagger-list">
               {filtered.length === 0 ? (
-                <Card className="border border-border/60 shadow-sm">
+                <Card className="border border-[var(--glass-border)] shadow-sm">
                   <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
                     <ClipboardList className="mb-3 h-10 w-10 opacity-30" />
                     <p className="text-base">لا توجد طلبات مطابقة</p>

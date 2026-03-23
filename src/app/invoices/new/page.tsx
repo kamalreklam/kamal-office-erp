@@ -235,7 +235,7 @@ export default function NewInvoicePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent">
+            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground hover:bg-[var(--surface-2)]">
               <ArrowRight className="h-5 w-5" />
             </button>
             <div>
@@ -246,7 +246,7 @@ export default function NewInvoicePage() {
         </div>
 
         {/* Client Selection */}
-        <Card className="border border-border/60 shadow-sm !overflow-visible">
+        <Card className="border border-[var(--glass-border)] shadow-sm !overflow-visible" style={{ position: "relative", zIndex: 20 }}>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <User className="h-5 w-5 text-primary" />
@@ -271,27 +271,37 @@ export default function NewInvoicePage() {
               </div>
 
               {showClientDropdown && !selectedClient && (
-                <div className="absolute top-full z-50 mt-2 w-full rounded-xl border border-border bg-white shadow-2xl">
-                  <div className="max-h-80 overflow-y-auto p-2">
+                <div
+                  className="absolute top-full mt-2 w-full rounded-xl overflow-hidden"
+                  style={{
+                    zIndex: 100,
+                    background: "var(--surface-1)",
+                    border: "1px solid var(--glass-border)",
+                    boxShadow: "var(--shadow-lg)",
+                  }}
+                >
+                  <div className="overflow-y-auto p-1.5" style={{ maxHeight: "240px" }}>
                     {filteredClients.length === 0 ? (
-                      <p className="p-4 text-center text-base text-muted-foreground">لا يوجد عملاء مطابقين</p>
+                      <p className="p-4 text-center text-sm text-muted-foreground">لا يوجد عملاء مطابقين</p>
                     ) : (
-                      filteredClients.map((client) => (
+                      filteredClients.slice(0, 20).map((client) => (
                         <button
                           key={client.id}
                           onClick={() => selectClient(client)}
-                          className="flex w-full items-center justify-between rounded-lg p-3 text-right transition-colors hover:bg-accent"
+                          className="flex w-full items-center justify-between rounded-lg p-2.5 text-right transition-colors"
+                          onMouseEnter={e => (e.currentTarget.style.background = "var(--surface-2)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ background: "var(--info-soft)", color: "var(--blue-500)" }}>
                               {client.name.charAt(0)}
                             </div>
                             <div>
-                              <p className="text-base font-medium text-foreground">{client.name}</p>
-                              <p className="text-sm text-muted-foreground"><span dir="ltr">{client.phone}</span> · {client.address}</p>
+                              <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{client.name}</p>
+                              {client.phone && <p className="text-xs" style={{ color: "var(--text-muted)" }}><span dir="ltr">{client.phone}</span></p>}
                             </div>
                           </div>
-                          <Badge variant="secondary" className="text-xs">{formatCurrency(client.totalSpent)}</Badge>
+                          <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>{formatCurrency(client.totalSpent)}</span>
                         </button>
                       ))
                     )}
@@ -312,7 +322,7 @@ export default function NewInvoicePage() {
                   </div>
                   <button
                     onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                    className="rounded-xl p-2.5 text-muted-foreground hover:bg-accent"
+                    className="rounded-xl p-2.5 text-muted-foreground hover:bg-[var(--surface-2)]"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -343,7 +353,7 @@ export default function NewInvoicePage() {
         )}
 
         {/* Line Items */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Package className="h-5 w-5 text-primary" />
@@ -355,7 +365,7 @@ export default function NewInvoicePage() {
               <div
                 key={item.id}
                 data-product-row
-                className="group rounded-xl border border-border/60 bg-white p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
+                className="group rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
               >
                 <div className="flex items-start gap-3">
                   {/* Row number */}
@@ -388,10 +398,13 @@ export default function NewInvoicePage() {
                       />
 
                       {activeProductRow === item.id && (
-                        <div className="absolute top-full z-20 mt-1 w-full rounded-xl border border-border bg-white shadow-xl">
-                          <div className="max-h-64 overflow-y-auto p-2">
+                        <div
+                          className="absolute top-full mt-1 w-full rounded-xl overflow-hidden"
+                          style={{ zIndex: 90, background: "var(--surface-1)", border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-lg)" }}
+                        >
+                          <div className="overflow-y-auto p-1.5" style={{ maxHeight: "220px" }}>
                             {getFilteredProducts(item.id).length === 0 ? (
-                              <p className="p-4 text-center text-base text-muted-foreground">لا توجد منتجات</p>
+                              <p className="p-4 text-center text-sm text-muted-foreground">لا توجد منتجات</p>
                             ) : (
                               getFilteredProducts(item.id).map((product) => {
                                 const img = getProductImage(product.id);
@@ -399,10 +412,10 @@ export default function NewInvoicePage() {
                                   <button
                                     key={product.id}
                                     onClick={() => selectProduct(item.id, product)}
-                                    className="flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors hover:bg-accent"
+                                    className="flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors hover:bg-[var(--surface-2)]"
                                   >
                                     {img ? (
-                                      <img src={img} alt="" className="h-12 w-12 rounded-xl object-cover border border-border/60" />
+                                      <img src={img} alt="" className="h-12 w-12 rounded-xl object-cover border border-[var(--glass-border)]" />
                                     ) : (
                                       <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                                         <Package className="h-5 w-5" />
@@ -475,7 +488,7 @@ export default function NewInvoicePage() {
         </Card>
 
         {/* Summary */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <Calculator className="h-5 w-5 text-primary" />
@@ -487,7 +500,7 @@ export default function NewInvoicePage() {
             <button
               type="button"
               onClick={() => setShowExtras(!showExtras)}
-              className="flex w-full items-center justify-between rounded-xl border border-dashed border-border/60 px-5 py-3.5 text-base font-medium text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+              className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--glass-border)] px-5 py-3.5 text-base font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
             >
               <span>خصم وملاحظات (اختياري)</span>
               <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${showExtras ? "rotate-180" : ""}`} />
@@ -496,7 +509,7 @@ export default function NewInvoicePage() {
             {showExtras && (
               <div className="grid gap-5 sm:grid-cols-2 animate-fade-in-up" style={{ animationDuration: "0.3s" }}>
                 {/* Discount */}
-                <div className="rounded-xl border border-border/60 p-6 space-y-3">
+                <div className="rounded-xl border border-[var(--glass-border)] p-6 space-y-3">
                   <p className="text-base font-medium">الخصم</p>
                   <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
                     <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
@@ -514,7 +527,7 @@ export default function NewInvoicePage() {
                 </div>
 
                 {/* Notes */}
-                <div className="rounded-xl border border-border/60 p-6 space-y-3">
+                <div className="rounded-xl border border-[var(--glass-border)] p-6 space-y-3">
                   <p className="text-base font-medium">ملاحظات</p>
                   <Textarea
                     placeholder="ملاحظات إضافية على الفاتورة..."
@@ -528,7 +541,7 @@ export default function NewInvoicePage() {
             )}
 
             {/* Totals */}
-            <div className="rounded-xl bg-muted/30 p-6 space-y-3">
+            <div className="rounded-xl bg-[var(--surface-2)] p-6 space-y-3">
               <div className="flex justify-between text-base">
                 <span className="text-muted-foreground">المجموع الفرعي</span>
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
@@ -547,7 +560,7 @@ export default function NewInvoicePage() {
                   <span className="font-medium">+{formatCurrency(taxAmount)}</span>
                 </div>
               )}
-              <div className="border-t border-border/60 pt-3">
+              <div className="border-t border-[var(--glass-border)] pt-3">
                 <div className="flex justify-between text-xl">
                   <span className="font-bold text-foreground">الإجمالي النهائي</span>
                   <span className="font-extrabold text-primary">{formatCurrency(total)}</span>

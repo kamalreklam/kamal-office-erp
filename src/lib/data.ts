@@ -1543,29 +1543,35 @@ export function getCategoryLabel(category: Product["category"]): string {
 export function getStatusColor(status: InvoiceStatus): string {
   switch (status) {
     case "مدفوعة":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "status-badge status-badge--success";
     case "غير مدفوعة":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "status-badge status-badge--warning";
     case "مسودة":
-      return "bg-slate-50 text-slate-600 border-slate-200";
+      return "status-badge status-badge--muted";
     case "ملغاة":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "status-badge status-badge--danger";
     default:
-      return "bg-slate-50 text-slate-600 border-slate-200";
+      return "status-badge status-badge--muted";
   }
 }
 
 export function getOrderStatusColor(status: OrderStatus): string {
   switch (status) {
     case "قيد الانتظار":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "status-badge status-badge--warning";
     case "قيد التنفيذ":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "status-badge status-badge--info";
     case "جاهز للاستلام":
-      return "bg-emerald-50 text-emerald-700 border-emerald-200";
+      return "status-badge status-badge--success";
     case "مكتمل":
-      return "bg-slate-100 text-slate-600 border-slate-200";
+      return "status-badge status-badge--purple";
     default:
-      return "bg-slate-50 text-slate-600 border-slate-200";
+      return "status-badge status-badge--muted";
   }
+}
+
+export function getStockStatusStyle(isLow: boolean): { className: string; label: string } {
+  return isLow
+    ? { className: "status-badge status-badge--danger", label: "منخفض" }
+    : { className: "status-badge status-badge--success", label: "متوفر" };
 }

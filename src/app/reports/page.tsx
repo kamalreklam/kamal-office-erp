@@ -8,9 +8,14 @@ import { formatCurrency } from "@/lib/data";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp, TrendingDown, Users, Package, FileText, DollarSign, BarChart3,
 } from "lucide-react";
+import { toast } from "sonner";
+import { exportReportPDF } from "@/lib/pdf";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { createSalesReport } from "@/lib/report-generators";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -166,7 +171,15 @@ export default function ReportsPage() {
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             تحليل شامل لأداء الأعمال والإيرادات
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex justify-center gap-2">
+            <DateRangeExportButton
+              label="تصدير تقرير PDF"
+              onExport={async (range: DateRange) => {
+                const doc = createSalesReport(invoices, range, settings);
+                await exportReportPDF(doc, "تقرير_المبيعات", range);
+                toast.success("تم تصدير تقرير المبيعات");
+              }}
+            />
             <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
@@ -183,7 +196,7 @@ export default function ReportsPage() {
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 stagger-list">
           {kpis.map((kpi) => (
-            <Card key={kpi.label} className="border border-border/60 shadow-sm hover-lift">
+            <Card key={kpi.label} className="border border-[var(--glass-border)] shadow-sm hover-lift">
               <CardContent className="flex flex-col items-center p-4 sm:p-6">
                 <div className={`flex h-11 w-11 items-center justify-center rounded-2xl sm:h-12 sm:w-12 ${kpi.color}`}>
                   <kpi.icon className="h-5 w-5 sm:h-6 sm:w-6" />
@@ -202,7 +215,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Monthly Revenue Chart */}
-        <Card className="border border-border/60 shadow-sm">
+        <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardContent className="p-6">
             <h2 className="mb-6 text-lg font-bold text-foreground">الإيرادات الشهرية</h2>
             <div className="h-[350px]" dir="ltr">
@@ -230,7 +243,7 @@ export default function ReportsPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Top Clients */}
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
@@ -263,7 +276,7 @@ export default function ReportsPage() {
           </Card>
 
           {/* Top Products */}
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <div className="mb-4 flex items-center gap-2">
                 <Package className="h-5 w-5 text-primary" />
@@ -298,7 +311,7 @@ export default function ReportsPage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Invoice Status Pie */}
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <h2 className="mb-4 text-lg font-bold text-foreground">توزيع حالات الفواتير</h2>
               {statusBreakdown.length === 0 ? (
@@ -330,7 +343,7 @@ export default function ReportsPage() {
           </Card>
 
           {/* Revenue by Category */}
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-6">
               <h2 className="mb-4 text-lg font-bold text-foreground">الإيرادات حسب الفئة</h2>
               {categoryRevenue.length === 0 ? (
@@ -364,19 +377,19 @@ export default function ReportsPage() {
 
         {/* Quick Stats Footer */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-5 text-center">
               <p className="text-sm text-muted-foreground">إجمالي العملاء</p>
               <p className="mt-1 text-2xl font-extrabold text-foreground">{clients.length}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-5 text-center">
               <p className="text-sm text-muted-foreground">إجمالي المنتجات</p>
               <p className="mt-1 text-2xl font-extrabold text-foreground">{products.length}</p>
             </CardContent>
           </Card>
-          <Card className="border border-border/60 shadow-sm">
+          <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="p-5 text-center">
               <p className="text-sm text-muted-foreground">الطلبات النشطة</p>
               <p className="mt-1 text-2xl font-extrabold text-foreground">
