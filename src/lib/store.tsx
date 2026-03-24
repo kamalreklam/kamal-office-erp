@@ -216,7 +216,6 @@ function clientToRow(c: Client) {
     name: c.name,
     phone: c.phone,
     address: c.address,
-    notes: c.notes || "",
     total_spent: c.totalSpent,
     created_at: c.createdAt,
   };
