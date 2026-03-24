@@ -1,8 +1,6 @@
 "use client";
 
-import { pdf } from "@react-pdf/renderer";
-import { createElement, type ReactElement } from "react";
-import { InvoicePDF, type InvoicePDFSettings } from "@/components/invoice-pdf";
+import { createElement } from "react";
 import type { Invoice } from "@/lib/data";
 import type { AppSettings } from "@/lib/store";
 
@@ -10,32 +8,41 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_");
 }
 
+async function generateBlob(doc: React.ReactElement): Promise<Blob> {
+  const { pdf } = await import("@react-pdf/renderer");
+  return pdf(doc as any).toBlob();
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
 export async function exportInvoicePDF(
   invoice: Invoice,
   settings: AppSettings,
   productImages?: Record<string, string>,
-  pdfSettings?: Partial<InvoicePDFSettings>
+  pdfSettings?: Record<string, unknown>
 ) {
+  const { InvoicePDF } = await import("@/components/invoice-pdf");
   const doc = createElement(InvoicePDF, {
     invoice,
     settings,
     productImages,
     pdfSettings,
-  });
+  } as any);
 
-  const blob = await pdf(doc as any).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  // Filename: clientName_invoiceDate_orderNumber.pdf
+  const blob = await generateBlob(doc);
   const clientPart = sanitizeFilename(invoice.clientName);
   const datePart = invoice.createdAt.replace(/\//g, "-");
   const orderPart = invoice.invoiceNumber.replace(/^INV-/, "");
-  link.download = `${clientPart}_${datePart}_${orderPart}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `${clientPart}_${datePart}_${orderPart}.pdf`);
 }
 
 export async function exportReportPDF(
@@ -43,34 +50,20 @@ export async function exportReportPDF(
   reportType: string,
   dateRange?: { from: string; to: string }
 ) {
-  const blob = await pdf(doc as any).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
+  const blob = await generateBlob(doc);
   const typePart = sanitizeFilename(reportType);
   const rangePart = dateRange
     ? `${dateRange.from}_${dateRange.to}`
     : new Date().toISOString().slice(0, 7);
-  link.download = `${typePart}_${rangePart}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `${typePart}_${rangePart}.pdf`);
 }
 
 export async function exportClientSheetPDF(
   doc: React.ReactElement,
   clientName: string
 ) {
-  const blob = await pdf(doc as any).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `${sanitizeFilename(clientName)}_بيانات.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const blob = await generateBlob(doc);
+  downloadBlob(blob, `${sanitizeFilename(clientName)}_بيانات.pdf`);
 }
 
 export function shareInvoiceWhatsApp(

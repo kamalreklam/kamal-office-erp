@@ -271,4 +271,4 @@ export function ReportStatRow({ stats, accentColor = "#2563eb" }: { stats: StatB
   );
 }
 
-export { fmtNum, fmtInt };
+export { fmtNum, fmtInt, Text as PdfText, View as PdfView };

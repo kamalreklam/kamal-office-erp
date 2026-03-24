@@ -1,8 +1,7 @@
 "use client";
 
 import { createElement } from "react";
-import { Text, View, StyleSheet } from "@react-pdf/renderer";
-import { ReportPDF, ReportTable, ReportStatRow, fmtNum, fmtInt } from "@/components/report-pdf";
+import { ReportPDF, ReportTable, ReportStatRow, fmtNum, fmtInt, PdfText, PdfView } from "@/components/report-pdf";
 import type { DateRange } from "@/components/date-range-picker";
 import type { Product, Invoice, Client, Order } from "@/lib/data";
 import type { AppSettings } from "@/lib/store";
@@ -252,8 +251,8 @@ export function createClientSheet(
             `${c}${fmtNum(client.totalSpent)}`,
           ],
         })
-      : createElement(View, { style: { padding: 20 } },
-          createElement(Text, { style: { fontSize: 10, color: "#94a3b8", textAlign: "center" } }, "لا توجد فواتير لهذا العميل")
+      : createElement(PdfView, { style: { padding: 20 } },
+          createElement(PdfText, { style: { fontSize: 10, color: "#94a3b8", textAlign: "center" } }, "لا توجد فواتير لهذا العميل")
         )
   );
 }

@@ -373,7 +373,6 @@ function settingsToRow(s: AppSettings) {
     low_stock_warning: s.lowStockWarning,
     primary_color: s.primaryColor,
     custom_invoice_html: s.customInvoiceHtml,
-    product_categories: JSON.stringify(s.productCategories),
   };
 }
 
@@ -393,9 +392,7 @@ function rowToSettings(r: Record<string, unknown>): AppSettings {
     lowStockWarning: r.low_stock_warning as boolean ?? true,
     primaryColor: (r.primary_color || "#2563eb") as string,
     customInvoiceHtml: (r.custom_invoice_html || "") as string,
-    productCategories: (() => {
-      try { const v = r.product_categories; return typeof v === "string" ? JSON.parse(v) : (v as string[]) || defaultSettings.productCategories; } catch { return defaultSettings.productCategories; }
-    })(),
+    productCategories: defaultSettings.productCategories,
   };
 }
 
