@@ -43,7 +43,12 @@ export default function InvoiceDetailPage({
     );
   }
 
-  const invoice = foundInvoice;
+  // Normalize items — handle { _items, _taxAmount } meta format from DB
+  const rawItems = foundInvoice.items;
+  const normalizedItems = Array.isArray(rawItems)
+    ? rawItems
+    : (rawItems as any)?._items || [];
+  const invoice = { ...foundInvoice, items: normalizedItems as typeof foundInvoice.items };
   const client = clients.find((c) => c.id === invoice.clientId);
   const hasCustomTemplate = !!settings.customInvoiceHtml?.trim();
 
