@@ -22,9 +22,7 @@ import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
-import { exportReportPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createSalesReport } from "@/lib/report-generators";
 
 export default function InvoicesPage() {
   const { invoices, deleteInvoice, settings } = useStore();
@@ -103,6 +101,8 @@ export default function InvoicesPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createSalesReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createSalesReport(invoices, range, settings);
                 await exportReportPDF(doc, "تقرير_الفواتير", range);
                 toast.success("تم تصدير تقرير الفواتير");

@@ -23,9 +23,7 @@ import { useStore } from "@/lib/store";
 import { type Client, formatCurrency, getStatusColor, getOrderStatusColor } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
-import { exportReportPDF, exportClientSheetPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createClientsReport, createClientSheet } from "@/lib/report-generators";
 
 const emptyClient = { name: "", phone: "", address: "", notes: "" };
 
@@ -154,6 +152,8 @@ export default function ClientsPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createClientsReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createClientsReport(filtered, invoices, range, settings);
                 await exportReportPDF(doc, "تقرير_العملاء", range);
                 toast.success("تم تصدير تقرير العملاء");

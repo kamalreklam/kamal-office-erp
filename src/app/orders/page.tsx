@@ -21,9 +21,7 @@ import {
 import { useStore } from "@/lib/store";
 import { type OrderStatus, getOrderStatusColor } from "@/lib/data";
 import { toast } from "sonner";
-import { exportReportPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createOrdersReport } from "@/lib/report-generators";
 
 const statusOptions: OrderStatus[] = ["قيد الانتظار", "قيد التنفيذ", "جاهز للاستلام", "مكتمل"];
 
@@ -189,6 +187,8 @@ export default function OrdersPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createOrdersReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createOrdersReport(orders, range, settings);
                 await exportReportPDF(doc, "تقرير_الطلبات", range);
                 toast.success("تم تصدير تقرير الطلبات");

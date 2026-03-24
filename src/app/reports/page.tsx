@@ -13,9 +13,7 @@ import {
   TrendingUp, TrendingDown, Users, Package, FileText, DollarSign, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
-import { exportReportPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createSalesReport } from "@/lib/report-generators";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend,
@@ -175,6 +173,8 @@ export default function ReportsPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createSalesReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createSalesReport(invoices, range, settings);
                 await exportReportPDF(doc, "تقرير_المبيعات", range);
                 toast.success("تم تصدير تقرير المبيعات");

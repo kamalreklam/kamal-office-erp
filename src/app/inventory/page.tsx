@@ -23,9 +23,7 @@ import { useStore } from "@/lib/store";
 import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
-import { exportReportPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createInventoryReport } from "@/lib/report-generators";
 
 const categoryIcons: Record<string, typeof Package> = {
   "طابعة": Printer,
@@ -199,6 +197,8 @@ export default function InventoryPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createInventoryReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createInventoryReport(filtered, range, settings);
                 await exportReportPDF(doc, "تقرير_المخزون", range);
                 toast.success("تم تصدير تقرير المخزون");

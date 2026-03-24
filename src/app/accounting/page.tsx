@@ -20,9 +20,7 @@ import {
 } from "lucide-react";
 import { exportCSV } from "@/lib/export";
 import { toast } from "sonner";
-import { exportReportPDF } from "@/lib/pdf";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-import { createAccountingReport } from "@/lib/report-generators";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
@@ -203,6 +201,8 @@ export default function AccountingPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
+                const { createAccountingReport } = await import("@/lib/report-generators");
+                const { exportReportPDF } = await import("@/lib/pdf");
                 const doc = createAccountingReport(invoices, range, settings);
                 await exportReportPDF(doc, "التقرير_المحاسبي", range);
                 toast.success("تم تصدير التقرير المحاسبي");
