@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download, MessageCircle } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -85,6 +85,32 @@ export default function InvoicesPage() {
     toast.success("تم تصدير الفواتير");
   }
 
+  function shareWhatsApp() {
+    const paid = filtered.filter(inv => inv.status === "مدفوعة");
+    const unpaid = filtered.filter(inv => inv.status === "غير مدفوعة");
+    const draft = filtered.filter(inv => inv.status === "مسودة");
+    const lines = [
+      `🧾 *تقرير الفواتير - ${settings.businessName}*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      "",
+      `📊 *الملخص:*`,
+      `  • عدد الفواتير: ${filtered.length}`,
+      `  • إجمالي الإيرادات: ${settings.currencySymbol}${totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • ✅ مدفوعة: ${paid.length} (${settings.currencySymbol}${paid.reduce((s, i) => s + i.total, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})`,
+      `  • ⏳ غير مدفوعة: ${unpaid.length} (${settings.currencySymbol}${unpaid.reduce((s, i) => s + i.total, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})`,
+    ];
+    if (draft.length > 0) {
+      lines.push(`  • 📝 مسودة: ${draft.length} (${settings.currencySymbol}${draft.reduce((s, i) => s + i.total, 0).toLocaleString("en-US", { minimumFractionDigits: 2 })})`);
+    }
+    lines.push("", `📋 *آخر 10 فواتير:*`);
+    filtered.slice(0, 10).forEach((inv, i) => {
+      const emoji = inv.status === "مدفوعة" ? "✅" : inv.status === "غير مدفوعة" ? "🔴" : "🔶";
+      lines.push(`${i + 1}. ${inv.invoiceNumber} | ${inv.clientName} | ${emoji} ${settings.currencySymbol}${inv.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+    });
+    if (filtered.length > 10) lines.push(`... و ${filtered.length - 10} فاتورة أخرى`);
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -108,6 +134,10 @@ export default function InvoicesPage() {
                 toast.success("تم تصدير تقرير الفواتير");
               }}
             />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">مشاركة واتساب</span>
+            </Button>
             <Link href="/invoices/new">
               <Button size="sm" className="gap-1.5">
                 <Plus className="h-5 w-5" />

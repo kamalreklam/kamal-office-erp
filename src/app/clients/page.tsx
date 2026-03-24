@@ -13,7 +13,7 @@ import {
 import {
   Search, Users, Plus, Pencil, Trash2, Phone, MapPin, DollarSign,
   FileText, ChevronDown, ChevronUp, Clock, CheckCircle2, PackageCheck, Loader2, AlertTriangle, ArrowUpDown, Download,
-  LayoutGrid, List,
+  LayoutGrid, List, MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -131,6 +131,28 @@ export default function ClientsPage() {
     }
   }
 
+  function shareWhatsApp() {
+    const totalSpent = filtered.reduce((s, c) => s + c.totalSpent, 0);
+    const lines = [
+      `👥 *تقرير العملاء - ${settings.businessName}*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      "",
+      `📊 *الملخص:*`,
+      `  • عدد العملاء: ${filtered.length}`,
+      `  • إجمالي المبيعات: ${settings.currencySymbol}${totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • عدد الفواتير: ${invoices.length}`,
+      "",
+      `📋 *قائمة العملاء:*`,
+    ];
+    filtered.forEach((c, i) => {
+      const clientInvCount = invoices.filter(inv => inv.clientId === c.id).length;
+      lines.push(`${i + 1}. *${c.name}*`);
+      lines.push(`   📞 ${c.phone || "—"} | 📍 ${c.address || "—"}`);
+      lines.push(`   💰 المشتريات: ${settings.currencySymbol}${c.totalSpent.toLocaleString("en-US", { minimumFractionDigits: 2 })} (${clientInvCount} فاتورة)`);
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -159,6 +181,10 @@ export default function ClientsPage() {
                 toast.success("تم تصدير تقرير العملاء");
               }}
             />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">مشاركة واتساب</span>
+            </Button>
             <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
               <Plus className="h-5 w-5" />
               إضافة عميل

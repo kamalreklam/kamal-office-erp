@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
-  TrendingUp, TrendingDown, Users, Package, FileText, DollarSign, BarChart3,
+  TrendingUp, TrendingDown, Users, Package, FileText, DollarSign, BarChart3, MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -160,6 +160,40 @@ export default function ReportsPage() {
     { label: "متوسط الفاتورة", value: formatCurrency(avgInvoice), icon: BarChart3, color: "text-violet-600 bg-violet-50" },
   ];
 
+  function shareWhatsApp() {
+    const lines = [
+      `📊 *التقرير المالي - ${settings.businessName}*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📆 السنة: ${selectedYear}`,
+      "",
+      `💰 *المؤشرات الرئيسية:*`,
+    ];
+    kpis.forEach(k => {
+      lines.push(`  • ${k.label}: ${k.value}`);
+    });
+    lines.push(
+      "",
+      `📈 *أفضل العملاء:*`,
+    );
+    const clientTotals = clients.map(c => ({ name: c.name, total: c.totalSpent }))
+      .sort((a, b) => b.total - a.total).slice(0, 5);
+    clientTotals.forEach((c, i) => {
+      lines.push(`  ${i + 1}. ${c.name}: ${settings.currencySymbol}${c.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+    });
+    lines.push(
+      "",
+      `🏷️ *أكثر المنتجات مبيعاً:*`,
+    );
+    const productSales: Record<string, number> = {};
+    invoices.forEach(inv => inv.items.forEach(item => {
+      productSales[item.productName] = (productSales[item.productName] || 0) + item.quantity;
+    }));
+    Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(([name, qty], i) => {
+      lines.push(`  ${i + 1}. ${name}: ${qty} وحدة`);
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -180,6 +214,10 @@ export default function ReportsPage() {
                 toast.success("تم تصدير تقرير المبيعات");
               }}
             />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">مشاركة واتساب</span>
+            </Button>
             <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />

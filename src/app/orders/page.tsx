@@ -177,6 +177,34 @@ export default function OrdersPage() {
     );
   }
 
+  function shareOrdersSummaryWhatsApp() {
+    const pending = orders.filter(o => o.status === "قيد الانتظار").length;
+    const inProgress = orders.filter(o => o.status === "قيد التنفيذ").length;
+    const ready = orders.filter(o => o.status === "جاهز للاستلام").length;
+    const completed = orders.filter(o => o.status === "مكتمل").length;
+    const lines = [
+      `📋 *تقرير الطلبات - ${settings.businessName}*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      "",
+      `📊 *الملخص:*`,
+      `  • إجمالي الطلبات: ${orders.length}`,
+      `  • ⏳ قيد الانتظار: ${pending}`,
+      `  • 🔄 قيد التنفيذ: ${inProgress}`,
+      `  • ✅ جاهز للاستلام: ${ready}`,
+      `  • 📦 مكتمل: ${completed}`,
+    ];
+    const active = orders.filter(o => o.status !== "مكتمل");
+    if (active.length > 0) {
+      lines.push("", `📋 *الطلبات النشطة:*`);
+      active.forEach((o, i) => {
+        const emoji = o.status === "قيد الانتظار" ? "⏳" : o.status === "قيد التنفيذ" ? "🔄" : "✅";
+        lines.push(`${i + 1}. ${o.trackingId} | ${o.clientName} | ${emoji} ${o.status}`);
+        if (o.description) lines.push(`   📝 ${o.description}`);
+      });
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -194,6 +222,10 @@ export default function OrdersPage() {
                 toast.success("تم تصدير تقرير الطلبات");
               }}
             />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareOrdersSummaryWhatsApp}>
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">مشاركة واتساب</span>
+            </Button>
             {/* View toggle */}
             <div className="flex rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-1">
               <button

@@ -261,7 +261,7 @@
   --sidebar-accent: var(--surface-3);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border-default);
-  --sidebar-ring: var(--teal-500);
+  --sidebar-ring: var(--blue-400);
 }
 
 /* ── Tailwind theme mapping ───────────────────────── */
@@ -335,7 +335,7 @@
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 999px; }
-::-webkit-scrollbar-thumb:hover { background: var(--teal-700); }
+::-webkit-scrollbar-thumb:hover { background: var(--blue-600); }
 
 /* Selection */
 ::selection { background: var(--accent-soft); color: var(--text-primary); }
@@ -402,7 +402,7 @@ aside, header, main, nav, table, thead, tbody, tfoot, tr, td, th,
 }
 .glass-card--interactive:hover {
   transform: translateY(-3px);
-  border-color: var(--teal-700);
+  border-color: var(--blue-600);
   box-shadow: var(--glass-shadow), var(--glass-shine), var(--accent-glow);
 }
 .glass-card--interactive:active {
@@ -496,7 +496,7 @@ aside, header, main, nav, table, thead, tbody, tfoot, tr, td, th,
 .badge-warning { color: var(--amber-500); background: var(--warning-soft); }
 .badge-danger  { color: var(--red-500); background: var(--danger-soft); }
 .badge-info    { color: var(--blue-500); background: var(--info-soft); }
-.badge-accent  { color: var(--teal-700); background: var(--accent-soft); }
+.badge-accent  { color: var(--blue-600); background: var(--accent-soft); }
 .badge-gradient {
   background: var(--gradient-brand);
   color: white;

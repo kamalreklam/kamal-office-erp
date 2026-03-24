@@ -65,7 +65,7 @@ const variantStyles: Record<string, React.CSSProperties> = {
   },
   link: {
     background: "transparent",
-    color: "var(--teal-700)",
+    color: "var(--blue-600)",
   },
 }
 

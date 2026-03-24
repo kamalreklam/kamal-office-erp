@@ -12,8 +12,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
   ArrowRight, Plus, Trash2, Search, User, Package, Calculator,
-  Save, Printer, FileText, Layers, ChevronDown,
+  Save, Printer, FileText, Layers, ChevronDown, Droplets,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { type InvoiceStatus, formatCurrency } from "@/lib/data";
@@ -160,29 +163,75 @@ export default function NewInvoicePage() {
     setProductSearch((prev) => { const c = { ...prev }; delete c[rowId]; return c; });
   }
 
-  function addBundle(bundle: (typeof bundles)[0]) {
+  // ---- Bundle CMYK dialog ----
+  const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
+  const [activeBundleId, setActiveBundleId] = useState<string | null>(null);
+  const [bundleQty, setBundleQty] = useState<Record<string, number>>({});
+  const [bundlePrice, setBundlePrice] = useState<Record<string, number>>({});
+
+  const colorConfig: Record<string, { label: string; bg: string; dot: string }> = {
+    C: { label: "Cyan", bg: "bg-cyan-500/15 dark:bg-cyan-900/30", dot: "#06b6d4" },
+    M: { label: "Magenta", bg: "bg-pink-500/15 dark:bg-pink-900/30", dot: "#ec4899" },
+    Y: { label: "Yellow", bg: "bg-amber-500/15 dark:bg-yellow-900/30", dot: "#eab308" },
+    BK: { label: "Black", bg: "bg-gray-500/20 dark:bg-gray-800", dot: "#1f2937" },
+    LC: { label: "Light Cyan", bg: "bg-sky-500/15 dark:bg-sky-900/30", dot: "#38bdf8" },
+    LM: { label: "Light Magenta", bg: "bg-rose-500/15 dark:bg-rose-900/30", dot: "#fb7185" },
+  };
+  const colorOrder = ["C", "M", "Y", "BK", "LC", "LM"];
+
+  function getColorKey(productName: string): string {
+    const n = productName.toLowerCase();
+    if (n.includes("light cyan") || n === "lc") return "LC";
+    if (n.includes("light magenta") || n === "lm") return "LM";
+    if (n.includes("cyan") || n === "c") return "C";
+    if (n.includes("magenta") || n === "m") return "M";
+    if (n.includes("yellow") || n === "y") return "Y";
+    if (n.includes("black") || n === "bk") return "BK";
+    return productName;
+  }
+
+  function openBundleDialog(bundleId: string) {
+    const bundle = bundles.find(b => b.id === bundleId);
+    if (!bundle) return;
+    const qty: Record<string, number> = {};
+    const price: Record<string, number> = {};
+    bundle.items.forEach(bi => {
+      const product = products.find(p => p.id === bi.productId);
+      qty[bi.productId] = 1;
+      price[bi.productId] = product?.price || 0;
+    });
+    setBundleQty(qty);
+    setBundlePrice(price);
+    setActiveBundleId(bundleId);
+    setBundleDialogOpen(true);
+  }
+
+  function confirmBundleAdd() {
+    const bundle = bundles.find(b => b.id === activeBundleId);
+    if (!bundle) return;
     const newItems: LineItem[] = bundle.items.map((bi, idx) => {
-      const product = products.find((p) => p.id === bi.productId);
+      const product = products.find(p => p.id === bi.productId);
+      const q = bundleQty[bi.productId] || 1;
+      const p = bundlePrice[bi.productId] || product?.price || 0;
       return {
         id: `li${Date.now()}-${idx}`,
         productId: bi.productId,
-        productName: bi.productName,
+        productName: product?.name || bi.productName,
         description: product?.description || "",
-        quantity: bi.quantity,
-        unitPrice: product?.price || 0,
-        total: bi.quantity * (product?.price || 0),
+        quantity: q,
+        unitPrice: p,
+        total: q * p,
       };
     });
-    setLineItems((prev) => {
-      // Keep all existing items that have a product selected;
-      // only drop the empty default row if it's the sole item
-      const hasRealItems = prev.some((li) => li.productId !== "");
-      const kept = hasRealItems ? prev.filter((li) => li.productId !== "") : [];
+    setLineItems(prev => {
+      const hasRealItems = prev.some(li => li.productId !== "");
+      const kept = hasRealItems ? prev.filter(li => li.productId !== "") : [];
       return [...kept, ...newItems];
     });
-    newItems.forEach((item) => {
-      setProductSearch((prev) => ({ ...prev, [item.id]: item.productName }));
+    newItems.forEach(item => {
+      setProductSearch(prev => ({ ...prev, [item.id]: item.productName }));
     });
+    setBundleDialogOpen(false);
     toast.success(`تم إضافة مجموعة "${bundle.name}"`);
   }
 
@@ -336,13 +385,13 @@ export default function NewInvoicePage() {
         {bundles.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-1">
             <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground">
-              <Layers className="h-3.5 w-3.5" />
+              <Droplets className="h-3.5 w-3.5" />
               مجموعات:
             </span>
             {bundles.map((bundle) => (
               <button
                 key={bundle.id}
-                onClick={() => addBundle(bundle)}
+                onClick={() => openBundleDialog(bundle.id)}
                 className="flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
               >
                 <Plus className="h-3 w-3" />
@@ -590,6 +639,90 @@ export default function NewInvoicePage() {
           </Button>
         </div>
       </div>
+
+      {/* Bundle CMYK Dialog */}
+      <Dialog open={bundleDialogOpen} onOpenChange={setBundleDialogOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          {(() => {
+            const bundle = bundles.find(b => b.id === activeBundleId);
+            if (!bundle) return null;
+            const sortedItems = [...bundle.items]
+              .map(bi => {
+                const product = products.find(p => p.id === bi.productId);
+                const ck = getColorKey(product?.name || bi.productName);
+                return { ...bi, product, colorKey: ck };
+              })
+              .sort((a, b) => colorOrder.indexOf(a.colorKey) - colorOrder.indexOf(b.colorKey));
+
+            const bundleTotal = sortedItems.reduce((s, bi) => {
+              const q = bundleQty[bi.productId] || 1;
+              const p = bundlePrice[bi.productId] || 0;
+              return s + q * p;
+            }, 0);
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 via-pink-500 to-yellow-500 text-white">
+                      <Droplets className="h-4 w-4" />
+                    </div>
+                    {bundle.name}
+                  </DialogTitle>
+                  {bundle.description && <p className="text-sm text-muted-foreground">{bundle.description}</p>}
+                </DialogHeader>
+
+                <div className="space-y-1">
+                  {/* Header */}
+                  <div className="grid grid-cols-[auto_1fr_80px_80px] gap-3 items-center px-2 py-1.5">
+                    <div className="w-4" />
+                    <span className="text-xs font-bold text-muted-foreground">اللون</span>
+                    <span className="text-xs font-bold text-muted-foreground text-center">الكمية</span>
+                    <span className="text-xs font-bold text-muted-foreground text-center">السعر ($)</span>
+                  </div>
+
+                  {sortedItems.map((bi) => {
+                    const cfg = colorConfig[bi.colorKey] || colorConfig.BK;
+                    return (
+                      <div key={bi.productId} className={`grid grid-cols-[auto_1fr_80px_80px] gap-3 items-center rounded-xl px-3 py-3 ${cfg.bg}`}>
+                        <div className="h-4 w-4 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                        <div>
+                          <span className="text-sm font-bold">{bi.colorKey}</span>
+                          <span className="text-xs text-muted-foreground mr-2">{cfg.label}</span>
+                        </div>
+                        <Input
+                          type="number" min={0} value={bundleQty[bi.productId] || 1}
+                          onChange={e => setBundleQty(prev => ({ ...prev, [bi.productId]: parseInt(e.target.value) || 0 }))}
+                          className="h-9 text-center text-sm font-bold"
+                        />
+                        <Input
+                          type="number" min={0} step={0.25} value={bundlePrice[bi.productId] || 0}
+                          onChange={e => setBundlePrice(prev => ({ ...prev, [bi.productId]: parseFloat(e.target.value) || 0 }))}
+                          className="h-9 text-center text-sm"
+                        />
+                      </div>
+                    );
+                  })}
+
+                  {/* Total */}
+                  <div className="flex justify-between items-center rounded-xl bg-primary/10 px-4 py-3 mt-2">
+                    <span className="text-sm font-bold">الإجمالي</span>
+                    <span className="text-lg font-extrabold text-primary">{formatCurrency(bundleTotal)}</span>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button variant="outline" onClick={() => setBundleDialogOpen(false)}>إلغاء</Button>
+                  <Button onClick={confirmBundleAdd} className="gap-1.5">
+                    <Plus className="h-4 w-4" />
+                    إضافة للفاتورة
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

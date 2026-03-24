@@ -16,7 +16,7 @@ import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, Clock,
-  FileText, Download, Calculator, Receipt, Wallet, CreditCard,
+  FileText, Download, Calculator, Receipt, Wallet, CreditCard, MessageCircle,
 } from "lucide-react";
 import { exportCSV } from "@/lib/export";
 import { toast } from "sonner";
@@ -188,6 +188,35 @@ export default function AccountingPage() {
     { label: settings.taxEnabled ? `الضريبة (${settings.taxRate}%)` : "الضريبة", value: settings.taxEnabled ? formatCurrency(pnl.taxAmount) : "معطلة", icon: Calculator, color: "text-violet-600 bg-violet-50" },
   ];
 
+  function shareWhatsApp() {
+    const lines = [
+      `💰 *التقرير المحاسبي - ${settings.businessName}*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📆 السنة: ${selectedYear}`,
+      "",
+      `📊 *قائمة الأرباح والخسائر:*`,
+      `  • إجمالي الإيرادات: ${settings.currencySymbol}${pnl.grossRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • الخصومات: -${settings.currencySymbol}${pnl.totalDiscount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • صافي الإيرادات: ${settings.currencySymbol}${pnl.netRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+    ];
+    if (settings.taxEnabled) {
+      lines.push(`  • الضريبة (${settings.taxRate}%): ${settings.currencySymbol}${pnl.taxAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+    }
+    lines.push(
+      "",
+      `🔔 *المستحقات:*`,
+      `  • إجمالي المستحقات: ${settings.currencySymbol}${receivables.totalReceivable.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • عدد الفواتير المعلقة: ${receivables.unpaid.length}`,
+    );
+    if (receivables.unpaid.length > 0) {
+      lines.push("", `📋 *الفواتير غير المدفوعة:*`);
+      receivables.unpaid.slice(0, 10).forEach((inv, i) => {
+        lines.push(`  ${i + 1}. ${inv.invoiceNumber} | ${inv.clientName} | ${settings.currencySymbol}${inv.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+      });
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -208,6 +237,10 @@ export default function AccountingPage() {
                 toast.success("تم تصدير التقرير المحاسبي");
               }}
             />
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
+              <MessageCircle className="h-5 w-5 text-green-600" />
+              <span className="hidden sm:inline">مشاركة واتساب</span>
+            </Button>
             <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />

@@ -18,8 +18,8 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         color: "var(--text-primary)",
       }}
       onFocus={e => {
-        e.currentTarget.style.borderColor = "var(--teal-700)";
-        e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-soft), 0 0 16px rgba(0, 228, 184, 0.08)";
+        e.currentTarget.style.borderColor = "var(--blue-600)";
+        e.currentTarget.style.boxShadow = "0 0 0 3px var(--accent-soft), 0 0 16px rgba(37, 99, 235, 0.08)";
       }}
       onBlur={e => {
         e.currentTarget.style.borderColor = "var(--border-default)";

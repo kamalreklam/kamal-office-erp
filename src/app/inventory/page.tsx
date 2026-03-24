@@ -140,22 +140,33 @@ export default function InventoryPage() {
   }
 
   function shareWhatsApp() {
+    const totalValue = filtered.reduce((s, p) => s + p.price * p.stock, 0);
+    const totalStock = filtered.reduce((s, p) => s + p.stock, 0);
     const lines = [
       `📦 *تقرير المخزون - ${settings.businessName}*`,
       `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
       "",
+      `📊 *الملخص:*`,
+      `  • عدد المنتجات: ${filtered.length}`,
+      `  • إجمالي المخزون: ${totalStock} وحدة`,
+      `  • قيمة المخزون: ${settings.currencySymbol}${totalValue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      "",
+      `📋 *قائمة المنتجات:*`,
     ];
+    filtered.forEach((p, i) => {
+      const val = p.price * p.stock;
+      const warn = p.stock <= p.minStock ? " ⚠️" : "";
+      lines.push(`${i + 1}. ${p.name}${warn}`);
+      lines.push(`   الكمية: ${p.stock} ${p.unit} | السعر: ${settings.currencySymbol}${p.price} | القيمة: ${settings.currencySymbol}${val.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+    });
     if (lowStock.length > 0) {
-      lines.push("⚠️ *منتجات بحاجة لإعادة تعبئة:*");
-      lowStock.forEach((p) => {
-        lines.push(`  • ${p.name}: ${p.stock} ${p.unit} (الحد الأدنى: ${p.minStock})`);
-      });
       lines.push("");
+      lines.push(`⚠️ *منتجات منخفضة المخزون (${lowStock.length}):*`);
+      lowStock.forEach((p) => {
+        lines.push(`  🔴 ${p.name}: ${p.stock} ${p.unit} (الحد الأدنى: ${p.minStock})`);
+      });
     }
-    lines.push(`📊 إجمالي المنتجات: ${products.length}`);
-    lines.push(`⚠️ منتجات منخفضة: ${lowStock.length}`);
-    const text = encodeURIComponent(lines.join("\n"));
-    window.open(`https://wa.me/?text=${text}`, "_blank");
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   }
 
   function shareLowStockWhatsApp() {

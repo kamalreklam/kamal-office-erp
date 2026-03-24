@@ -17,7 +17,7 @@ const almarai = Almarai({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#009e7e",
+  themeColor: "#2563eb",
 };
 
 export const metadata: Metadata = {
