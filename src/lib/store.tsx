@@ -264,18 +264,22 @@ function rowToProduct(r: Record<string, unknown>): Product {
   };
 }
 
+// NOTE: tax_amount is stored inside the JSON `items` field as a top-level property
+// until the column is added to Supabase via:
+//   ALTER TABLE invoices ADD COLUMN tax_amount numeric DEFAULT 0;
 function invoiceToRow(inv: Invoice) {
+  // Embed taxAmount in items JSON so it survives round-trip
+  const itemsWithMeta = { _items: inv.items, _taxAmount: inv.taxAmount ?? 0 };
   return {
     id: inv.id,
     invoice_number: inv.invoiceNumber,
     client_id: inv.clientId,
     client_name: inv.clientName,
-    items: JSON.stringify(inv.items),
+    items: JSON.stringify(itemsWithMeta),
     subtotal: inv.subtotal,
     discount_type: inv.discountType,
     discount_value: inv.discountValue,
     discount_amount: inv.discountAmount,
-    tax_amount: inv.taxAmount ?? 0,
     total: inv.total,
     status: inv.status,
     notes: inv.notes,
@@ -284,21 +288,34 @@ function invoiceToRow(inv: Invoice) {
 }
 
 function rowToInvoice(r: Record<string, unknown>): Invoice {
-  let items = r.items;
-  if (typeof items === "string") {
-    try { items = JSON.parse(items); } catch { items = []; }
+  let parsed = r.items;
+  if (typeof parsed === "string") {
+    try { parsed = JSON.parse(parsed); } catch { parsed = []; }
   }
+  // Handle embedded meta format { _items: [...], _taxAmount: N }
+  let items: Invoice["items"];
+  let taxFromItems = 0;
+  if (parsed && typeof parsed === "object" && "_items" in (parsed as Record<string, unknown>)) {
+    const meta = parsed as { _items: Invoice["items"]; _taxAmount?: number };
+    items = meta._items || [];
+    taxFromItems = meta._taxAmount ?? 0;
+  } else {
+    items = (parsed as Invoice["items"]) || [];
+  }
+  // Prefer DB column if it exists, otherwise use embedded value
+  const taxAmount = r.tax_amount !== undefined ? Number(r.tax_amount) || 0 : taxFromItems;
+
   return {
     id: r.id as string,
     invoiceNumber: r.invoice_number as string,
     clientId: r.client_id as string,
     clientName: r.client_name as string,
-    items: (items as Invoice["items"]) || [],
+    items,
     subtotal: Number(r.subtotal) || 0,
     discountType: (r.discount_type || "fixed") as "percentage" | "fixed",
     discountValue: Number(r.discount_value) || 0,
     discountAmount: Number(r.discount_amount) || 0,
-    taxAmount: Number(r.tax_amount) || 0,
+    taxAmount,
     total: Number(r.total) || 0,
     status: (r.status || "غير مدفوعة") as InvoiceStatus,
     notes: (r.notes || "") as string,
@@ -775,12 +792,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const row = {
           client_id: data.clientId,
           client_name: data.clientName,
-          items: JSON.stringify(data.items),
+          items: JSON.stringify({ _items: data.items, _taxAmount: data.taxAmount ?? 0 }),
           subtotal: data.subtotal,
           discount_type: data.discountType,
           discount_value: data.discountValue,
           discount_amount: data.discountAmount,
-          tax_amount: data.taxAmount ?? 0,
           total: data.total,
           status: data.status,
           notes: data.notes,
