@@ -60,8 +60,8 @@ export default function AccountingPage() {
     const paid = yearInvoices.filter((i) => i.status === "مدفوعة");
     const grossRevenue = paid.reduce((s, i) => s + i.subtotal, 0);
     const totalDiscount = paid.reduce((s, i) => s + i.discountAmount, 0);
+    const taxAmount = paid.reduce((s, i) => s + (i.taxAmount ?? 0), 0);
     const netRevenue = paid.reduce((s, i) => s + i.total, 0);
-    const taxAmount = settings.taxEnabled ? netRevenue * (settings.taxRate / 100) : 0;
     const revenueAfterTax = netRevenue - taxAmount;
 
     return { grossRevenue, totalDiscount, netRevenue, taxAmount, revenueAfterTax, invoiceCount: paid.length };
@@ -132,7 +132,7 @@ export default function AccountingPage() {
         if (entry) {
           entry.revenue += inv.total;
           entry.discount += inv.discountAmount;
-          entry.tax += settings.taxEnabled ? inv.total * (settings.taxRate / 100) : 0;
+          entry.tax += inv.taxAmount ?? 0;
           entry.invoices++;
         }
       });
@@ -151,8 +151,8 @@ export default function AccountingPage() {
   const taxSummary = useMemo(() => {
     if (!settings.taxEnabled) return null;
     const taxableInvoices = yearInvoices.filter((i) => i.status === "مدفوعة");
-    const totalTaxable = taxableInvoices.reduce((s, i) => s + i.total, 0);
-    const totalTax = totalTaxable * (settings.taxRate / 100);
+    const totalTax = taxableInvoices.reduce((s, i) => s + (i.taxAmount ?? 0), 0);
+    const totalTaxable = taxableInvoices.reduce((s, i) => s + i.total - (i.taxAmount ?? 0), 0);
     const monthlyTax = monthlyMetrics.map((m) => ({ month: m.month, tax: m.tax }));
     return { totalTaxable, totalTax, rate: settings.taxRate, monthlyTax };
   }, [yearInvoices, settings, monthlyMetrics]);

@@ -78,8 +78,8 @@ export function createSalesReport(
   settings: AppSettings
 ) {
   const c = currency(settings);
-  const filtered = invoices.filter(inv => inv.createdAt >= dateRange.from && inv.createdAt <= dateRange.to);
-  const totalRevenue = filtered.reduce((s, inv) => s + inv.total, 0);
+  const filtered = invoices.filter(inv => inv.createdAt >= dateRange.from && inv.createdAt <= dateRange.to && inv.status !== "ملغاة" && inv.status !== "مسودة");
+  const totalRevenue = filtered.filter(inv => inv.status === "مدفوعة").reduce((s, inv) => s + inv.total, 0);
   const paidCount = filtered.filter(inv => inv.status === "مدفوعة").length;
   const unpaidTotal = filtered.filter(inv => inv.status === "غير مدفوعة").reduce((s, inv) => s + inv.total, 0);
 
@@ -264,10 +264,10 @@ export function createAccountingReport(
   settings: AppSettings
 ) {
   const c = currency(settings);
-  const filtered = invoices.filter(inv => inv.createdAt >= dateRange.from && inv.createdAt <= dateRange.to);
-  const totalRevenue = filtered.reduce((s, inv) => s + inv.total, 0);
+  const filtered = invoices.filter(inv => inv.createdAt >= dateRange.from && inv.createdAt <= dateRange.to && inv.status !== "ملغاة" && inv.status !== "مسودة");
   const paidRevenue = filtered.filter(inv => inv.status === "مدفوعة").reduce((s, inv) => s + inv.total, 0);
   const unpaidRevenue = filtered.filter(inv => inv.status === "غير مدفوعة").reduce((s, inv) => s + inv.total, 0);
+  const totalRevenue = paidRevenue + unpaidRevenue;
   const discounts = filtered.reduce((s, inv) => s + inv.discountAmount, 0);
 
   return createElement(

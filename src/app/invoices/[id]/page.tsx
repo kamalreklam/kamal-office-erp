@@ -223,6 +223,12 @@ export default function InvoiceDetailPage({
                         <span className="text-red-600">-{formatCurrency(invoice.discountAmount)}</span>
                       </div>
                     )}
+                    {(invoice.taxAmount ?? 0) > 0 && (
+                      <div className="flex justify-between text-base">
+                        <span className="text-muted-foreground">الضريبة</span>
+                        <span>+{formatCurrency(invoice.taxAmount)}</span>
+                      </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between text-lg pt-1">
                       <span className="font-bold">الإجمالي</span>

@@ -89,7 +89,8 @@ export default function NewInvoicePage() {
   }, [editingInvoice, clients, prefilled]);
 
   const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
-  const discountAmount = discountType === "percentage" ? (subtotal * discountValue) / 100 : discountValue;
+  const clampedDiscount = discountType === "percentage" ? Math.min(discountValue, 100) : Math.min(discountValue, subtotal);
+  const discountAmount = discountType === "percentage" ? (subtotal * clampedDiscount) / 100 : clampedDiscount;
   const taxAmount = settings.taxEnabled ? ((subtotal - discountAmount) * settings.taxRate) / 100 : 0;
   const total = Math.max(0, subtotal - discountAmount + taxAmount);
 
@@ -256,13 +257,14 @@ export default function NewInvoicePage() {
         description: li.description,
         quantity: li.quantity,
         unitPrice: li.unitPrice,
-        total: li.total,
+        total: Math.round(li.total * 100) / 100,
       })),
-      subtotal,
+      subtotal: Math.round(subtotal * 100) / 100,
       discountType,
       discountValue,
-      discountAmount,
-      total,
+      discountAmount: Math.round(discountAmount * 100) / 100,
+      taxAmount: Math.round(taxAmount * 100) / 100,
+      total: Math.round(total * 100) / 100,
       status,
       notes,
     };

@@ -275,6 +275,7 @@ function invoiceToRow(inv: Invoice) {
     discount_type: inv.discountType,
     discount_value: inv.discountValue,
     discount_amount: inv.discountAmount,
+    tax_amount: inv.taxAmount ?? 0,
     total: inv.total,
     status: inv.status,
     notes: inv.notes,
@@ -297,6 +298,7 @@ function rowToInvoice(r: Record<string, unknown>): Invoice {
     discountType: (r.discount_type || "fixed") as "percentage" | "fixed",
     discountValue: Number(r.discount_value) || 0,
     discountAmount: Number(r.discount_amount) || 0,
+    taxAmount: Number(r.tax_amount) || 0,
     total: Number(r.total) || 0,
     status: (r.status || "غير مدفوعة") as InvoiceStatus,
     notes: (r.notes || "") as string,
@@ -711,44 +713,226 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [nextInvoiceNumber, products, clients]
   );
 
+  // Helper: should this status deduct stock?
+  const statusDeductsStock = (s: InvoiceStatus) => s !== "مسودة" && s !== "ملغاة";
+  // Helper: should this status count toward totalSpent?
+  const statusCountsSpent = (s: InvoiceStatus) => s === "مدفوعة";
+
   const updateInvoice = useCallback(
     (id: string, data: Omit<Invoice, "id" | "invoiceNumber" | "createdAt">) => {
+      const oldInvoice = invoices.find(inv => inv.id === id);
+
       setInvoices((prev) =>
         prev.map((inv) =>
           inv.id === id ? { ...inv, ...data } : inv
         )
       );
-      const row = {
-        client_id: data.clientId,
-        client_name: data.clientName,
-        items: JSON.stringify(data.items),
-        subtotal: data.subtotal,
-        discount_type: data.discountType,
-        discount_value: data.discountValue,
-        discount_amount: data.discountAmount,
-        total: data.total,
-        status: data.status,
-        notes: data.notes,
-      };
-      dbExec(supabase.from("invoices").update(row).eq("id", id));
+
+      // Stock adjustment: restore old items, deduct new items
+      if (oldInvoice) {
+        const oldDeducts = statusDeductsStock(oldInvoice.status);
+        const newDeducts = statusDeductsStock(data.status);
+
+        setProducts(prev => prev.map(p => {
+          let stock = p.stock;
+          // Restore old deduction
+          if (oldDeducts) {
+            const oldItem = oldInvoice.items.find(i => i.productId === p.id);
+            if (oldItem) stock += oldItem.quantity;
+          }
+          // Apply new deduction
+          if (newDeducts) {
+            const newItem = data.items.find(i => i.productId === p.id);
+            if (newItem) stock = Math.max(0, stock - newItem.quantity);
+          }
+          return stock !== p.stock ? { ...p, stock } : p;
+        }));
+
+        // totalSpent adjustment — handle client change
+        const oldSpent = statusCountsSpent(oldInvoice.status) ? oldInvoice.total : 0;
+        const newSpent = statusCountsSpent(data.status) ? data.total : 0;
+        const clientChanged = oldInvoice.clientId !== data.clientId;
+
+        if (clientChanged) {
+          // Reverse from old client, add to new client
+          setClients(prev => prev.map(c => {
+            if (c.id === oldInvoice.clientId && oldSpent > 0) return { ...c, totalSpent: Math.max(0, c.totalSpent - oldSpent) };
+            if (c.id === data.clientId && newSpent > 0) return { ...c, totalSpent: c.totalSpent + newSpent };
+            return c;
+          }));
+        } else {
+          const spentDiff = newSpent - oldSpent;
+          if (spentDiff !== 0 && data.clientId) {
+            setClients(prev => prev.map(c =>
+              c.id === data.clientId ? { ...c, totalSpent: Math.max(0, c.totalSpent + spentDiff) } : c
+            ));
+          }
+        }
+      }
+
+      // DB update
+      (async () => {
+        const row = {
+          client_id: data.clientId,
+          client_name: data.clientName,
+          items: JSON.stringify(data.items),
+          subtotal: data.subtotal,
+          discount_type: data.discountType,
+          discount_value: data.discountValue,
+          discount_amount: data.discountAmount,
+          tax_amount: data.taxAmount ?? 0,
+          total: data.total,
+          status: data.status,
+          notes: data.notes,
+        };
+        await dbExec(supabase.from("invoices").update(row).eq("id", id));
+
+        // Sync stock and client in DB
+        if (oldInvoice) {
+          const allProductIds = new Set([
+            ...oldInvoice.items.map(i => i.productId),
+            ...data.items.map(i => i.productId),
+          ]);
+          for (const pid of allProductIds) {
+            const p = products.find(pr => pr.id === pid);
+            if (!p) continue;
+            let stock = p.stock;
+            const oldItem = oldInvoice.items.find(i => i.productId === pid);
+            const newItem = data.items.find(i => i.productId === pid);
+            if (statusDeductsStock(oldInvoice.status) && oldItem) stock += oldItem.quantity;
+            if (statusDeductsStock(data.status) && newItem) stock = Math.max(0, stock - newItem.quantity);
+            if (stock !== p.stock) {
+              await dbExec(supabase.from("products").update({ stock }).eq("id", pid));
+            }
+          }
+
+          const oldSpent = statusCountsSpent(oldInvoice.status) ? oldInvoice.total : 0;
+          const newSpent = statusCountsSpent(data.status) ? data.total : 0;
+          const clientChanged = oldInvoice.clientId !== data.clientId;
+
+          if (clientChanged) {
+            if (oldSpent > 0) {
+              const oldClient = clients.find(c => c.id === oldInvoice.clientId);
+              if (oldClient) await dbExec(supabase.from("clients").update({ total_spent: Math.max(0, oldClient.totalSpent - oldSpent) }).eq("id", oldInvoice.clientId));
+            }
+            if (newSpent > 0) {
+              const newClient = clients.find(c => c.id === data.clientId);
+              if (newClient) await dbExec(supabase.from("clients").update({ total_spent: newClient.totalSpent + newSpent }).eq("id", data.clientId));
+            }
+          } else {
+            const spentDiff = newSpent - oldSpent;
+            if (spentDiff !== 0 && data.clientId) {
+              const client = clients.find(c => c.id === data.clientId);
+              if (client) await dbExec(supabase.from("clients").update({ total_spent: Math.max(0, client.totalSpent + spentDiff) }).eq("id", data.clientId));
+            }
+          }
+        }
+      })();
     },
-    []
+    [invoices, products, clients]
   );
 
   const updateInvoiceStatus = useCallback(
     (id: string, status: InvoiceStatus) => {
+      const oldInvoice = invoices.find(inv => inv.id === id);
+      if (!oldInvoice) return;
+      const oldStatus = oldInvoice.status;
+
       setInvoices((prev) =>
         prev.map((inv) => (inv.id === id ? { ...inv, status } : inv))
       );
-      dbExec(supabase.from("invoices").update({ status }).eq("id", id));
+
+      // Stock: restore if old deducted, deduct if new should
+      const oldDeducts = statusDeductsStock(oldStatus);
+      const newDeducts = statusDeductsStock(status);
+      if (oldDeducts !== newDeducts) {
+        setProducts(prev => prev.map(p => {
+          const item = oldInvoice.items.find(i => i.productId === p.id);
+          if (!item) return p;
+          const stock = oldDeducts && !newDeducts
+            ? p.stock + item.quantity           // restore
+            : Math.max(0, p.stock - item.quantity); // deduct
+          return { ...p, stock };
+        }));
+      }
+
+      // totalSpent
+      const oldCounts = statusCountsSpent(oldStatus);
+      const newCounts = statusCountsSpent(status);
+      if (oldCounts !== newCounts) {
+        const diff = newCounts ? oldInvoice.total : -oldInvoice.total;
+        setClients(prev => prev.map(c =>
+          c.id === oldInvoice.clientId ? { ...c, totalSpent: Math.max(0, c.totalSpent + diff) } : c
+        ));
+      }
+
+      // DB
+      (async () => {
+        await dbExec(supabase.from("invoices").update({ status }).eq("id", id));
+
+        if (oldDeducts !== newDeducts) {
+          for (const item of oldInvoice.items) {
+            const p = products.find(pr => pr.id === item.productId);
+            if (!p) continue;
+            const stock = oldDeducts && !newDeducts
+              ? p.stock + item.quantity
+              : Math.max(0, p.stock - item.quantity);
+            await dbExec(supabase.from("products").update({ stock }).eq("id", item.productId));
+          }
+        }
+
+        if (oldCounts !== newCounts) {
+          const client = clients.find(c => c.id === oldInvoice.clientId);
+          if (client) {
+            const diff = newCounts ? oldInvoice.total : -oldInvoice.total;
+            await dbExec(supabase.from("clients").update({ total_spent: Math.max(0, client.totalSpent + diff) }).eq("id", oldInvoice.clientId));
+          }
+        }
+      })();
     },
-    []
+    [invoices, products, clients]
   );
 
   const deleteInvoice = useCallback((id: string) => {
+    const invoice = invoices.find(inv => inv.id === id);
+
     setInvoices((prev) => prev.filter((inv) => inv.id !== id));
-    dbExec(supabase.from("invoices").delete().eq("id", id));
-  }, []);
+
+    if (invoice) {
+      // Restore stock if it was deducted
+      if (statusDeductsStock(invoice.status)) {
+        setProducts(prev => prev.map(p => {
+          const item = invoice.items.find(i => i.productId === p.id);
+          return item ? { ...p, stock: p.stock + item.quantity } : p;
+        }));
+      }
+      // Reverse totalSpent if it was counted
+      if (statusCountsSpent(invoice.status)) {
+        setClients(prev => prev.map(c =>
+          c.id === invoice.clientId ? { ...c, totalSpent: Math.max(0, c.totalSpent - invoice.total) } : c
+        ));
+      }
+
+      // DB
+      (async () => {
+        await dbExec(supabase.from("invoices").delete().eq("id", id));
+        if (statusDeductsStock(invoice.status)) {
+          for (const item of invoice.items) {
+            const p = products.find(pr => pr.id === item.productId);
+            if (p) {
+              await dbExec(supabase.from("products").update({ stock: p.stock + item.quantity }).eq("id", item.productId));
+            }
+          }
+        }
+        if (statusCountsSpent(invoice.status) && invoice.clientId) {
+          const client = clients.find(c => c.id === invoice.clientId);
+          if (client) {
+            await dbExec(supabase.from("clients").update({ total_spent: Math.max(0, client.totalSpent - invoice.total) }).eq("id", invoice.clientId));
+          }
+        }
+      })();
+    }
+  }, [invoices, products, clients]);
 
   // --- Order CRUD ---
   const addOrder = useCallback(
@@ -907,6 +1091,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               discountType: (i.discountType || "fixed") as "percentage" | "fixed",
               discountValue: i.discountValue || 0,
               discountAmount: i.discountAmount || 0,
+              taxAmount: i.taxAmount ?? 0,
               total: i.total,
               status: (i.status || "غير مدفوعة") as InvoiceStatus,
               notes: i.notes || "",

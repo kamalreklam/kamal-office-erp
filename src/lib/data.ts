@@ -48,6 +48,7 @@ export interface Invoice {
   discountType: "percentage" | "fixed";
   discountValue: number;
   discountAmount: number;
+  taxAmount: number;
   total: number;
   status: InvoiceStatus;
   notes: string;
@@ -787,6 +788,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 2816,
     "status": "ملغاة",
     "notes": "",
@@ -812,6 +814,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 2047.5,
     "status": "مدفوعة",
     "notes": "",
@@ -882,6 +885,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 835,
     "status": "مدفوعة",
     "notes": "",
@@ -979,6 +983,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 800,
     "status": "مدفوعة",
     "notes": "",
@@ -1076,6 +1081,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 4331.5,
     "status": "مدفوعة",
     "notes": "",
@@ -1137,6 +1143,7 @@ export const invoices: Invoice[] = [
     "discountType": "fixed",
     "discountValue": 0,
     "discountAmount": 0,
+    "taxAmount": 0,
     "total": 2257.5,
     "status": "مدفوعة",
     "notes": "",
@@ -1532,8 +1539,8 @@ export function getTotalRevenue(invoicesList: Invoice[]): number {
     .reduce((sum, inv) => sum + inv.total, 0);
 }
 
-export function formatCurrency(amount: number): string {
-  return `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export function formatCurrency(amount: number, symbol = "$"): string {
+  return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function getCategoryLabel(category: Product["category"]): string {

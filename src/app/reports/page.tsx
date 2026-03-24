@@ -55,7 +55,8 @@ export default function ReportsPage() {
   const totalRevenue = yearInvoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.total, 0);
   const totalUnpaid = yearInvoices.filter((i) => i.status === "غير مدفوعة").reduce((s, i) => s + i.total, 0);
   const invoiceCount = yearInvoices.length;
-  const avgInvoice = invoiceCount > 0 ? totalRevenue / yearInvoices.filter((i) => i.status === "مدفوعة").length || 0 : 0;
+  const paidCount = yearInvoices.filter((i) => i.status === "مدفوعة").length;
+  const avgInvoice = paidCount > 0 ? totalRevenue / paidCount : 0;
 
   // ---- Monthly Revenue Chart ----
   const monthlyData = useMemo(() => {
@@ -102,7 +103,7 @@ export default function ReportsPage() {
   const topProducts = useMemo(() => {
     const map = new Map<string, { name: string; qty: number; revenue: number }>();
     yearInvoices
-      .filter((i) => i.status !== "ملغاة")
+      .filter((i) => i.status !== "ملغاة" && i.status !== "مسودة")
       .forEach((inv) => {
         inv.items.forEach((item) => {
           const existing = map.get(item.productId) || { name: item.productName, qty: 0, revenue: 0 };
@@ -129,7 +130,7 @@ export default function ReportsPage() {
   const categoryRevenue = useMemo(() => {
     const map = new Map<string, number>();
     yearInvoices
-      .filter((i) => i.status !== "ملغاة")
+      .filter((i) => i.status !== "ملغاة" && i.status !== "مسودة")
       .forEach((inv) => {
         inv.items.forEach((item) => {
           const product = products.find((p) => p.id === item.productId);
@@ -185,7 +186,7 @@ export default function ReportsPage() {
       `🏷️ *أكثر المنتجات مبيعاً:*`,
     );
     const productSales: Record<string, number> = {};
-    invoices.forEach(inv => inv.items.forEach(item => {
+    yearInvoices.filter(i => i.status !== "ملغاة" && i.status !== "مسودة").forEach(inv => inv.items.forEach(item => {
       productSales[item.productName] = (productSales[item.productName] || 0) + item.quantity;
     }));
     Object.entries(productSales).sort((a, b) => b[1] - a[1]).slice(0, 5).forEach(([name, qty], i) => {
