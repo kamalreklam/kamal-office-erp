@@ -83,7 +83,7 @@ export default function InvoiceDetailPage({
     toast.success("جاري تصدير الفاتورة كـ PDF...");
     try {
       const { exportInvoicePDF } = await import("@/lib/pdf");
-      await exportInvoicePDF(invoice, settings);
+      await exportInvoicePDF(invoice, settings, { phone: client?.phone, address: client?.address });
     } catch {
       toast.error("فشل تصدير الفاتورة");
     }

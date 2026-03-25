@@ -376,70 +376,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Import from Odoo */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Database className="h-5 w-5 text-primary" />
-              استيراد من Odoo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              استيراد بيانات العملاء والمنتجات والفواتير والطلبات من ملف JSON المُصدَّر من نظام Odoo.
-              يمكنك تصدير البيانات باستخدام الأمر:
-            </p>
-            <div className="rounded-lg bg-muted/50 p-3 font-mono text-xs" dir="ltr">
-              node scripts/parse-odoo.js dump.sql output.json
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="flex-1">
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportFile}
-                  className="hidden"
-                  disabled={importing}
-                />
-                <div className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[var(--glass-border)] px-4 py-6 text-base text-muted-foreground transition-colors hover:border-primary hover:bg-primary/5 hover:text-primary">
-                  {importing ? (
-                    <span className="animate-spin">⏳</span>
-                  ) : (
-                    <FileUp className="h-5 w-5" />
-                  )}
-                  <span>{importing ? "جاري الاستيراد..." : "اختر ملف JSON للاستيراد"}</span>
-                </div>
-              </label>
-            </div>
-
-            {importResult && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 space-y-2">
-                <div className="flex items-center gap-2 text-base font-bold text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  تم الاستيراد بنجاح
-                </div>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    { label: "عملاء", count: importResult.clients },
-                    { label: "منتجات", count: importResult.products },
-                    { label: "فواتير", count: importResult.invoices },
-                    { label: "طلبات", count: importResult.orders },
-                  ].map((item) => (
-                    <div key={item.label} className="rounded-lg bg-[var(--surface-1)] p-2.5 text-center">
-                      <p className="text-lg font-bold text-emerald-700">{item.count}</p>
-                      <p className="text-xs text-muted-foreground">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <p className="text-xs text-muted-foreground">
-              البيانات المُستوردة ستُضاف إلى البيانات الحالية دون حذف أي بيانات موجودة. لن يتم استيراد البيانات المكررة.
-            </p>
-          </CardContent>
-        </Card>
-
         {/* HTML Invoice Template Editor */}
         <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
@@ -468,20 +404,8 @@ export default function SettingsPage() {
               </div>
             </details>
 
-            {/* Toggle Preview/Code */}
+            {/* Actions */}
             <div className="flex items-center gap-2">
-              <div className="flex rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-1">
-                <button onClick={() => setShowPreview(false)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${!showPreview ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}>
-                  <Code className="h-3.5 w-3.5" />
-                  كود HTML
-                </button>
-                <button onClick={() => setShowPreview(true)}
-                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${showPreview ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground"}`}>
-                  <Eye className="h-3.5 w-3.5" />
-                  معاينة حية
-                </button>
-              </div>
               <div className="flex-1" />
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleResetTemplate}>
                 <RotateCcw className="h-3 w-3" />
@@ -493,32 +417,20 @@ export default function SettingsPage() {
               </Button>
             </div>
 
-            {/* Editor / Preview */}
-            {!showPreview ? (
-              <textarea
-                value={invoiceHtml}
-                onChange={e => setInvoiceHtml(e.target.value)}
-                dir="ltr"
-                className="w-full rounded-xl border border-[var(--glass-border)] p-4 font-mono text-xs leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                style={{
-                  minHeight: 500,
-                  background: "var(--surface-2)",
-                  color: "var(--text-primary)",
-                  tabSize: 2,
-                }}
-                spellCheck={false}
-              />
-            ) : (
-              <div className="rounded-xl border border-[var(--glass-border)] overflow-hidden" style={{ background: "white" }}>
-                <iframe
-                  srcDoc={getPreviewHtml()}
-                  className="w-full border-none"
-                  style={{ height: 600, background: "white" }}
-                  title="Invoice Preview"
-                  sandbox="allow-same-origin"
-                />
-              </div>
-            )}
+            {/* Code Editor */}
+            <textarea
+              value={invoiceHtml}
+              onChange={e => setInvoiceHtml(e.target.value)}
+              dir="ltr"
+              className="w-full rounded-xl border border-[var(--glass-border)] p-4 font-mono text-xs leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              style={{
+                minHeight: 500,
+                background: "var(--surface-2)",
+                color: "var(--text-primary)",
+                tabSize: 2,
+              }}
+              spellCheck={false}
+            />
 
             {/* Test Export */}
             <Button variant="outline" className="w-full gap-2" onClick={async () => {
@@ -535,7 +447,7 @@ export default function SettingsPage() {
                   subtotal: 800, discountType: "fixed" as const, discountValue: 0, discountAmount: 0, taxAmount: 0,
                   total: 800, status: "مدفوعة" as const, notes: "", createdAt: "2025-12-30",
                 };
-                await exportInvoicePDF(sampleInvoice, settings);
+                await exportInvoicePDF(sampleInvoice, settings, { phone: "00905465301000", address: "حلب" });
                 toast.success("تم تصدير فاتورة تجريبية");
               } catch (e) { toast.error("فشل تصدير الفاتورة: " + (e as Error).message); }
             }}>

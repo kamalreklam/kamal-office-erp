@@ -7,15 +7,18 @@ export interface InvoiceSettings {
 const STORAGE_KEY = "invoice_template";
 
 // All available template variables
-export const TEMPLATE_VARIABLES = {
+export const TEMPLATE_VARIABLES: Record<string, string> = {
   "{{companyName}}": "اسم الشركة (عربي)",
   "{{companyNameEn}}": "اسم الشركة (إنجليزي)",
+  "{{companyTagline}}": "شعار الشركة (سطر ترويجي)",
   "{{companyAddress}}": "عنوان الشركة",
   "{{companyPhone}}": "هاتف الشركة",
   "{{companyEmail}}": "بريد الشركة",
   "{{logoUrl}}": "رابط الشعار",
   "{{invoiceNumber}}": "رقم الفاتورة",
   "{{clientName}}": "اسم العميل",
+  "{{clientPhone}}": "هاتف العميل",
+  "{{clientAddress}}": "عنوان العميل",
   "{{date}}": "تاريخ الفاتورة",
   "{{status}}": "حالة الفاتورة",
   "{{salesperson}}": "مندوب المبيعات",
@@ -26,6 +29,8 @@ export const TEMPLATE_VARIABLES = {
   "{{total}}": "الإجمالي",
   "{{currencySymbol}}": "رمز العملة",
   "{{notes}}": "ملاحظات الفاتورة",
+  "{{notesSection}}": "قسم الملاحظات (HTML كامل)",
+  "{{footerText}}": "نص التذييل",
 };
 
 export const DEFAULT_TEMPLATE = `<!DOCTYPE html>
@@ -33,322 +38,236 @@ export const DEFAULT_TEMPLATE = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
 
 :root {
-  --accent: #2a7ab5;
-  --accent-light: #e8f4fd;
-  --accent-dark: #1a5a8a;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  --border: #e2e8f0;
-  --bg-soft: #f8fafc;
-  --white: #ffffff;
+  --blue: #29ABE2;
+  --blue-dark: #1B8AC2;
+  --blue-light: #e8f6fc;
+  --key: #1a1a2e;
+  --key-soft: #2a2a3e;
+  --text: #1a1a2e;
+  --text-secondary: #546e7a;
+  --text-muted: #90a4ae;
+  --surface: #ffffff;
+  --surface-alt: #f5f7fa;
+  --border: #e8ecf1;
+  --border-light: #f0f3f7;
 }
 
-* { margin:0; padding:0; box-sizing:border-box; }
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
-  font-size: 11px;
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 13px;
   color: var(--text);
   direction: rtl;
-  background: var(--white);
+  background: var(--surface);
   -webkit-font-smoothing: antialiased;
+  width: 794px;
+  min-height: 1123px;
+  position: relative;
 }
 
-/* ═══════════════ HEADER ═══════════════ */
+/* ═══ TOP STRIP ═══ */
+.geo-strip { position: absolute; top: 0; right: 0; left: 0; height: 6px; display: flex; }
+.geo-strip span { flex: 1; }
+.geo-strip span:nth-child(1) { background: var(--blue); }
+.geo-strip span:nth-child(2) { background: var(--blue-dark); }
+.geo-strip span:nth-child(3) { background: var(--key); }
+.geo-strip span:nth-child(4) { background: var(--key); }
+
+/* ═══ HEADER ═══ */
 .header {
+  padding: 32px 40px 28px;
+  background: var(--key);
   position: relative;
-  padding: 28px 36px 24px;
-  background: linear-gradient(160deg, #f7faff 0%, #edf2ff 40%, var(--accent-light) 100%);
-  border-bottom: 3px solid var(--accent);
   overflow: hidden;
 }
 .header::before {
   content: '';
-  position: absolute;
-  top: -60px;
-  left: -40px;
-  width: 200px;
-  height: 200px;
-  background: radial-gradient(circle, rgba(42,122,181,0.06) 0%, transparent 70%);
-  border-radius: 50%;
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(circle, rgba(41,171,226,0.08) 1.5px, transparent 1.5px),
+    radial-gradient(circle, rgba(41,171,226,0.05) 1px, transparent 1px);
+  background-size: 20px 20px, 14px 14px;
+  background-position: 0 0, 7px 7px;
 }
-.header-inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  position: relative;
-  z-index: 1;
+.header::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0;
+  width: 120px; height: 120px;
+  background: linear-gradient(135deg, transparent 50%, rgba(41,171,226,0.12) 50%);
 }
-.header-brand {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.company-name {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.3px;
-}
-.company-subtitle {
-  font-size: 9px;
-  color: var(--text-muted);
-  letter-spacing: 0.5px;
-}
-.company-address {
-  font-size: 9px;
-  color: var(--text-light);
-  margin-top: 2px;
-}
-.logo {
-  max-height: 65px;
-  max-width: 170px;
-  object-fit: contain;
-}
+.header-inner { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2; }
+.header-brand { display: flex; flex-direction: column; gap: 8px; }
+.company-name { font-size: 22px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1.1; }
+.company-tagline { font-size: 11px; font-weight: 500; color: var(--blue); letter-spacing: 2.5px; text-transform: uppercase; }
+.company-contact { display: flex; gap: 16px; margin-top: 6px; }
+.company-contact span { font-size: 8.5px; color: rgba(255,255,255,0.5); font-weight: 400; }
+.logo { max-height: 60px; max-width: 160px; object-fit: contain; opacity: 0.95; }
 
-/* ═══════════════ CONTENT ═══════════════ */
-.content {
-  padding: 28px 36px 20px;
-}
-
-/* Order Header */
-.order-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 22px;
-  padding-bottom: 16px;
+/* ═══ TITLE BAR ═══ */
+.title-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 40px;
+  background: var(--surface-alt);
   border-bottom: 1px solid var(--border);
 }
-.order-number-label {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-.order-number {
-  font-family: 'Inter', 'IBM Plex Sans Arabic', sans-serif;
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--text);
-  letter-spacing: -0.5px;
-}
-.client-block {
-  text-align: left;
-}
-.client-label {
-  font-size: 9px;
-  color: var(--text-light);
-  margin-bottom: 3px;
-}
-.client-name {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent-dark);
-}
+.invoice-label-group { display: flex; align-items: baseline; gap: 14px; }
+.invoice-label { font-size: 13px; font-weight: 700; color: var(--blue); letter-spacing: 3px; text-transform: uppercase; }
+.invoice-number { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; color: var(--text); letter-spacing: -1px; direction: ltr; }
+.invoice-date { font-family: 'Space Mono', monospace; font-size: 18px; color: var(--text-secondary); direction: ltr; }
 
-/* Meta Cards */
-.meta-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.meta-card {
-  flex: 1;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
-}
-.meta-card-header {
-  padding: 8px 16px;
-  background: var(--bg-soft);
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-}
-.meta-card-body {
-  padding: 10px 16px;
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-  color: var(--text);
-}
+/* ═══ CONTENT ═══ */
+.content { padding: 28px 40px 20px; }
 
-/* ═══════════════ ITEMS TABLE ═══════════════ */
-.items-table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  overflow: hidden;
+/* Client Info */
+.info-block {
+  padding: 14px 20px; border: 1px solid var(--border); border-radius: 6px;
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 24px;
+  margin-bottom: 28px;
 }
+.info-block::before { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--blue); }
+.info-block-label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; white-space: nowrap; }
+.info-block .name { font-size: 16px; font-weight: 700; color: var(--text); white-space: nowrap; }
+.info-block .detail { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.info-block .detail .sep { color: var(--text-muted); font-size: 10px; }
+
+/* ═══ ITEMS TABLE ═══ */
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table thead { background: var(--key); }
 .items-table thead th {
-  padding: 11px 16px;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: var(--bg-soft);
-  border-bottom: 2px solid var(--border);
-  text-align: right;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  padding: 12px 18px; font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,0.8); text-align: right;
+  text-transform: uppercase; letter-spacing: 1.2px;
 }
+.items-table thead th:first-child { border-radius: 0 6px 0 0; }
+.items-table thead th:last-child { border-radius: 6px 0 0 0; }
 .items-table thead th.t-center { text-align: center; }
 .items-table thead th.t-left { text-align: left; }
-.items-table tbody td {
-  padding: 13px 16px;
-  font-size: 11px;
-  border-bottom: 1px solid #f1f5f9;
-  vertical-align: middle;
-}
+.items-table tbody td { padding: 14px 18px; font-size: 13px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
 .items-table tbody tr:last-child td { border-bottom: none; }
-.items-table tbody tr:nth-child(even) { background: #fafbfd; }
+.items-table tbody tr:nth-child(even) { background: rgba(245, 247, 250, 0.5); }
 .items-table .t-center { text-align: center; }
 .items-table .t-left { text-align: left; }
-.items-table .t-bold { font-weight: 700; }
-.items-table .t-muted { color: var(--text-muted); font-size: 10px; }
+.items-table .t-bold { font-weight: 600; }
+.items-table .t-mono { font-family: 'Space Mono', monospace; font-size: 13px; direction: ltr; display: inline-block; }
+.row-num { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--text-muted); font-weight: 700; }
 
-/* Total Row */
-.total-row {
-  background: var(--accent) !important;
-}
-.total-row td {
-  color: var(--white) !important;
-  font-weight: 700 !important;
-  font-size: 12px !important;
-  padding: 13px 16px !important;
-  border-bottom: none !important;
-}
-.total-row .total-amount {
-  font-family: 'Inter', sans-serif;
-  font-size: 16px !important;
-  font-weight: 800 !important;
-  letter-spacing: -0.3px;
-}
+/* ═══ TOTALS ═══ */
+.totals-area { display: flex; justify-content: flex-end; margin: 24px 0; }
+.totals-box { width: 310px; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+.totals-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--border-light); }
+.totals-row:last-child { border-bottom: none; }
+.totals-row .label { font-size: 10px; color: var(--text-secondary); font-weight: 500; }
+.totals-row .value { font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; color: var(--text); direction: ltr; }
+.totals-row.discount .value { color: var(--blue); }
+.totals-row.grand-total { background: var(--key); padding: 14px 18px; }
+.totals-row.grand-total .label { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8); }
+.totals-row.grand-total .value { font-size: 18px; font-weight: 700; color: var(--blue); letter-spacing: -0.5px; }
 
-/* Discount & Tax Rows */
-.extra-row td {
-  color: var(--text-muted);
-  font-size: 10px;
-  padding: 8px 16px;
-  border-bottom: 1px solid #f1f5f9;
-}
-.discount-amount { color: #dc2626; font-weight: 600; }
-.tax-amount { color: var(--text); font-weight: 600; }
+/* ═══ NOTES ═══ */
+.notes-section { padding: 16px 20px; background: var(--surface-alt); border-right: 3px solid var(--blue); border-radius: 0 6px 6px 0; margin-bottom: 20px; }
+.notes-title { font-size: 8px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+.notes-text { font-size: 10px; color: var(--text-secondary); line-height: 1.7; }
 
-/* ═══════════════ NOTES ═══════════════ */
-.notes {
-  margin-top: 20px;
-  padding: 14px 18px;
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 10px;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-.notes strong { color: var(--text); }
-
-/* ═══════════════ FOOTER ═══════════════ */
-.footer {
-  margin-top: 50px;
-  padding: 14px 36px;
-  text-align: center;
-  border-top: 1px solid var(--border);
-  background: var(--bg-soft);
-}
-.footer-contact {
-  font-size: 9px;
-  color: var(--text-muted);
-  letter-spacing: 0.3px;
-}
-.footer-contact a { color: var(--accent); text-decoration: none; }
-.footer-page {
-  font-size: 8px;
-  color: var(--text-light);
-  margin-top: 5px;
-}
+/* ═══ FOOTER ═══ */
+.footer { position: absolute; bottom: 0; left: 0; right: 0; }
+.footer-content { display: flex; justify-content: space-between; align-items: center; padding: 16px 40px; background: var(--surface-alt); border-top: 1px solid var(--border); }
+.footer-legal { font-size: 10px; color: var(--text-muted); line-height: 1.5; max-width: 400px; }
+.footer-page { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); }
+.footer-strip { height: 4px; display: flex; }
+.footer-strip span:nth-child(1) { flex: 5; background: var(--blue); }
+.footer-strip span:nth-child(2) { flex: 3; background: var(--blue-dark); }
+.footer-strip span:nth-child(3) { flex: 2; background: var(--key); }
+.footer-strip span:nth-child(4) { flex: 0; }
 </style>
 </head>
 <body>
 
-<!-- ▀▀▀ HEADER ▀▀▀ -->
+<div class="geo-strip"><span></span><span></span><span></span><span></span></div>
+
 <div class="header">
   <div class="header-inner">
     <div class="header-brand">
       <div class="company-name">{{companyName}}</div>
-      <div class="company-address">{{companyAddress}}</div>
+      <div class="company-tagline">{{companyTagline}}</div>
+      <div class="company-contact">
+        <span dir="ltr">{{companyPhone}}</span>
+        <span>{{companyEmail}}</span>
+        <span>{{companyAddress}}</span>
+      </div>
     </div>
-    <img src="{{logoUrl}}" class="logo" crossorigin="anonymous" />
+    <div class="logo-area">
+      <img src="{{logoUrl}}" class="logo" crossorigin="anonymous" />
+    </div>
   </div>
 </div>
 
-<!-- ▀▀▀ CONTENT ▀▀▀ -->
+<div class="title-bar">
+  <div class="invoice-label-group">
+    <div class="invoice-label">فاتورة</div>
+    <div class="invoice-number">{{invoiceNumber}}</div>
+  </div>
+  <div class="invoice-date">{{date}}</div>
+</div>
+
 <div class="content">
-
-  <!-- Order + Client -->
-  <div class="order-section">
-    <div>
-      <div class="order-number-label">رقم الأمر</div>
-      <div class="order-number">{{invoiceNumber}}</div>
-    </div>
-    <div class="client-block">
-      <div class="client-label">العميل</div>
-      <div class="client-name">{{clientName}}</div>
+  <div class="info-block">
+    <div class="info-block-label">العميل</div>
+    <div class="name">{{clientName}}</div>
+    <div class="detail">
+      <span dir="ltr">{{clientPhone}}</span>
+      <span class="sep">&middot;</span>
+      <span>{{clientAddress}}</span>
     </div>
   </div>
 
-  <!-- Meta Cards -->
-  <div class="meta-row">
-    <div class="meta-card">
-      <div class="meta-card-header">تاريخ الطلب</div>
-      <div class="meta-card-body">{{date}}</div>
-    </div>
-    <div class="meta-card">
-      <div class="meta-card-header">مندوب المبيعات</div>
-      <div class="meta-card-body" dir="ltr">{{salesperson}}</div>
-    </div>
+  <div class="table-wrapper">
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:5%">#</th>
+          <th style="width:42%">الوصف</th>
+          <th class="t-center" style="width:13%">الكمية</th>
+          <th class="t-center" style="width:18%">سعر الوحدة</th>
+          <th class="t-left" style="width:22%">المبلغ</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{itemsRows}}
+      </tbody>
+    </table>
   </div>
 
-  <!-- Items Table -->
-  <table class="items-table">
-    <thead>
-      <tr>
-        <th style="width:45%">الوصف</th>
-        <th class="t-center" style="width:18%">الكمية</th>
-        <th class="t-center" style="width:17%">سعر الوحدة</th>
-        <th class="t-left" style="width:20%">المبلغ</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{itemsRows}}
+  <div class="totals-area">
+    <div class="totals-box">
+      <div class="totals-row subtotal">
+        <span class="label">المجموع الفرعي</span>
+        <span class="value">{{subtotal}}</span>
+      </div>
       {{discountRow}}
       {{taxRow}}
-      <tr class="total-row">
-        <td colspan="3">الإجمالي</td>
-        <td class="t-left total-amount">{{total}}</td>
-      </tr>
-    </tbody>
-  </table>
+      <div class="totals-row grand-total">
+        <span class="label">الإجمالي</span>
+        <span class="value">{{total}}</span>
+      </div>
+    </div>
+  </div>
 
-  {{notes}}
-
+  {{notesSection}}
 </div>
 
-<!-- ▀▀▀ FOOTER ▀▀▀ -->
 <div class="footer">
-  <div class="footer-contact">{{companyEmail}}  ·  {{companyPhone}}</div>
-  <div class="footer-page">الصفحة 1 / 1</div>
+  <div class="footer-content">
+    <div class="footer-legal">{{footerText}}</div>
+    <div class="footer-page">1 / 1</div>
+  </div>
+  <div class="footer-strip"><span></span><span></span><span></span><span></span></div>
 </div>
 
 </body>

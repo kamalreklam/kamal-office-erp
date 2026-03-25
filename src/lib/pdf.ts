@@ -194,47 +194,54 @@ function statusBadge(status: string): string {
 export async function exportInvoicePDF(
   invoice: Invoice,
   settings: AppSettings,
+  clientInfo?: { phone?: string; address?: string },
 ) {
   const { loadInvoiceTemplate } = await import("@/lib/invoice-settings");
   const template = loadInvoiceTemplate();
   const c = settings.currencySymbol || "$";
   const items = Array.isArray(invoice.items) ? invoice.items : (invoice.items as any)?._items || [];
 
-  // Build items rows HTML using template CSS classes
-  const itemsRows = items.map((item: InvoiceItem) => `
+  // Build items rows with row numbers
+  const itemsRows = items.map((item: InvoiceItem, i: number) => `
     <tr>
+      <td class="t-center"><span class="row-num">${i + 1}</span></td>
       <td class="t-bold">${item.productName}</td>
-      <td class="t-center">${item.quantity.toFixed(2)} الوحدات</td>
-      <td class="t-center">${fmtCurrency(item.unitPrice, c)}</td>
-      <td class="t-left t-bold">${fmtCurrency(item.total, c)}</td>
+      <td class="t-center"><span class="t-mono">${item.quantity.toFixed(2)}</span> الوحدات</td>
+      <td class="t-center"><span class="t-mono">${fmtCurrency(item.unitPrice, c)}</span></td>
+      <td class="t-left"><span class="t-mono t-bold">${fmtCurrency(item.total, c)}</span></td>
     </tr>
   `).join("");
 
-  // Build discount row
+  // Discount row for totals box
   let discountRow = "";
   if (invoice.discountAmount > 0) {
-    discountRow = `<tr class="extra-row"><td colspan="3">الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</td><td class="t-left discount-amount">-${fmtCurrency(invoice.discountAmount, c)}</td></tr>`;
+    discountRow = `<div class="totals-row discount"><span class="label">الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</span><span class="value">-${fmtCurrency(invoice.discountAmount, c)}</span></div>`;
   }
 
-  // Build tax row
+  // Tax row for totals box
   let taxRow = "";
   if ((invoice.taxAmount ?? 0) > 0) {
-    taxRow = `<tr class="extra-row"><td colspan="3">الضريبة</td><td class="t-left tax-amount">+${fmtCurrency(invoice.taxAmount, c)}</td></tr>`;
+    taxRow = `<div class="totals-row"><span class="label">الضريبة</span><span class="value">+${fmtCurrency(invoice.taxAmount, c)}</span></div>`;
   }
 
-  // Notes
-  const notesHtml = invoice.notes ? `<div class="notes"><strong>ملاحظات:</strong> ${invoice.notes}</div>` : "";
+  // Notes section
+  const notesSection = invoice.notes
+    ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>`
+    : "";
 
   // Replace all template variables
   const html = template
     .replace(/\{\{companyName\}\}/g, "برينتكس للأحبار ولوازم الطباعة")
     .replace(/\{\{companyNameEn\}\}/g, "PRINTIX")
+    .replace(/\{\{companyTagline\}\}/g, "INKS & PRINTING SUPPLIES")
     .replace(/\{\{companyAddress\}\}/g, "الجميلية - حلب - سوريا")
     .replace(/\{\{companyPhone\}\}/g, "00905465301000")
     .replace(/\{\{companyEmail\}\}/g, "kamalreklam.ist@gmail.com")
     .replace(/\{\{logoUrl\}\}/g, window.location.origin + "/logo.png")
     .replace(/\{\{invoiceNumber\}\}/g, invoice.invoiceNumber)
     .replace(/\{\{clientName\}\}/g, invoice.clientName)
+    .replace(/\{\{clientPhone\}\}/g, clientInfo?.phone || "")
+    .replace(/\{\{clientAddress\}\}/g, clientInfo?.address || "")
     .replace(/\{\{date\}\}/g, invoice.createdAt.split("-").reverse().join("/"))
     .replace(/\{\{status\}\}/g, invoice.status)
     .replace(/\{\{salesperson\}\}/g, "BILAL TARRAB")
@@ -244,7 +251,9 @@ export async function exportInvoicePDF(
     .replace(/\{\{taxRow\}\}/g, taxRow)
     .replace(/\{\{total\}\}/g, fmtCurrency(invoice.total, c))
     .replace(/\{\{currencySymbol\}\}/g, c)
-    .replace(/\{\{notes\}\}/g, notesHtml);
+    .replace(/\{\{notes\}\}/g, invoice.notes || "")
+    .replace(/\{\{notesSection\}\}/g, notesSection)
+    .replace(/\{\{footerText\}\}/g, settings.invoiceNotes || "شكراً لتعاملكم معنا");
 
   const clientPart = sanitizeFilename(invoice.clientName);
   const datePart = invoice.createdAt.replace(/\//g, "-");
