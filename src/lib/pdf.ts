@@ -17,19 +17,40 @@ async function generatePdfFromHtml(html: string, filename: string): Promise<void
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ html, filename }),
   });
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Unknown error" }));
     throw new Error(err.details || err.error || "PDF generation failed");
   }
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+
+  const contentType = res.headers.get("content-type") || "";
+
+  if (contentType.includes("application/pdf")) {
+    // Server generated PDF (local dev with puppeteer)
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } else {
+    // Fallback (Vercel): open in new window for print-to-PDF
+    const data = await res.json();
+    if (data.fallback === "print" && data.html) {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        // Wait for fonts to load then auto-print
+        setTimeout(() => {
+          printWindow.print();
+        }, 1500);
+      }
+    }
+  }
 }
 
 // ============================================================
