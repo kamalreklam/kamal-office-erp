@@ -14,10 +14,21 @@ function fmtCurrency(amount: number, symbol = "$"): string {
 // ============================================================
 // Core: render HTML string inside a hidden iframe and trigger print/save
 // ============================================================
-async function downloadPdf(html: string, filename: string): Promise<void> {
-  const html2pdf = (await import("html2pdf.js")).default;
+// Load html2pdf.js dynamically via script tag (avoids SSR issues)
+function loadHtml2Pdf(): Promise<any> {
+  return new Promise((resolve, reject) => {
+    if ((window as any).html2pdf) { resolve((window as any).html2pdf); return; }
+    const script = document.createElement("script");
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js";
+    script.onload = () => resolve((window as any).html2pdf);
+    script.onerror = () => reject(new Error("Failed to load html2pdf.js"));
+    document.head.appendChild(script);
+  });
+}
 
-  // Create a hidden container to render the HTML
+async function downloadPdf(html: string, filename: string): Promise<void> {
+  const html2pdf = await loadHtml2Pdf();
+
   const container = document.createElement("div");
   container.innerHTML = html;
   container.style.position = "fixed";
@@ -26,10 +37,10 @@ async function downloadPdf(html: string, filename: string): Promise<void> {
   container.style.width = "210mm";
   document.body.appendChild(container);
 
-  // Wait for fonts to load
-  await new Promise(r => setTimeout(r, 300));
+  // Wait for fonts + images to load
+  await new Promise(r => setTimeout(r, 500));
 
-  await (html2pdf as any)()
+  await html2pdf()
     .set({
       margin: [8, 8, 12, 8],
       filename,
