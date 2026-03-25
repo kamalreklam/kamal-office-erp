@@ -157,8 +157,8 @@ body {
 .row-num { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:700; }
 
 /* ═══ TOTALS ═══ */
-.totals-area { display:flex; justify-content:flex-end; margin-bottom:28px; }
-.totals-box { width:310px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.totals-area { display:flex; justify-content:flex-end; margin-bottom:28px; break-inside:avoid; page-break-inside:avoid; }
+.totals-box { width:310px; border:1px solid var(--border); border-radius:6px; overflow:hidden; break-inside:avoid; page-break-inside:avoid; }
 .totals-row { display:flex; justify-content:space-between; align-items:center; padding:10px 18px; border-bottom:1px solid var(--border-light); }
 .totals-row:last-of-type:not(.grand-total) { border-bottom:none; }
 .totals-row .label { font-size:12px; color:var(--text-secondary); font-weight:500; }
@@ -169,7 +169,7 @@ body {
 .totals-row.grand-total .value { font-size:22px; font-weight:700; color:var(--blue); letter-spacing:-0.5px; }
 
 /* ═══ NOTES ═══ */
-.notes-section { padding:16px 20px; background:var(--surface-alt); border-right:3px solid var(--blue); border-radius:0 6px 6px 0; margin-bottom:20px; }
+.notes-section { padding:16px 20px; background:var(--surface-alt); border-right:3px solid var(--blue); border-radius:0 6px 6px 0; margin-bottom:20px; break-inside:avoid; page-break-inside:avoid; }
 .notes-title { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:2px; margin-bottom:6px; }
 .notes-text { font-size:12px; color:var(--text-secondary); line-height:1.7; }
 
@@ -235,24 +235,24 @@ body {
     <tbody>${rows}</tbody>
   </table>
 
-  <!-- Totals -->
-  <div class="totals-area">
-    <div class="totals-box">
-      <div class="totals-row">
-        <span class="label">المجموع الفرعي</span>
-        <span class="value">${fmt(invoice.subtotal, c).replace(c, "")} ${currLabel}</span>
-      </div>
-      ${discountRow}
-      ${taxRow}
-      <div class="totals-row grand-total">
-        <span class="label">الإجمالي</span>
-        <span class="value">${fmt(invoice.total, c).replace(c, "")} ${currLabel}</span>
+  <!-- Totals + Notes (kept together, won't split across pages) -->
+  <div style="break-inside:avoid; page-break-inside:avoid;">
+    <div class="totals-area">
+      <div class="totals-box">
+        <div class="totals-row">
+          <span class="label">المجموع الفرعي</span>
+          <span class="value">${fmt(invoice.subtotal, c).replace(c, "")} ${currLabel}</span>
+        </div>
+        ${discountRow}
+        ${taxRow}
+        <div class="totals-row grand-total">
+          <span class="label">الإجمالي</span>
+          <span class="value">${fmt(invoice.total, c).replace(c, "")} ${currLabel}</span>
+        </div>
       </div>
     </div>
+    ${invoice.notes ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>` : ""}
   </div>
-
-  <!-- Notes -->
-  ${invoice.notes ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>` : ""}
 
 </div>
 
