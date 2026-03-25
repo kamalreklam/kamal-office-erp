@@ -12,261 +12,419 @@ function fmtCurrency(amount: number, symbol = "$"): string {
 }
 
 // ============================================================
-// Core: render HTML string inside a hidden iframe and trigger print/save
+// jsPDF-based PDF generation (reliable, no html2canvas issues)
 // ============================================================
-// Load html2pdf.js dynamically via script tag (avoids SSR issues)
-function loadHtml2Pdf(): Promise<any> {
-  return new Promise((resolve, reject) => {
-    if ((window as any).html2pdf) { resolve((window as any).html2pdf); return; }
-    const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js";
-    script.onload = () => resolve((window as any).html2pdf);
-    script.onerror = () => reject(new Error("Failed to load html2pdf.js"));
-    document.head.appendChild(script);
-  });
+async function createPdf() {
+  const { jsPDF } = await import("jspdf");
+  await import("jspdf-autotable");
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  return doc;
 }
 
-async function downloadPdf(html: string, filename: string): Promise<void> {
-  const html2pdf = await loadHtml2Pdf();
-
-  // Extract body content and styles from the full HTML document
-  const styleMatch = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-  const styles = styleMatch ? styleMatch[1] : "";
-  const bodyContent = bodyMatch ? bodyMatch[1] : html;
-
-  // Create a visible container (html2canvas REQUIRES visible elements)
-  const wrapper = document.createElement("div");
-  wrapper.style.position = "fixed";
-  wrapper.style.top = "0";
-  wrapper.style.left = "0";
-  wrapper.style.width = "794px"; // A4 width in px at 96dpi
-  wrapper.style.background = "white";
-  wrapper.style.zIndex = "99999";
-  wrapper.style.overflow = "hidden";
-
-  // Add styles
-  const styleEl = document.createElement("style");
-  styleEl.textContent = styles;
-  wrapper.appendChild(styleEl);
-
-  // Add body wrapper with RTL
-  const content = document.createElement("div");
-  content.setAttribute("dir", "rtl");
-  content.style.fontFamily = "'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif";
-  content.style.fontSize = "12px";
-  content.style.color = "#1e293b";
-  content.style.direction = "rtl";
-  content.style.background = "white";
-  content.innerHTML = bodyContent;
-  wrapper.appendChild(content);
-
-  document.body.appendChild(wrapper);
-
-  // Wait for Google Fonts + images to load
-  await new Promise(r => setTimeout(r, 1200));
-
-  try {
-    await html2pdf()
-      .set({
-        margin: [4, 4, 8, 4],
-        filename,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          width: 794,
-          windowWidth: 794,
-        },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      })
-      .from(wrapper)
-      .save();
-  } finally {
-    document.body.removeChild(wrapper);
-  }
+function downloadDoc(doc: any, filename: string) {
+  doc.save(filename);
 }
 
 // ============================================================
-// Shared HTML template wrapper
-// ============================================================
-function reportTemplate(opts: {
-  title: string;
-  subtitle?: string;
-  dateRange?: { from: string; to: string };
-  companyName: string;
-  companyNameEn: string;
-  accentColor?: string;
-  body: string;
-  stats?: { label: string; value: string }[];
-}): string {
-  const accent = opts.accentColor || "#2563eb";
-  const statsHtml = opts.stats
-    ? `<div class="stats-row">${opts.stats.map(s =>
-        `<div class="stat-box" style="border-top: 3px solid ${accent}">
-          <div class="stat-label">${s.label}</div>
-          <div class="stat-value">${s.value}</div>
-        </div>`
-      ).join("")}</div>`
-    : "";
-  const dateRangeHtml = opts.dateRange
-    ? `<div class="date-range">من ${opts.dateRange.from} إلى ${opts.dateRange.to}</div>`
-    : "";
-
-  return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<title>${opts.title}</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap');
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif; font-size: 11px; color: #1e293b; direction: rtl; padding: 20px 30px; }
-@media print {
-  @page { size: A4; margin: 15mm 12mm; }
-  body { padding: 0; }
-  .no-print { display: none !important; }
-}
-.accent-bar { height: 4px; background: ${accent}; margin-bottom: 16px; border-radius: 2px; }
-.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0; }
-.header-right h1 { font-size: 20px; font-weight: 700; color: ${accent}; }
-.header-right .subtitle { font-size: 10px; color: #64748b; margin-top: 2px; }
-.header-left { text-align: left; }
-.date-range { font-size: 9px; color: #64748b; background: #f8fafc; padding: 4px 10px; border-radius: 4px; display: inline-block; }
-.company-info { font-size: 8px; color: #94a3b8; margin-top: 4px; }
-.stats-row { display: flex; gap: 10px; margin: 14px 0; }
-.stat-box { flex: 1; background: #f8fafc; border-radius: 6px; padding: 10px 12px; }
-.stat-label { font-size: 9px; color: #64748b; }
-.stat-value { font-size: 16px; font-weight: 700; color: #1e293b; margin-top: 2px; }
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-thead tr { background: ${accent}; color: white; }
-thead th { padding: 7px 10px; font-size: 9px; font-weight: 700; text-align: right; }
-tbody tr { border-bottom: 0.5px solid #e2e8f0; }
-tbody tr:nth-child(even) { background: #f8fafc; }
-tbody td { padding: 6px 10px; font-size: 10px; }
-tfoot tr { background: ${accent}; color: white; font-weight: 700; }
-tfoot td { padding: 7px 10px; font-size: 10px; }
-.totals-row { background: ${accent} !important; color: white !important; }
-.totals-row td { font-weight: 700; }
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-muted { color: #64748b; }
-.font-bold { font-weight: 700; }
-.footer { margin-top: 20px; border-top: 0.5px solid #e2e8f0; padding-top: 8px; display: flex; justify-content: space-between; font-size: 8px; color: #94a3b8; }
-.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 8px; font-weight: 600; }
-.badge-paid { background: #dcfce7; color: #16a34a; }
-.badge-unpaid { background: #fef3c7; color: #d97706; }
-.badge-draft { background: #f1f5f9; color: #64748b; }
-.badge-cancelled { background: #fee2e2; color: #dc2626; }
-</style>
-</head>
-<body>
-<div class="accent-bar"></div>
-<div class="header">
-  <div class="header-right">
-    <h1>${opts.title}</h1>
-    ${opts.subtitle ? `<div class="subtitle">${opts.subtitle}</div>` : ""}
-  </div>
-  <div class="header-left">
-    ${dateRangeHtml}
-    <div class="company-info">${opts.companyName} | ${opts.companyNameEn}</div>
-  </div>
-</div>
-${statsHtml}
-${opts.body}
-<div class="footer">
-  <span>${opts.companyName} — ${opts.companyNameEn}</span>
-  <span>${new Date().toLocaleDateString("ar-SY")}</span>
-</div>
-</body>
-</html>`;
-}
-
-function statusBadge(status: string): string {
-  const cls = status === "مدفوعة" ? "badge-paid" : status === "غير مدفوعة" ? "badge-unpaid" : status === "مسودة" ? "badge-draft" : "badge-cancelled";
-  return `<span class="badge ${cls}">${status}</span>`;
-}
-
-// ============================================================
-// INVOICE PDF — Uses customizable HTML template
+// INVOICE PDF
 // ============================================================
 export async function exportInvoicePDF(
   invoice: Invoice,
   settings: AppSettings,
   clientInfo?: { phone?: string; address?: string },
 ) {
-  const { loadInvoiceTemplate } = await import("@/lib/invoice-settings");
-  const template = loadInvoiceTemplate();
+  const doc = await createPdf();
   const c = settings.currencySymbol || "$";
   const items = Array.isArray(invoice.items) ? invoice.items : (invoice.items as any)?._items || [];
+  const pageW = 210;
+  const margin = 15;
+  const contentW = pageW - margin * 2;
 
-  // Build items rows with row numbers
-  const itemsRows = items.map((item: InvoiceItem, i: number) => `
-    <tr>
-      <td class="t-center"><span class="row-num">${i + 1}</span></td>
-      <td class="t-bold">${item.productName}</td>
-      <td class="t-center"><span class="t-mono">${item.quantity.toFixed(2)}</span> الوحدات</td>
-      <td class="t-center"><span class="t-mono">${fmtCurrency(item.unitPrice, c)}</span></td>
-      <td class="t-left"><span class="t-mono t-bold">${fmtCurrency(item.total, c)}</span></td>
-    </tr>
-  `).join("");
+  // Colors
+  const blue = [41, 171, 226];
+  const dark = [26, 26, 46];
+  const white = [255, 255, 255];
+  const gray = [100, 116, 139];
+  const lightGray = [241, 245, 249];
 
-  // Discount row for totals box
-  let discountRow = "";
+  // ── Top accent strip ──
+  doc.setFillColor(blue[0], blue[1], blue[2]);
+  doc.rect(0, 0, pageW * 0.4, 3, "F");
+  doc.setFillColor(27, 138, 194);
+  doc.rect(pageW * 0.4, 0, pageW * 0.3, 3, "F");
+  doc.setFillColor(dark[0], dark[1], dark[2]);
+  doc.rect(pageW * 0.7, 0, pageW * 0.3, 3, "F");
+
+  // ── Dark header ──
+  doc.setFillColor(dark[0], dark[1], dark[2]);
+  doc.rect(0, 3, pageW, 38, "F");
+
+  // Company name (right-aligned for RTL)
+  doc.setTextColor(white[0], white[1], white[2]);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.text("برينتكس للأحبار ولوازم الطباعة", pageW - margin, 18, { align: "right" });
+
+  // Tagline
+  doc.setFontSize(8);
+  doc.setTextColor(blue[0], blue[1], blue[2]);
+  doc.text("INKS & PRINTING SUPPLIES", pageW - margin, 24, { align: "right" });
+
+  // Contact info
+  doc.setFontSize(7);
+  doc.setTextColor(180, 180, 200);
+  doc.text("00905465301000  |  kamalreklam.ist@gmail.com  |  الجميلية - حلب - سوريا", pageW - margin, 30, { align: "right" });
+
+  // Logo placeholder text (left side)
+  doc.setFontSize(20);
+  doc.setTextColor(white[0], white[1], white[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text("PRINTIX", margin + 5, 23, { align: "left" });
+
+  // Try loading logo image
+  try {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/logo.png";
+    await new Promise<void>((resolve) => {
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const imgData = canvas.toDataURL("image/png");
+            const ratio = img.width / img.height;
+            const h = 18;
+            const w = h * ratio;
+            doc.addImage(imgData, "PNG", margin + 2, 12, w, h);
+            // Clear the text placeholder
+            doc.setFillColor(dark[0], dark[1], dark[2]);
+            doc.rect(margin, 12, w + 4, h + 2, "F");
+            doc.addImage(imgData, "PNG", margin + 2, 12, w, h);
+          }
+        } catch { /* logo loading failed, text fallback is shown */ }
+        resolve();
+      };
+      img.onerror = () => resolve();
+      setTimeout(resolve, 2000); // timeout fallback
+    });
+  } catch { /* ignore */ }
+
+  // ── Title bar ──
+  let y = 44;
+  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+  doc.rect(0, y, pageW, 14, "F");
+  doc.setDrawColor(232, 236, 241);
+  doc.line(0, y + 14, pageW, y + 14);
+
+  // Invoice label + number
+  doc.setFontSize(10);
+  doc.setTextColor(blue[0], blue[1], blue[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text("فاتورة", pageW - margin, y + 9, { align: "right" });
+
+  doc.setFontSize(16);
+  doc.setTextColor(dark[0], dark[1], dark[2]);
+  doc.text(invoice.invoiceNumber, pageW - margin - 22, y + 9.5, { align: "right" });
+
+  // Date on left
+  doc.setFontSize(12);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  const dateStr = invoice.createdAt.split("-").reverse().join("/");
+  doc.text(dateStr, margin, y + 9, { align: "left" });
+
+  // ── Client info ──
+  y = 62;
+  doc.setDrawColor(blue[0], blue[1], blue[2]);
+  doc.setLineWidth(1);
+  doc.line(pageW - margin, y, pageW - margin, y + 14);
+  doc.setLineWidth(0.2);
+  doc.setDrawColor(232, 236, 241);
+  doc.rect(margin, y, contentW, 14);
+
+  doc.setFontSize(8);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.text("العميل", pageW - margin - 4, y + 5, { align: "right" });
+
+  doc.setFontSize(12);
+  doc.setTextColor(dark[0], dark[1], dark[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text(invoice.clientName, pageW - margin - 4, y + 11, { align: "right" });
+
+  // Client details on left
+  if (clientInfo?.phone || clientInfo?.address) {
+    doc.setFontSize(8);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont("helvetica", "normal");
+    const details = [clientInfo.phone, clientInfo.address].filter(Boolean).join("  ·  ");
+    doc.text(details, margin + 4, y + 9, { align: "left" });
+  }
+
+  // ── Items table ──
+  y = 82;
+
+  const tableHead = [["#", "الوصف", "الكمية", "سعر الوحدة", "المبلغ"]];
+  const tableBody = items.map((item: InvoiceItem, i: number) => [
+    String(i + 1),
+    item.productName,
+    `${item.quantity.toFixed(2)} الوحدات`,
+    fmtCurrency(item.unitPrice, c),
+    fmtCurrency(item.total, c),
+  ]);
+
+  (doc as any).autoTable({
+    startY: y,
+    head: tableHead,
+    body: tableBody,
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 10,
+      cellPadding: 4,
+      lineColor: [240, 243, 247],
+      lineWidth: 0.3,
+      textColor: dark,
+      halign: "right",
+    },
+    headStyles: {
+      fillColor: dark,
+      textColor: [220, 220, 240],
+      fontSize: 8,
+      fontStyle: "bold",
+      halign: "right",
+    },
+    columnStyles: {
+      0: { halign: "center", cellWidth: 12, textColor: gray, fontSize: 9 },
+      1: { cellWidth: "auto", fontStyle: "bold" },
+      2: { halign: "center", cellWidth: 32 },
+      3: { halign: "center", cellWidth: 30 },
+      4: { halign: "left", cellWidth: 32, fontStyle: "bold" },
+    },
+    alternateRowStyles: { fillColor: [250, 251, 253] },
+    margin: { left: margin, right: margin },
+    didDrawPage: () => {},
+  });
+
+  // ── Totals box ──
+  y = (doc as any).lastAutoTable.finalY + 8;
+  const boxW = 80;
+  const boxX = margin;
+
+  // Subtotal
+  doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+  doc.rect(boxX, y, boxW, 9, "F");
+  doc.setFontSize(8);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.text("المجموع الفرعي", boxX + boxW - 3, y + 6, { align: "right" });
+  doc.setFontSize(9);
+  doc.setTextColor(dark[0], dark[1], dark[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text(fmtCurrency(invoice.subtotal, c), boxX + 3, y + 6, { align: "left" });
+  y += 10;
+
+  // Discount row
   if (invoice.discountAmount > 0) {
-    discountRow = `<div class="totals-row discount"><span class="label">الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</span><span class="value">-${fmtCurrency(invoice.discountAmount, c)}</span></div>`;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(boxX, y, boxW, 9, "F");
+    doc.setFontSize(8);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont("helvetica", "normal");
+    const discLabel = `الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}`;
+    doc.text(discLabel, boxX + boxW - 3, y + 6, { align: "right" });
+    doc.setTextColor(blue[0], blue[1], blue[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text(`-${fmtCurrency(invoice.discountAmount, c)}`, boxX + 3, y + 6, { align: "left" });
+    y += 10;
   }
 
-  // Tax row for totals box
-  let taxRow = "";
+  // Tax row
   if ((invoice.taxAmount ?? 0) > 0) {
-    taxRow = `<div class="totals-row"><span class="label">الضريبة</span><span class="value">+${fmtCurrency(invoice.taxAmount, c)}</span></div>`;
+    doc.setFillColor(255, 255, 255);
+    doc.rect(boxX, y, boxW, 9, "F");
+    doc.setFontSize(8);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont("helvetica", "normal");
+    doc.text("الضريبة", boxX + boxW - 3, y + 6, { align: "right" });
+    doc.setTextColor(dark[0], dark[1], dark[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text(`+${fmtCurrency(invoice.taxAmount, c)}`, boxX + 3, y + 6, { align: "left" });
+    y += 10;
   }
 
-  // Notes section
-  const notesSection = invoice.notes
-    ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>`
-    : "";
+  // Grand total
+  doc.setFillColor(dark[0], dark[1], dark[2]);
+  doc.rect(boxX, y, boxW, 12, "F");
+  doc.setFontSize(9);
+  doc.setTextColor(200, 200, 220);
+  doc.setFont("helvetica", "bold");
+  doc.text("الإجمالي", boxX + boxW - 3, y + 8, { align: "right" });
+  doc.setFontSize(14);
+  doc.setTextColor(blue[0], blue[1], blue[2]);
+  doc.text(fmtCurrency(invoice.total, c), boxX + 3, y + 8.5, { align: "left" });
 
-  // Replace all template variables
-  const html = template
-    .replace(/\{\{companyName\}\}/g, "برينتكس للأحبار ولوازم الطباعة")
-    .replace(/\{\{companyNameEn\}\}/g, "PRINTIX")
-    .replace(/\{\{companyTagline\}\}/g, "INKS & PRINTING SUPPLIES")
-    .replace(/\{\{companyAddress\}\}/g, "الجميلية - حلب - سوريا")
-    .replace(/\{\{companyPhone\}\}/g, "00905465301000")
-    .replace(/\{\{companyEmail\}\}/g, "kamalreklam.ist@gmail.com")
-    .replace(/\{\{logoUrl\}\}/g, window.location.origin + "/logo.png")
-    .replace(/\{\{invoiceNumber\}\}/g, invoice.invoiceNumber)
-    .replace(/\{\{clientName\}\}/g, invoice.clientName)
-    .replace(/\{\{clientPhone\}\}/g, clientInfo?.phone || "")
-    .replace(/\{\{clientAddress\}\}/g, clientInfo?.address || "")
-    .replace(/\{\{date\}\}/g, invoice.createdAt.split("-").reverse().join("/"))
-    .replace(/\{\{status\}\}/g, invoice.status)
-    .replace(/\{\{salesperson\}\}/g, "BILAL TARRAB")
-    .replace(/\{\{itemsRows\}\}/g, itemsRows)
-    .replace(/\{\{subtotal\}\}/g, fmtCurrency(invoice.subtotal, c))
-    .replace(/\{\{discountRow\}\}/g, discountRow)
-    .replace(/\{\{taxRow\}\}/g, taxRow)
-    .replace(/\{\{total\}\}/g, fmtCurrency(invoice.total, c))
-    .replace(/\{\{currencySymbol\}\}/g, c)
-    .replace(/\{\{notes\}\}/g, invoice.notes || "")
-    .replace(/\{\{notesSection\}\}/g, notesSection)
-    .replace(/\{\{footerText\}\}/g, settings.invoiceNotes || "شكراً لتعاملكم معنا");
+  // ── Notes ──
+  if (invoice.notes) {
+    y += 18;
+    doc.setDrawColor(blue[0], blue[1], blue[2]);
+    doc.setLineWidth(1);
+    doc.line(pageW - margin, y, pageW - margin, y + 12);
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+    doc.rect(margin, y, contentW, 12, "F");
+    doc.setFontSize(7);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.setFont("helvetica", "normal");
+    doc.text("ملاحظات", pageW - margin - 4, y + 4.5, { align: "right" });
+    doc.setFontSize(9);
+    doc.setTextColor(dark[0], dark[1], dark[2]);
+    doc.text(invoice.notes, pageW - margin - 4, y + 9, { align: "right" });
+  }
+
+  // ── Footer ──
+  const footerY = 280;
+  doc.setDrawColor(232, 236, 241);
+  doc.line(margin, footerY, pageW - margin, footerY);
+  doc.setFontSize(7);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.setFont("helvetica", "normal");
+  doc.text(settings.invoiceNotes || "شكراً لتعاملكم معنا", pageW - margin, footerY + 5, { align: "right" });
+  doc.text("1 / 1", margin, footerY + 5, { align: "left" });
+
+  // Bottom strip
+  doc.setFillColor(blue[0], blue[1], blue[2]);
+  doc.rect(0, 294, pageW * 0.5, 3, "F");
+  doc.setFillColor(27, 138, 194);
+  doc.rect(pageW * 0.5, 294, pageW * 0.3, 3, "F");
+  doc.setFillColor(dark[0], dark[1], dark[2]);
+  doc.rect(pageW * 0.8, 294, pageW * 0.2, 3, "F");
 
   const clientPart = sanitizeFilename(invoice.clientName);
   const datePart = invoice.createdAt.replace(/\//g, "-");
-  await downloadPdf(html, `${clientPart}_${datePart}_${invoice.invoiceNumber}.pdf`);
+  downloadDoc(doc, `${clientPart}_${datePart}_${invoice.invoiceNumber}.pdf`);
 }
 
 // ============================================================
-// REPORT EXPORTS — each page calls its own function
+// REPORT PDF EXPORTS
 // ============================================================
-
 export interface ReportDateRange {
   from: string;
   to: string;
+}
+
+async function createReportPdf(
+  title: string,
+  subtitle: string,
+  dateRange: ReportDateRange,
+  settings: AppSettings,
+  stats: { label: string; value: string }[],
+  tableHead: string[][],
+  tableBody: string[][],
+  totalsRow?: string[],
+) {
+  const doc = await createPdf();
+  const c = settings.currencySymbol || "$";
+  const pageW = 210;
+  const margin = 15;
+  const blue = [41, 171, 226];
+  const dark = [26, 26, 46];
+  const gray = [100, 116, 139];
+  const lightGray = [241, 245, 249];
+
+  // Accent bar
+  doc.setFillColor(blue[0], blue[1], blue[2]);
+  doc.rect(0, 0, pageW, 3, "F");
+
+  // Title
+  let y = 14;
+  doc.setFontSize(16);
+  doc.setTextColor(blue[0], blue[1], blue[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text(title, pageW - margin, y, { align: "right" });
+
+  doc.setFontSize(9);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.setFont("helvetica", "normal");
+  doc.text(subtitle, pageW - margin, y + 6, { align: "right" });
+
+  // Date range on left
+  doc.setFontSize(8);
+  doc.text(`من ${dateRange.from} إلى ${dateRange.to}`, margin, y + 2, { align: "left" });
+  doc.setFontSize(7);
+  doc.text(`${settings.businessName} | ${settings.businessNameEn}`, margin, y + 6, { align: "left" });
+
+  // Separator
+  y = 24;
+  doc.setDrawColor(232, 236, 241);
+  doc.line(margin, y, pageW - margin, y);
+
+  // Stats row
+  y = 28;
+  const statW = (pageW - margin * 2) / stats.length;
+  stats.forEach((stat, i) => {
+    const x = pageW - margin - (i + 1) * statW;
+    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]);
+    doc.rect(x + 1, y, statW - 2, 16, "F");
+    doc.setFillColor(blue[0], blue[1], blue[2]);
+    doc.rect(x + 1, y, statW - 2, 1.5, "F");
+
+    doc.setFontSize(7);
+    doc.setTextColor(gray[0], gray[1], gray[2]);
+    doc.text(stat.label, x + statW / 2, y + 6, { align: "center" });
+    doc.setFontSize(11);
+    doc.setTextColor(dark[0], dark[1], dark[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text(stat.value, x + statW / 2, y + 13, { align: "center" });
+  });
+
+  // Table
+  y = 48;
+  const body = totalsRow ? [...tableBody, totalsRow] : tableBody;
+
+  (doc as any).autoTable({
+    startY: y,
+    head: tableHead,
+    body,
+    theme: "plain",
+    styles: {
+      font: "helvetica",
+      fontSize: 8,
+      cellPadding: 3,
+      lineColor: [240, 243, 247],
+      lineWidth: 0.2,
+      textColor: dark,
+      halign: "right",
+    },
+    headStyles: {
+      fillColor: blue,
+      textColor: [255, 255, 255],
+      fontSize: 7,
+      fontStyle: "bold",
+    },
+    alternateRowStyles: { fillColor: [250, 251, 253] },
+    margin: { left: margin, right: margin },
+    didParseCell: (data: any) => {
+      // Bold totals row
+      if (totalsRow && data.section === "body" && data.row.index === tableBody.length) {
+        data.cell.styles.fillColor = blue;
+        data.cell.styles.textColor = [255, 255, 255];
+        data.cell.styles.fontStyle = "bold";
+      }
+    },
+  });
+
+  // Footer
+  const fY = 285;
+  doc.setDrawColor(232, 236, 241);
+  doc.line(margin, fY, pageW - margin, fY);
+  doc.setFontSize(7);
+  doc.setTextColor(gray[0], gray[1], gray[2]);
+  doc.setFont("helvetica", "normal");
+  doc.text(`${settings.businessName} — ${settings.businessNameEn}`, pageW - margin, fY + 4, { align: "right" });
+  doc.text(new Date().toLocaleDateString("ar-SY"), margin, fY + 4, { align: "left" });
+
+  return doc;
 }
 
 export async function exportInventoryReportPDF(
@@ -279,53 +437,19 @@ export async function exportInventoryReportPDF(
   const totalStock = products.reduce((s, p) => s + p.stock, 0);
   const lowStock = products.filter(p => p.stock <= p.minStock);
 
-  const rows = products.map((p, i) => `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td>${p.name}</td>
-      <td class="text-center">${p.category}</td>
-      <td class="text-left">${fmtCurrency(p.price, c)}</td>
-      <td class="text-center">${p.stock}</td>
-      <td class="text-center">${p.unit}</td>
-      <td class="text-left font-bold">${fmtCurrency(p.price * p.stock, c)}</td>
-    </tr>
-  `).join("");
-
-  const html = reportTemplate({
-    title: "تقرير المخزون",
-    subtitle: `${products.length} منتج`,
-    dateRange,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    "تقرير المخزون", `${products.length} منتج`, dateRange, settings,
+    [
       { label: "إجمالي المنتجات", value: String(products.length) },
       { label: "إجمالي المخزون", value: totalStock.toLocaleString() },
       { label: "قيمة المخزون", value: fmtCurrency(totalValue, c) },
       { label: "منخفض المخزون", value: String(lowStock.length) },
     ],
-    body: `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:28%">المنتج</th>
-          <th class="text-center" style="width:13%">الفئة</th>
-          <th class="text-left" style="width:12%">السعر</th>
-          <th class="text-center" style="width:10%">المخزون</th>
-          <th class="text-center" style="width:10%">الوحدة</th>
-          <th class="text-left" style="width:17%">القيمة</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="totals-row">
-          <td></td><td>${products.length} منتج</td><td></td><td></td>
-          <td class="text-center">${totalStock.toLocaleString()}</td><td></td>
-          <td class="text-left">${fmtCurrency(totalValue, c)}</td>
-        </tr></tfoot>
-      </table>
-    `,
-  });
-
-  await downloadPdf(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
+    [["#", "المنتج", "الفئة", "السعر", "المخزون", "الوحدة", "القيمة"]],
+    products.map((p, i) => [String(i + 1), p.name, p.category, fmtCurrency(p.price, c), String(p.stock), p.unit, fmtCurrency(p.price * p.stock, c)]),
+    ["", `${products.length} منتج`, "", "", String(totalStock), "", fmtCurrency(totalValue, c)],
+  );
+  downloadDoc(doc, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportSalesReportPDF(
@@ -339,55 +463,22 @@ export async function exportSalesReportPDF(
   const paidCount = filtered.filter(inv => inv.status === "مدفوعة").length;
   const unpaidTotal = filtered.filter(inv => inv.status === "غير مدفوعة").reduce((s, inv) => s + inv.total, 0);
 
-  const rows = filtered.map((inv, i) => {
-    const items = Array.isArray(inv.items) ? inv.items : (inv.items as any)?._items || [];
-    return `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td>${inv.invoiceNumber}</td>
-      <td>${inv.clientName}</td>
-      <td>${inv.createdAt}</td>
-      <td class="text-center">${statusBadge(inv.status)}</td>
-      <td class="text-center">${items.length}</td>
-      <td class="text-left font-bold">${fmtCurrency(inv.total, c)}</td>
-    </tr>
-  `}).join("");
-
-  const html = reportTemplate({
-    title: "تقرير المبيعات",
-    subtitle: `${filtered.length} فاتورة`,
-    dateRange,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    "تقرير المبيعات", `${filtered.length} فاتورة`, dateRange, settings,
+    [
       { label: "إجمالي المبيعات", value: fmtCurrency(totalRevenue, c) },
       { label: "عدد الفواتير", value: String(filtered.length) },
       { label: "المدفوعة", value: String(paidCount) },
       { label: "مستحقات معلقة", value: fmtCurrency(unpaidTotal, c) },
     ],
-    body: `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:14%">رقم الفاتورة</th>
-          <th style="width:22%">العميل</th>
-          <th style="width:12%">التاريخ</th>
-          <th class="text-center" style="width:12%">الحالة</th>
-          <th class="text-center" style="width:8%">المنتجات</th>
-          <th class="text-left" style="width:20%">الإجمالي</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="totals-row">
-          <td></td><td>${filtered.length} فاتورة</td><td></td><td></td>
-          <td class="text-center">${paidCount} مدفوعة</td><td></td>
-          <td class="text-left">${fmtCurrency(totalRevenue, c)}</td>
-        </tr></tfoot>
-      </table>
-    `,
-  });
-
-  await downloadPdf(html, `تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
+    [["#", "رقم الفاتورة", "العميل", "التاريخ", "الحالة", "الإجمالي"]],
+    filtered.map((inv, i) => {
+      const items = Array.isArray(inv.items) ? inv.items : (inv.items as any)?._items || [];
+      return [String(i + 1), inv.invoiceNumber, inv.clientName, inv.createdAt, inv.status, fmtCurrency(inv.total, c)];
+    }),
+    ["", `${filtered.length} فاتورة`, "", "", `${paidCount} مدفوعة`, fmtCurrency(totalRevenue, c)],
+  );
+  downloadDoc(doc, `تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientsReportPDF(
@@ -399,50 +490,18 @@ export async function exportClientsReportPDF(
   const c = settings.currencySymbol || "$";
   const totalSpent = clients.reduce((s, cl) => s + cl.totalSpent, 0);
 
-  const rows = clients.map((cl, i) => `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td class="font-bold">${cl.name}</td>
-      <td>${cl.phone || "—"}</td>
-      <td>${cl.address || "—"}</td>
-      <td class="text-center">${invoices.filter(inv => inv.clientId === cl.id).length}</td>
-      <td class="text-left font-bold">${fmtCurrency(cl.totalSpent, c)}</td>
-    </tr>
-  `).join("");
-
-  const html = reportTemplate({
-    title: "تقرير العملاء",
-    subtitle: `${clients.length} عميل`,
-    dateRange,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    "تقرير العملاء", `${clients.length} عميل`, dateRange, settings,
+    [
       { label: "عدد العملاء", value: String(clients.length) },
       { label: "إجمالي المبيعات", value: fmtCurrency(totalSpent, c) },
       { label: "عدد الفواتير", value: String(invoices.length) },
     ],
-    body: `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:25%">العميل</th>
-          <th style="width:18%">الهاتف</th>
-          <th style="width:18%">العنوان</th>
-          <th class="text-center" style="width:10%">الفواتير</th>
-          <th class="text-left" style="width:24%">إجمالي الإنفاق</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="totals-row">
-          <td></td><td>${clients.length} عميل</td><td></td><td></td>
-          <td class="text-center">${invoices.length}</td>
-          <td class="text-left">${fmtCurrency(totalSpent, c)}</td>
-        </tr></tfoot>
-      </table>
-    `,
-  });
-
-  await downloadPdf(html, `تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
+    [["#", "العميل", "الهاتف", "العنوان", "الفواتير", "إجمالي الإنفاق"]],
+    clients.map((cl, i) => [String(i + 1), cl.name, cl.phone || "—", cl.address || "—", String(invoices.filter(inv => inv.clientId === cl.id).length), fmtCurrency(cl.totalSpent, c)]),
+    ["", `${clients.length} عميل`, "", "", String(invoices.length), fmtCurrency(totalSpent, c)],
+  );
+  downloadDoc(doc, `تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportAccountingReportPDF(
@@ -457,53 +516,19 @@ export async function exportAccountingReportPDF(
   const totalRevenue = paidRevenue + unpaidRevenue;
   const discounts = filtered.reduce((s, inv) => s + inv.discountAmount, 0);
 
-  const rows = filtered.map((inv, i) => `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td>${inv.invoiceNumber}</td>
-      <td>${inv.clientName}</td>
-      <td>${inv.createdAt}</td>
-      <td class="text-center">${statusBadge(inv.status)}</td>
-      <td class="text-left">${inv.discountAmount > 0 ? `-${fmtCurrency(inv.discountAmount, c)}` : "—"}</td>
-      <td class="text-left font-bold">${fmtCurrency(inv.total, c)}</td>
-    </tr>
-  `).join("");
-
-  const html = reportTemplate({
-    title: "التقرير المحاسبي",
-    subtitle: `الفترة: من ${dateRange.from} إلى ${dateRange.to}`,
-    dateRange,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    "التقرير المحاسبي", `الفترة: من ${dateRange.from} إلى ${dateRange.to}`, dateRange, settings,
+    [
       { label: "إجمالي الإيرادات", value: fmtCurrency(totalRevenue, c) },
       { label: "المحصّل", value: fmtCurrency(paidRevenue, c) },
       { label: "المستحقات", value: fmtCurrency(unpaidRevenue, c) },
       { label: "الخصومات", value: fmtCurrency(discounts, c) },
     ],
-    body: `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:14%">رقم الفاتورة</th>
-          <th style="width:22%">العميل</th>
-          <th style="width:12%">التاريخ</th>
-          <th class="text-center" style="width:12%">الحالة</th>
-          <th class="text-left" style="width:12%">الخصم</th>
-          <th class="text-left" style="width:20%">الإجمالي</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="totals-row">
-          <td></td><td>${filtered.length} فاتورة</td><td></td><td></td><td></td>
-          <td class="text-left">${discounts > 0 ? `-${fmtCurrency(discounts, c)}` : "—"}</td>
-          <td class="text-left">${fmtCurrency(totalRevenue, c)}</td>
-        </tr></tfoot>
-      </table>
-    `,
-  });
-
-  await downloadPdf(html, `التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
+    [["#", "رقم الفاتورة", "العميل", "التاريخ", "الحالة", "الخصم", "الإجمالي"]],
+    filtered.map((inv, i) => [String(i + 1), inv.invoiceNumber, inv.clientName, inv.createdAt, inv.status, inv.discountAmount > 0 ? `-${fmtCurrency(inv.discountAmount, c)}` : "—", fmtCurrency(inv.total, c)]),
+    ["", `${filtered.length} فاتورة`, "", "", "", discounts > 0 ? `-${fmtCurrency(discounts, c)}` : "—", fmtCurrency(totalRevenue, c)],
+  );
+  downloadDoc(doc, `التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportOrdersReportPDF(
@@ -516,46 +541,18 @@ export async function exportOrdersReportPDF(
   const inProgress = filtered.filter(o => o.status === "قيد التنفيذ").length;
   const completed = filtered.filter(o => o.status === "مكتمل").length;
 
-  const rows = filtered.map((o, i) => `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td class="font-bold">${o.trackingId}</td>
-      <td>${o.clientName}</td>
-      <td>${o.description || "—"}</td>
-      <td class="text-center">${statusBadge(o.status)}</td>
-      <td>${o.createdAt}</td>
-    </tr>
-  `).join("");
-
-  const html = reportTemplate({
-    title: "تقرير الطلبات",
-    subtitle: `${filtered.length} طلب`,
-    dateRange,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    "تقرير الطلبات", `${filtered.length} طلب`, dateRange, settings,
+    [
       { label: "إجمالي الطلبات", value: String(filtered.length) },
       { label: "قيد الانتظار", value: String(pending) },
       { label: "قيد التنفيذ", value: String(inProgress) },
       { label: "مكتمل", value: String(completed) },
     ],
-    body: `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:14%">رقم التتبع</th>
-          <th style="width:22%">العميل</th>
-          <th style="width:25%">الوصف</th>
-          <th class="text-center" style="width:14%">الحالة</th>
-          <th style="width:14%">التاريخ</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `,
-  });
-
-  await downloadPdf(html, `تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
+    [["#", "رقم التتبع", "العميل", "الوصف", "الحالة", "التاريخ"]],
+    filtered.map((o, i) => [String(i + 1), o.trackingId, o.clientName, o.description || "—", o.status, o.createdAt]),
+  );
+  downloadDoc(doc, `تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientSheetPDF(
@@ -565,50 +562,20 @@ export async function exportClientSheetPDF(
 ) {
   const c = settings.currencySymbol || "$";
 
-  const rows = clientInvoices.map((inv, i) => {
-    const items = Array.isArray(inv.items) ? inv.items : (inv.items as any)?._items || [];
-    return `
-    <tr>
-      <td class="text-center text-muted">${i + 1}</td>
-      <td>${inv.invoiceNumber}</td>
-      <td>${inv.createdAt}</td>
-      <td class="text-center">${statusBadge(inv.status)}</td>
-      <td class="text-center">${items.length}</td>
-      <td class="text-left font-bold">${fmtCurrency(inv.total, c)}</td>
-    </tr>
-  `}).join("");
-
-  const html = reportTemplate({
-    title: `بيانات العميل: ${client.name}`,
-    subtitle: `${client.phone || ""} — ${client.address || ""}`,
-    companyName: settings.businessName,
-    companyNameEn: settings.businessNameEn || "Kamal Copy Center",
-    accentColor: settings.primaryColor || "#2563eb",
-    stats: [
+  const doc = await createReportPdf(
+    `بيانات العميل: ${client.name}`, `${client.phone || ""} — ${client.address || ""}`,
+    { from: clientInvoices.length > 0 ? clientInvoices[clientInvoices.length - 1].createdAt : "—", to: clientInvoices.length > 0 ? clientInvoices[0].createdAt : "—" },
+    settings,
+    [
       { label: "إجمالي المشتريات", value: fmtCurrency(client.totalSpent, c) },
       { label: "عدد الفواتير", value: String(clientInvoices.length) },
       { label: "تاريخ التسجيل", value: client.createdAt },
     ],
-    body: clientInvoices.length > 0 ? `
-      <table>
-        <thead><tr>
-          <th class="text-center" style="width:5%">#</th>
-          <th style="width:20%">رقم الفاتورة</th>
-          <th style="width:15%">التاريخ</th>
-          <th class="text-center" style="width:15%">الحالة</th>
-          <th class="text-center" style="width:10%">المنتجات</th>
-          <th class="text-left" style="width:35%">الإجمالي</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-        <tfoot><tr class="totals-row">
-          <td></td><td>${clientInvoices.length} فاتورة</td><td></td><td></td><td></td>
-          <td class="text-left">${fmtCurrency(client.totalSpent, c)}</td>
-        </tr></tfoot>
-      </table>
-    ` : `<p style="text-align:center;padding:40px;color:#94a3b8">لا توجد فواتير لهذا العميل</p>`,
-  });
-
-  await downloadPdf(html, `${sanitizeFilename(client.name)}_بيانات.pdf`);
+    [["#", "رقم الفاتورة", "التاريخ", "الحالة", "الإجمالي"]],
+    clientInvoices.map((inv, i) => [String(i + 1), inv.invoiceNumber, inv.createdAt, inv.status, fmtCurrency(inv.total, c)]),
+    ["", `${clientInvoices.length} فاتورة`, "", "", fmtCurrency(client.totalSpent, c)],
+  );
+  downloadDoc(doc, `${sanitizeFilename(client.name)}_بيانات.pdf`);
 }
 
 // ============================================================
