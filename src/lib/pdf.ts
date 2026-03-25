@@ -11,49 +11,17 @@ function fmt(amount: number, symbol = "$"): string {
   return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// Arabic text shaping for PDF rendering
+// Arabic text shaping for PDF rendering — joins letters into presentation forms
+// Do NOT reverse text — @react-pdf/renderer handles RTL direction internally
 let reshapeCache: ((text: string) => string) | null = null;
 async function loadReshaper() {
   if (reshapeCache) return reshapeCache;
   const { convertArabic } = await import("arabic-reshaper");
   reshapeCache = (text: string) => {
     if (!text) return "";
-    // Reshape Arabic characters to presentation forms (joined glyphs)
-    const reshaped = convertArabic(text);
-    // Reverse the string for RTL rendering in PDF (PDF is LTR by default)
-    // But keep Latin/number segments in original order
-    return reverseRTL(reshaped);
+    return convertArabic(text);
   };
   return reshapeCache;
-}
-
-function reverseRTL(text: string): string {
-  // Split into segments: Arabic vs Latin/numbers
-  const segments: { text: string; isArabic: boolean }[] = [];
-  let current = "";
-  let currentIsArabic = false;
-
-  for (const char of text) {
-    const code = char.charCodeAt(0);
-    const isAr = (code >= 0x0600 && code <= 0x06FF) || (code >= 0xFB50 && code <= 0xFDFF) || (code >= 0xFE70 && code <= 0xFEFF);
-
-    if (current === "") {
-      currentIsArabic = isAr;
-      current = char;
-    } else if (isAr === currentIsArabic || char === " ") {
-      current += char;
-    } else {
-      segments.push({ text: current, isArabic: currentIsArabic });
-      current = char;
-      currentIsArabic = isAr;
-    }
-  }
-  if (current) segments.push({ text: current, isArabic: currentIsArabic });
-
-  // Reverse the order of segments and reverse Arabic segments internally
-  return segments.reverse().map(seg =>
-    seg.isArabic ? seg.text.split("").reverse().join("") : seg.text
-  ).join("");
 }
 
 async function renderAndDownload(element: React.ReactElement, filename: string) {
