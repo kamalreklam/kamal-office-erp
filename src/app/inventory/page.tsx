@@ -208,11 +208,13 @@ export default function InventoryPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
-                const { createInventoryReport } = await import("@/lib/report-generators");
-                const { exportReportPDF } = await import("@/lib/pdf");
-                const doc = createInventoryReport(filtered, range, settings);
-                await exportReportPDF(doc, "تقرير_المخزون", range);
-                toast.success("تم تصدير تقرير المخزون");
+                try {
+                  const { exportInventoryReportPDF } = await import("@/lib/pdf");
+                  await exportInventoryReportPDF(filtered, range, settings);
+                  toast.success("تم تصدير تقرير المخزون");
+                } catch {
+                  toast.error("فشل تصدير التقرير");
+                }
               }}
             />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>

@@ -230,11 +230,13 @@ export default function AccountingPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
-                const { createAccountingReport } = await import("@/lib/report-generators");
-                const { exportReportPDF } = await import("@/lib/pdf");
-                const doc = createAccountingReport(invoices, range, settings);
-                await exportReportPDF(doc, "التقرير_المحاسبي", range);
-                toast.success("تم تصدير التقرير المحاسبي");
+                try {
+                  const { exportAccountingReportPDF } = await import("@/lib/pdf");
+                  await exportAccountingReportPDF(invoices, range, settings);
+                  toast.success("تم تصدير التقرير المحاسبي");
+                } catch {
+                  toast.error("فشل تصدير التقرير");
+                }
               }}
             />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>

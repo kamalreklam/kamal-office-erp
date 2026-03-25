@@ -215,11 +215,13 @@ export default function OrdersPage() {
             <DateRangeExportButton
               label="تصدير تقرير PDF"
               onExport={async (range: DateRange) => {
-                const { createOrdersReport } = await import("@/lib/report-generators");
-                const { exportReportPDF } = await import("@/lib/pdf");
-                const doc = createOrdersReport(orders, range, settings);
-                await exportReportPDF(doc, "تقرير_الطلبات", range);
-                toast.success("تم تصدير تقرير الطلبات");
+                try {
+                  const { exportOrdersReportPDF } = await import("@/lib/pdf");
+                  await exportOrdersReportPDF(orders, range, settings);
+                  toast.success("تم تصدير تقرير الطلبات");
+                } catch {
+                  toast.error("فشل تصدير التقرير");
+                }
               }}
             />
             <Button variant="outline" size="sm" className="gap-1.5" onClick={shareOrdersSummaryWhatsApp}>

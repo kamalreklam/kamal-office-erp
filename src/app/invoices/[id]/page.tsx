@@ -15,7 +15,6 @@ import {
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
-import type { InvoicePDFSettings } from "@/components/invoice-pdf";
 import { toast } from "sonner";
 
 export default function InvoiceDetailPage({
@@ -84,17 +83,19 @@ export default function InvoiceDetailPage({
     toast.success("جاري تصدير الفاتورة كـ PDF...");
     try {
       const { exportInvoicePDF } = await import("@/lib/pdf");
-      await exportInvoicePDF(invoice, settings, {}, {
-        accentColor: settings.primaryColor || "#2563eb",
-      });
+      await exportInvoicePDF(invoice, settings);
     } catch {
       toast.error("فشل تصدير الفاتورة");
     }
   }
 
   async function shareWhatsApp() {
-    const { shareInvoiceWhatsApp } = await import("@/lib/pdf");
-    shareInvoiceWhatsApp(invoice, settings);
+    try {
+      const { shareInvoiceWhatsApp } = await import("@/lib/pdf");
+      shareInvoiceWhatsApp(invoice, settings);
+    } catch {
+      toast.error("فشل تصدير التقرير");
+    }
   }
 
   function togglePaid() {
