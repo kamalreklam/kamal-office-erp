@@ -44,7 +44,8 @@ export async function exportInvoicePDF(
   const items: InvoiceItem[] = Array.isArray(invoice.items) ? invoice.items : (invoice.items as any)?._items || [];
   const dateStr = invoice.createdAt;
   const clientDetail = [clientInfo?.phone, clientInfo?.address].filter(Boolean).join(" · ");
-  const logoUrl = typeof window !== "undefined" ? window.location.origin + "/logo-black.png" : "http://localhost:3001/logo-black.png";
+  // White logo for dark header background
+  const logoUrl = typeof window !== "undefined" ? window.location.origin + "/logo.png" : "http://localhost:3001/logo.png";
 
   const rows = items.map((item, i) => `
     <tr>
@@ -121,8 +122,8 @@ body {
 .company-tagline { font-size:11px; font-weight:500; color:var(--blue); letter-spacing:2.5px; margin-top:6px; }
 .company-contact { display:flex; gap:20px; margin-top:8px; }
 .company-contact span { font-size:10.5px; color:rgba(255,255,255,0.45); }
-.logo-placeholder { width:80px; height:80px; border:2px solid rgba(255,255,255,0.15); border-radius:12px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.3); font-size:8px; font-weight:600; }
-.logo-img { height:60px; }
+.logo-placeholder { width:120px; height:100px; border:2px solid rgba(255,255,255,0.15); border-radius:12px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.3); font-size:8px; font-weight:600; }
+.logo-img { height:100px; }
 
 /* ═══ TITLE BAR ═══ */
 .title-bar { display:flex; justify-content:space-between; align-items:center; padding:18px 40px; background:var(--surface-alt); border-bottom:1px solid var(--border); }
