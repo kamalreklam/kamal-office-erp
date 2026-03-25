@@ -64,10 +64,10 @@ export default function SettingsPage() {
       .replace(/\{\{status\}\}/g, "مدفوعة")
       .replace(/\{\{salesperson\}\}/g, "BILAL TARRAB")
       .replace(/\{\{itemsRows\}\}/g, `
-        <tr><td style="padding:12px 14px;text-align:right;border-bottom:1px solid #eee">Master Book Magic Black 1LT</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">32.00 الوحدات</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">$6.25</td><td style="padding:12px 14px;text-align:left;border-bottom:1px solid #eee;font-weight:600">$200.00</td></tr>
-        <tr><td style="padding:12px 14px;text-align:right;border-bottom:1px solid #eee">Master Book Magic Cyan 1LT</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">32.00 الوحدات</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">$6.25</td><td style="padding:12px 14px;text-align:left;border-bottom:1px solid #eee;font-weight:600">$200.00</td></tr>
-        <tr><td style="padding:12px 14px;text-align:right;border-bottom:1px solid #eee">Master Book Magic Magenta 1LT</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">32.00 الوحدات</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">$6.25</td><td style="padding:12px 14px;text-align:left;border-bottom:1px solid #eee;font-weight:600">$200.00</td></tr>
-        <tr><td style="padding:12px 14px;text-align:right;border-bottom:1px solid #eee">Master Book Magic Yellow 1LT</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">32.00 الوحدات</td><td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">$6.25</td><td style="padding:12px 14px;text-align:left;border-bottom:1px solid #eee;font-weight:600">$200.00</td></tr>
+        <tr><td class="t-bold">Master Book Magic Black 1LT</td><td class="t-center">32.00 الوحدات</td><td class="t-center">$6.25</td><td class="t-left t-bold">$200.00</td></tr>
+        <tr><td class="t-bold">Master Book Magic Cyan 1LT</td><td class="t-center">32.00 الوحدات</td><td class="t-center">$6.25</td><td class="t-left t-bold">$200.00</td></tr>
+        <tr><td class="t-bold">Master Book Magic Magenta 1LT</td><td class="t-center">32.00 الوحدات</td><td class="t-center">$6.25</td><td class="t-left t-bold">$200.00</td></tr>
+        <tr><td class="t-bold">Master Book Magic Yellow 1LT</td><td class="t-center">32.00 الوحدات</td><td class="t-center">$6.25</td><td class="t-left t-bold">$200.00</td></tr>
       `)
       .replace(/\{\{subtotal\}\}/g, "$800.00")
       .replace(/\{\{discountRow\}\}/g, "")

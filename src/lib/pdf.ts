@@ -191,26 +191,26 @@ export async function exportInvoicePDF(
   const c = settings.currencySymbol || "$";
   const items = Array.isArray(invoice.items) ? invoice.items : (invoice.items as any)?._items || [];
 
-  // Build items rows HTML
+  // Build items rows HTML using template CSS classes
   const itemsRows = items.map((item: InvoiceItem) => `
     <tr>
-      <td style="padding:12px 14px;text-align:right;border-bottom:1px solid #eee">${item.productName}</td>
-      <td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">${item.quantity.toFixed(2)} الوحدات</td>
-      <td style="padding:12px 14px;text-align:center;border-bottom:1px solid #eee">${fmtCurrency(item.unitPrice, c)}</td>
-      <td style="padding:12px 14px;text-align:left;border-bottom:1px solid #eee;font-weight:600">${fmtCurrency(item.total, c)}</td>
+      <td class="t-bold">${item.productName}</td>
+      <td class="t-center">${item.quantity.toFixed(2)} الوحدات</td>
+      <td class="t-center">${fmtCurrency(item.unitPrice, c)}</td>
+      <td class="t-left t-bold">${fmtCurrency(item.total, c)}</td>
     </tr>
   `).join("");
 
   // Build discount row
   let discountRow = "";
   if (invoice.discountAmount > 0) {
-    discountRow = `<tr><td colspan="3" style="padding:8px 14px;text-align:right;color:#64748b;border-bottom:1px solid #eee">الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</td><td style="padding:8px 14px;text-align:left;color:#dc2626;border-bottom:1px solid #eee">-${fmtCurrency(invoice.discountAmount, c)}</td></tr>`;
+    discountRow = `<tr class="extra-row"><td colspan="3">الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}</td><td class="t-left discount-amount">-${fmtCurrency(invoice.discountAmount, c)}</td></tr>`;
   }
 
   // Build tax row
   let taxRow = "";
   if ((invoice.taxAmount ?? 0) > 0) {
-    taxRow = `<tr><td colspan="3" style="padding:8px 14px;text-align:right;color:#64748b;border-bottom:1px solid #eee">الضريبة</td><td style="padding:8px 14px;text-align:left;border-bottom:1px solid #eee">+${fmtCurrency(invoice.taxAmount, c)}</td></tr>`;
+    taxRow = `<tr class="extra-row"><td colspan="3">الضريبة</td><td class="t-left tax-amount">+${fmtCurrency(invoice.taxAmount, c)}</td></tr>`;
   }
 
   // Notes
