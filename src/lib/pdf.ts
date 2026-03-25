@@ -11,6 +11,51 @@ function fmt(amount: number, symbol = "$"): string {
   return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
+// Arabic text shaping for PDF rendering
+let reshapeCache: ((text: string) => string) | null = null;
+async function loadReshaper() {
+  if (reshapeCache) return reshapeCache;
+  const { convertArabic } = await import("arabic-reshaper");
+  reshapeCache = (text: string) => {
+    if (!text) return "";
+    // Reshape Arabic characters to presentation forms (joined glyphs)
+    const reshaped = convertArabic(text);
+    // Reverse the string for RTL rendering in PDF (PDF is LTR by default)
+    // But keep Latin/number segments in original order
+    return reverseRTL(reshaped);
+  };
+  return reshapeCache;
+}
+
+function reverseRTL(text: string): string {
+  // Split into segments: Arabic vs Latin/numbers
+  const segments: { text: string; isArabic: boolean }[] = [];
+  let current = "";
+  let currentIsArabic = false;
+
+  for (const char of text) {
+    const code = char.charCodeAt(0);
+    const isAr = (code >= 0x0600 && code <= 0x06FF) || (code >= 0xFB50 && code <= 0xFDFF) || (code >= 0xFE70 && code <= 0xFEFF);
+
+    if (current === "") {
+      currentIsArabic = isAr;
+      current = char;
+    } else if (isAr === currentIsArabic || char === " ") {
+      current += char;
+    } else {
+      segments.push({ text: current, isArabic: currentIsArabic });
+      current = char;
+      currentIsArabic = isAr;
+    }
+  }
+  if (current) segments.push({ text: current, isArabic: currentIsArabic });
+
+  // Reverse the order of segments and reverse Arabic segments internally
+  return segments.reverse().map(seg =>
+    seg.isArabic ? seg.text.split("").reverse().join("") : seg.text
+  ).join("");
+}
+
 async function renderAndDownload(element: React.ReactElement, filename: string) {
   const { pdf } = await import("@react-pdf/renderer");
   const blob = await pdf(element as any).toBlob();
@@ -33,7 +78,8 @@ export async function exportInvoicePDF(
   clientInfo?: { phone?: string; address?: string },
 ) {
   const { createElement: h } = await import("react");
-  const { Document, Page, View, Text, Font, StyleSheet, Image } = await import("@react-pdf/renderer");
+  const { Document, Page, View, Text, Font, StyleSheet } = await import("@react-pdf/renderer");
+  const ar = await loadReshaper();
 
   // Register Arabic font
   Font.register({
@@ -119,17 +165,17 @@ export async function exportInvoicePDF(
       // Header
       h(View, { style: s.header },
         h(View, {},
-          h(Text, { style: s.companyName }, "برينتكس للأحبار ولوازم الطباعة"),
+          h(Text, { style: s.companyName }, ar("برينتكس للأحبار ولوازم الطباعة")),
           h(Text, { style: s.tagline }, "INKS & PRINTING SUPPLIES"),
-          h(Text, { style: s.contact }, "00905465301000  |  kamalreklam.ist@gmail.com  |  الجميلية - حلب - سوريا"),
+          h(Text, { style: s.contact }, ar("الجميلية - حلب - سوريا") + "  |  kamalreklam.ist@gmail.com  |  00905465301000"),
         ),
         h(Text, { style: s.logoText }, "PRINTIX"),
       ),
       // Title bar
       h(View, { style: s.titleBar },
-        h(View, { style: { flexDirection: "row-reverse", alignItems: "baseline", gap: 10 } },
-          h(Text, { style: s.invoiceLabel }, "فاتورة"),
+        h(View, { style: { flexDirection: "row", alignItems: "baseline", gap: 10 } },
           h(Text, { style: s.invoiceNum }, invoice.invoiceNumber),
+          h(Text, { style: s.invoiceLabel }, ar("فاتورة")),
         ),
         h(Text, { style: s.invoiceDate }, invoice.createdAt.split("-").reverse().join("/")),
       ),
@@ -137,58 +183,58 @@ export async function exportInvoicePDF(
       h(View, { style: s.content },
         // Client
         h(View, { style: s.clientBlock },
-          h(Text, { style: s.clientLabel }, "العميل"),
-          h(Text, { style: s.clientName }, invoice.clientName),
+          h(Text, { style: s.clientName }, ar(invoice.clientName)),
+          h(Text, { style: s.clientLabel }, ar("العميل")),
           (clientInfo?.phone || clientInfo?.address)
-            ? h(Text, { style: s.clientDetail }, [clientInfo.phone, clientInfo.address].filter(Boolean).join("  ·  "))
+            ? h(Text, { style: s.clientDetail }, [clientInfo.address, clientInfo.phone].filter(Boolean).map(t => ar(t!)).join("  ·  "))
             : null,
         ),
         // Table header
         h(View, { style: s.tableHeader },
+          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[4], textAlign: "left" } }, ar("المبلغ")),
+          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[3], textAlign: "center" } }, ar("سعر الوحدة")),
+          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[2], textAlign: "center" } }, ar("الكمية")),
+          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[1] } }, ar("الوصف")),
           h(Text, { style: { ...s.tableHeaderCell, width: colWidths[0], textAlign: "center" } }, "#"),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[1] } }, "الوصف"),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[2], textAlign: "center" } }, "الكمية"),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[3], textAlign: "center" } }, "سعر الوحدة"),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[4], textAlign: "left" } }, "المبلغ"),
         ),
         // Table rows
         ...items.map((item, i) =>
           h(View, { key: i, style: [s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}], wrap: false },
-            h(Text, { style: { ...s.tableCell, width: colWidths[0], textAlign: "center", color: gray, fontSize: 8 } }, String(i + 1)),
-            h(Text, { style: { ...s.tableCellBold, width: colWidths[1] } }, item.productName),
-            h(Text, { style: { ...s.tableCell, width: colWidths[2], textAlign: "center" } }, `${item.quantity} وحدة`),
-            h(Text, { style: { ...s.tableCell, width: colWidths[3], textAlign: "center" } }, fmt(item.unitPrice, c)),
             h(Text, { style: { ...s.tableCellBold, width: colWidths[4], textAlign: "left" } }, fmt(item.total, c)),
+            h(Text, { style: { ...s.tableCell, width: colWidths[3], textAlign: "center" } }, fmt(item.unitPrice, c)),
+            h(Text, { style: { ...s.tableCell, width: colWidths[2], textAlign: "center" } }, `${item.quantity} ${ar("وحدة")}`),
+            h(Text, { style: { ...s.tableCellBold, width: colWidths[1] } }, item.productName),
+            h(Text, { style: { ...s.tableCell, width: colWidths[0], textAlign: "center", color: gray, fontSize: 8 } }, String(i + 1)),
           )
         ),
         // Totals box
         h(View, { style: s.totalsBox },
           h(View, { style: s.totalsRow },
-            h(Text, { style: s.totalsLabel }, "المجموع الفرعي"),
             h(Text, { style: s.totalsValue }, fmt(invoice.subtotal, c)),
+            h(Text, { style: s.totalsLabel }, ar("المجموع الفرعي")),
           ),
           invoice.discountAmount > 0
             ? h(View, { style: s.totalsRow },
-                h(Text, { style: s.totalsLabel }, `الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}`),
                 h(Text, { style: { ...s.totalsValue, color: blue } }, `-${fmt(invoice.discountAmount, c)}`),
+                h(Text, { style: s.totalsLabel }, ar(`الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}`)),
               )
             : null,
           (invoice.taxAmount ?? 0) > 0
             ? h(View, { style: s.totalsRow },
-                h(Text, { style: s.totalsLabel }, "الضريبة"),
                 h(Text, { style: s.totalsValue }, `+${fmt(invoice.taxAmount, c)}`),
+                h(Text, { style: s.totalsLabel }, ar("الضريبة")),
               )
             : null,
           h(View, { style: s.grandTotal },
-            h(Text, { style: s.grandTotalLabel }, "الإجمالي"),
             h(Text, { style: s.grandTotalValue }, fmt(invoice.total, c)),
+            h(Text, { style: s.grandTotalLabel }, ar("الإجمالي")),
           ),
         ),
         // Notes
         invoice.notes
           ? h(View, { style: s.notesBlock },
-              h(Text, { style: s.notesTitle }, "ملاحظات"),
-              h(Text, { style: s.notesText }, invoice.notes),
+              h(Text, { style: s.notesTitle }, ar("ملاحظات")),
+              h(Text, { style: s.notesText }, ar(invoice.notes)),
             )
           : null,
       ),
@@ -196,8 +242,8 @@ export async function exportInvoicePDF(
       h(View, { style: s.footer, fixed: true },
         h(View, { style: s.footerLine }),
         h(View, { style: s.footerContent },
-          h(Text, { style: s.footerText }, settings.invoiceNotes || "شكراً لتعاملكم معنا"),
           h(Text, { style: s.footerText, render: ({ pageNumber, totalPages }: any) => `${pageNumber} / ${totalPages}` }),
+          h(Text, { style: s.footerText }, ar(settings.invoiceNotes || "شكراً لتعاملكم معنا")),
         ),
       ),
       // Bottom strip

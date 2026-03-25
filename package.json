@@ -13,6 +13,7 @@
     "@react-pdf/renderer": "^4.3.2",
     "@supabase/supabase-js": "^2.99.1",
     "@types/dompurify": "^3.0.5",
+    "arabic-reshaper": "^1.1.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
