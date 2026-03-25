@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, Download, X } from "lucide-react";
+import { CalendarDays, Download, X, FileText, Loader2 } from "lucide-react";
 
 export interface DateRange {
   from: string;
@@ -11,12 +11,12 @@ export interface DateRange {
 }
 
 interface DateRangePickerProps {
-  onExport: (range: DateRange) => void;
+  onExport: (range: DateRange) => Promise<void> | void;
   loading?: boolean;
   label?: string;
 }
 
-function getPresets(): { label: string; from: string; to: string }[] {
+function getPresets(): { label: string; emoji: string; from: string; to: string }[] {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -33,103 +33,140 @@ function getPresets(): { label: string; from: string; to: string }[] {
   const startOfYear = new Date(y, 0, 1);
 
   return [
-    { label: "اليوم", from: fmt(now), to: fmt(now) },
-    { label: "هذا الأسبوع", from: fmt(startOfWeek), to: fmt(now) },
-    { label: "هذا الشهر", from: fmt(startOfMonth), to: fmt(endOfMonth) },
-    { label: "الشهر الماضي", from: fmt(startOfLastMonth), to: fmt(endOfLastMonth) },
-    { label: "هذا الربع", from: fmt(startOfQuarter), to: fmt(now) },
-    { label: "هذا العام", from: fmt(startOfYear), to: fmt(now) },
+    { label: "اليوم", emoji: "📅", from: fmt(now), to: fmt(now) },
+    { label: "هذا الأسبوع", emoji: "📆", from: fmt(startOfWeek), to: fmt(now) },
+    { label: "هذا الشهر", emoji: "🗓️", from: fmt(startOfMonth), to: fmt(endOfMonth) },
+    { label: "الشهر الماضي", emoji: "⏪", from: fmt(startOfLastMonth), to: fmt(endOfLastMonth) },
+    { label: "هذا الربع", emoji: "📊", from: fmt(startOfQuarter), to: fmt(now) },
+    { label: "هذا العام", emoji: "🎯", from: fmt(startOfYear), to: fmt(now) },
+    { label: "كل الوقت", emoji: "♾️", from: "2020-01-01", to: fmt(now) },
   ];
 }
 
-export function DateRangeExportButton({ onExport, loading, label = "تصدير PDF" }: DateRangePickerProps) {
+export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const presets = getPresets();
   const defaultRange = presets[2]; // this month
   const [range, setRange] = useState<DateRange>({ from: defaultRange.from, to: defaultRange.to });
+  const [activePreset, setActivePreset] = useState(2);
 
-  function handleExport() {
-    onExport(range);
-    setOpen(false);
+  function selectPreset(idx: number) {
+    setRange({ from: presets[idx].from, to: presets[idx].to });
+    setActivePreset(idx);
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      await onExport(range);
+    } finally {
+      setExporting(false);
+      setOpen(false);
+    }
   }
 
   if (!open) {
     return (
       <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
-        <Download className="h-4 w-4" />
+        <FileText className="h-4 w-4" />
         <span className="hidden sm:inline">{label}</span>
       </Button>
     );
   }
 
   return (
-    <div
-      className="rounded-2xl p-4 space-y-3"
-      style={{
-        background: "var(--surface-1)",
-        border: "1px solid var(--glass-border)",
-        boxShadow: "var(--shadow-lg)",
-        minWidth: 300,
-      }}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CalendarDays className="h-4 w-4" style={{ color: "var(--primary)" }} />
-          <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>اختر الفترة</span>
+      <div
+        className="w-full max-w-sm mx-4 rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200"
+        style={{
+          background: "var(--surface-1)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+        }}
+        dir="rtl"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--primary)", color: "white" }}>
+              <CalendarDays className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>تصدير تقرير PDF</h3>
+              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>اختر الفترة الزمنية</p>
+            </div>
+          </div>
+          <button onClick={() => setOpen(false)} className="rounded-xl p-2 transition-colors hover:bg-[var(--surface-2)]" style={{ color: "var(--text-muted)" }}>
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <button onClick={() => setOpen(false)} className="p-1 rounded-lg" style={{ color: "var(--text-muted)" }}>
-          <X className="h-4 w-4" />
-        </button>
-      </div>
 
-      {/* Presets */}
-      <div className="flex flex-wrap gap-1.5">
-        {presets.map((preset) => {
-          const isActive = range.from === preset.from && range.to === preset.to;
-          return (
-            <button
-              key={preset.label}
-              onClick={() => setRange({ from: preset.from, to: preset.to })}
-              className="rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all"
-              style={{
-                background: isActive ? "var(--primary)" : "var(--surface-2)",
-                color: isActive ? "white" : "var(--text-secondary)",
-              }}
-            >
-              {preset.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Custom range */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1">
-          <label className="text-[10px] font-medium mb-0.5 block" style={{ color: "var(--text-muted)" }}>من</label>
-          <Input
-            type="date"
-            value={range.from}
-            onChange={(e) => setRange({ ...range, from: e.target.value })}
-            className="h-8 text-xs"
-            dir="ltr"
-          />
+        {/* Presets Grid */}
+        <div className="grid grid-cols-4 gap-1.5">
+          {presets.map((preset, idx) => {
+            const isActive = activePreset === idx;
+            return (
+              <button
+                key={preset.label}
+                onClick={() => selectPreset(idx)}
+                className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center transition-all ${
+                  idx === 6 ? "col-span-4" : idx >= 4 ? "col-span-2" : ""
+                }`}
+                style={{
+                  background: isActive ? "var(--primary)" : "var(--surface-2)",
+                  color: isActive ? "white" : "var(--text-secondary)",
+                  border: isActive ? "none" : "1px solid var(--glass-border)",
+                }}
+              >
+                <span className="text-xs">{preset.emoji}</span>
+                <span className="text-[11px] font-semibold leading-tight">{preset.label}</span>
+              </button>
+            );
+          })}
         </div>
-        <div className="flex-1">
-          <label className="text-[10px] font-medium mb-0.5 block" style={{ color: "var(--text-muted)" }}>إلى</label>
-          <Input
-            type="date"
-            value={range.to}
-            onChange={(e) => setRange({ ...range, to: e.target.value })}
-            className="h-8 text-xs"
-            dir="ltr"
-          />
-        </div>
-      </div>
 
-      <Button size="sm" className="w-full gap-1.5" onClick={handleExport} disabled={loading}>
-        <Download className="h-3.5 w-3.5" />
-        {loading ? "جاري التصدير..." : label}
-      </Button>
+        {/* Custom range */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>من</label>
+            <Input
+              type="date"
+              value={range.from}
+              onChange={(e) => { setRange({ ...range, from: e.target.value }); setActivePreset(-1); }}
+              className="h-9 text-xs"
+              dir="ltr"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>إلى</label>
+            <Input
+              type="date"
+              value={range.to}
+              onChange={(e) => { setRange({ ...range, to: e.target.value }); setActivePreset(-1); }}
+              className="h-9 text-xs"
+              dir="ltr"
+            />
+          </div>
+        </div>
+
+        {/* Export button */}
+        <Button size="lg" className="w-full gap-2 text-sm font-bold" onClick={handleExport} disabled={exporting}>
+          {exporting ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              جاري التصدير...
+            </>
+          ) : (
+            <>
+              <Download className="h-4 w-4" />
+              {label}
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

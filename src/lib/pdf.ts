@@ -14,37 +14,34 @@ function fmtCurrency(amount: number, symbol = "$"): string {
 // ============================================================
 // Core: render HTML string inside a hidden iframe and trigger print/save
 // ============================================================
-function printHtml(html: string, filename: string): Promise<void> {
-  return new Promise((resolve) => {
-    const iframe = document.createElement("iframe");
-    iframe.style.position = "fixed";
-    iframe.style.right = "-9999px";
-    iframe.style.top = "-9999px";
-    iframe.style.width = "210mm";
-    iframe.style.height = "297mm";
-    document.body.appendChild(iframe);
+async function downloadPdf(html: string, filename: string): Promise<void> {
+  const html2pdf = (await import("html2pdf.js")).default;
 
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) { document.body.removeChild(iframe); resolve(); return; }
+  // Create a hidden container to render the HTML
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  container.style.position = "fixed";
+  container.style.left = "-9999px";
+  container.style.top = "0";
+  container.style.width = "210mm";
+  document.body.appendChild(container);
 
-    doc.open();
-    doc.write(html);
-    doc.close();
+  // Wait for fonts to load
+  await new Promise(r => setTimeout(r, 300));
 
-    // Wait for fonts + images to load
-    iframe.onload = () => {
-      setTimeout(() => {
-        try {
-          iframe.contentWindow?.print();
-        } catch {
-          // Fallback: open in new tab
-          const w = window.open("", "_blank");
-          if (w) { w.document.write(html); w.document.close(); w.print(); }
-        }
-        setTimeout(() => { document.body.removeChild(iframe); resolve(); }, 1000);
-      }, 500);
-    };
-  });
+  await (html2pdf as any)()
+    .set({
+      margin: [8, 8, 12, 8],
+      filename,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    })
+    .from(container)
+    .save();
+
+  document.body.removeChild(container);
 }
 
 // ============================================================
@@ -220,7 +217,7 @@ export async function exportInvoicePDF(
   const clientPart = sanitizeFilename(invoice.clientName);
   const datePart = invoice.createdAt.replace(/\//g, "-");
   const orderPart = invoice.invoiceNumber.replace(/^INV-/, "");
-  await printHtml(html, `${clientPart}_${datePart}_${orderPart}.pdf`);
+  await downloadPdf(html, `${clientPart}_${datePart}_${orderPart}.pdf`);
 }
 
 // ============================================================
@@ -288,7 +285,7 @@ export async function exportInventoryReportPDF(
     `,
   });
 
-  await printHtml(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
+  await downloadPdf(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportSalesReportPDF(
@@ -350,7 +347,7 @@ export async function exportSalesReportPDF(
     `,
   });
 
-  await printHtml(html, `تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
+  await downloadPdf(html, `تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientsReportPDF(
@@ -405,7 +402,7 @@ export async function exportClientsReportPDF(
     `,
   });
 
-  await printHtml(html, `تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
+  await downloadPdf(html, `تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportAccountingReportPDF(
@@ -466,7 +463,7 @@ export async function exportAccountingReportPDF(
     `,
   });
 
-  await printHtml(html, `التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
+  await downloadPdf(html, `التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportOrdersReportPDF(
@@ -518,7 +515,7 @@ export async function exportOrdersReportPDF(
     `,
   });
 
-  await printHtml(html, `تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
+  await downloadPdf(html, `تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientSheetPDF(
@@ -571,7 +568,7 @@ export async function exportClientSheetPDF(
     ` : `<p style="text-align:center;padding:40px;color:#94a3b8">لا توجد فواتير لهذا العميل</p>`,
   });
 
-  await printHtml(html, `${sanitizeFilename(client.name)}_بيانات.pdf`);
+  await downloadPdf(html, `${sanitizeFilename(client.name)}_بيانات.pdf`);
 }
 
 // ============================================================
