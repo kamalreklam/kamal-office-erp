@@ -29,54 +29,63 @@ function loadHtml2Pdf(): Promise<any> {
 async function downloadPdf(html: string, filename: string): Promise<void> {
   const html2pdf = await loadHtml2Pdf();
 
-  // html2canvas needs the element to be visible in the viewport
-  const container = document.createElement("div");
-  container.style.position = "absolute";
-  container.style.top = "0";
-  container.style.left = "0";
-  container.style.width = "210mm";
-  container.style.zIndex = "-9999";
-  container.style.opacity = "0.01"; // nearly invisible but still rendered
-  container.style.pointerEvents = "none";
-  document.body.appendChild(container);
+  // Extract body content and styles from the full HTML document
+  const styleMatch = html.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const styles = styleMatch ? styleMatch[1] : "";
+  const bodyContent = bodyMatch ? bodyMatch[1] : html;
 
-  // Use an iframe to isolate styles
-  const iframe = document.createElement("iframe");
-  iframe.style.width = "210mm";
-  iframe.style.height = "297mm";
-  iframe.style.border = "none";
-  iframe.style.position = "absolute";
-  iframe.style.top = "0";
-  iframe.style.left = "0";
-  iframe.style.zIndex = "-9999";
-  iframe.style.opacity = "0.01";
-  document.body.appendChild(iframe);
+  // Create a visible container (html2canvas REQUIRES visible elements)
+  const wrapper = document.createElement("div");
+  wrapper.style.position = "fixed";
+  wrapper.style.top = "0";
+  wrapper.style.left = "0";
+  wrapper.style.width = "794px"; // A4 width in px at 96dpi
+  wrapper.style.background = "white";
+  wrapper.style.zIndex = "99999";
+  wrapper.style.overflow = "hidden";
 
-  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-  if (!iframeDoc) {
-    document.body.removeChild(iframe);
-    throw new Error("Cannot create iframe");
+  // Add styles
+  const styleEl = document.createElement("style");
+  styleEl.textContent = styles;
+  wrapper.appendChild(styleEl);
+
+  // Add body wrapper with RTL
+  const content = document.createElement("div");
+  content.setAttribute("dir", "rtl");
+  content.style.fontFamily = "'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif";
+  content.style.fontSize = "12px";
+  content.style.color = "#1e293b";
+  content.style.direction = "rtl";
+  content.style.background = "white";
+  content.innerHTML = bodyContent;
+  wrapper.appendChild(content);
+
+  document.body.appendChild(wrapper);
+
+  // Wait for Google Fonts + images to load
+  await new Promise(r => setTimeout(r, 1200));
+
+  try {
+    await html2pdf()
+      .set({
+        margin: [4, 4, 8, 4],
+        filename,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          width: 794,
+          windowWidth: 794,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      })
+      .from(wrapper)
+      .save();
+  } finally {
+    document.body.removeChild(wrapper);
   }
-  iframeDoc.open();
-  iframeDoc.write(html);
-  iframeDoc.close();
-
-  // Wait for fonts + images
-  await new Promise(r => setTimeout(r, 800));
-
-  await html2pdf()
-    .set({
-      margin: [6, 6, 10, 6],
-      filename,
-      image: { type: "jpeg", quality: 0.95 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    })
-    .from(iframeDoc.body)
-    .save();
-
-  document.body.removeChild(iframe);
-  document.body.removeChild(container);
 }
 
 // ============================================================
