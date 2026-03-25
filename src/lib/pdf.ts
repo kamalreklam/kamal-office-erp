@@ -11,22 +11,17 @@ function fmt(amount: number, symbol = "$"): string {
   return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// Arabic text shaping for PDF rendering — joins letters into presentation forms
-// Do NOT reverse text — @react-pdf/renderer handles RTL direction internally
-let reshapeCache: ((text: string) => string) | null = null;
-async function loadReshaper() {
-  if (reshapeCache) return reshapeCache;
-  const { convertArabic } = await import("arabic-reshaper");
-  reshapeCache = (text: string) => {
-    if (!text) return "";
-    return convertArabic(text);
-  };
-  return reshapeCache;
-}
-
-async function renderAndDownload(element: React.ReactElement, filename: string) {
-  const { pdf } = await import("@react-pdf/renderer");
-  const blob = await pdf(element as any).toBlob();
+async function generatePdfFromHtml(html: string, filename: string): Promise<void> {
+  const res = await fetch("/api/pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ html, filename }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Unknown error" }));
+    throw new Error(err.details || err.error || "PDF generation failed");
+  }
+  const blob = await res.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -45,245 +40,281 @@ export async function exportInvoicePDF(
   settings: AppSettings,
   clientInfo?: { phone?: string; address?: string },
 ) {
-  const { createElement: h } = await import("react");
-  const { Document, Page, View, Text, Font, StyleSheet } = await import("@react-pdf/renderer");
-  const ar = await loadReshaper();
-
-  // Register Arabic font
-  Font.register({
-    family: "Arabic",
-    fonts: [
-      { src: "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400 },
-      { src: "https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/ibmplexsansarabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700 },
-    ],
-  });
-  Font.registerHyphenationCallback((word: string) => [word]);
-
   const c = settings.currencySymbol || "$";
   const items: InvoiceItem[] = Array.isArray(invoice.items) ? invoice.items : (invoice.items as any)?._items || [];
+  const dateStr = invoice.createdAt;
+  const clientDetail = [clientInfo?.phone, clientInfo?.address].filter(Boolean).join(" · ");
+  const logoUrl = typeof window !== "undefined" ? window.location.origin + "/logo-black.png" : "http://localhost:3001/logo-black.png";
 
-  const blue = "#29ABE2";
-  const dark = "#1a1a2e";
-  const gray = "#64748b";
-  const lightGray = "#f5f7fa";
+  const rows = items.map((item, i) => `
+    <tr>
+      <td><span class="row-num">${String(i + 1).padStart(2, "0")}</span></td>
+      <td><div class="item-name">${item.productName}</div></td>
+      <td class="t-center">${item.quantity}</td>
+      <td class="t-center"><span class="t-mono">${fmt(item.unitPrice, c).replace(c, "")}</span></td>
+      <td class="t-left"><span class="t-mono">${fmt(item.total, c).replace(c, "")}</span></td>
+    </tr>
+  `).join("");
 
-  const s = StyleSheet.create({
-    page: { fontFamily: "Arabic", fontSize: 10, color: dark, backgroundColor: "#fff", position: "relative" },
-    // Top strip
-    topStrip: { flexDirection: "row", height: 4 },
-    stripBlue: { flex: 4, backgroundColor: blue },
-    stripDark: { flex: 3, backgroundColor: "#1B8AC2" },
-    stripKey: { flex: 3, backgroundColor: dark },
-    // Header
-    header: { backgroundColor: dark, padding: "22 30 18 30", flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center" },
-    companyName: { fontSize: 16, fontWeight: 700, color: "#fff", textAlign: "right" },
-    tagline: { fontSize: 8, color: blue, textAlign: "right", marginTop: 3, letterSpacing: 2 },
-    contact: { fontSize: 7, color: "rgba(255,255,255,0.45)", textAlign: "right", marginTop: 4 },
-    logoText: { fontSize: 18, fontWeight: 700, color: "#fff" },
-    // Title bar
-    titleBar: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", padding: "12 30", backgroundColor: lightGray, borderBottomWidth: 0.5, borderBottomColor: "#e2e8f0" },
-    invoiceLabel: { fontSize: 10, fontWeight: 700, color: blue, letterSpacing: 2 },
-    invoiceNum: { fontSize: 18, fontWeight: 700, color: dark, marginRight: 10 },
-    invoiceDate: { fontSize: 14, color: gray },
-    // Content
-    content: { padding: "18 30" },
-    // Client block
-    clientBlock: { flexDirection: "row-reverse", borderWidth: 0.5, borderColor: "#e2e8f0", borderRadius: 4, padding: "10 16", marginBottom: 18, alignItems: "center", gap: 16, borderRightWidth: 3, borderRightColor: blue },
-    clientLabel: { fontSize: 8, fontWeight: 700, color: gray, letterSpacing: 1 },
-    clientName: { fontSize: 14, fontWeight: 700, color: dark },
-    clientDetail: { fontSize: 9, color: gray },
-    // Table
-    tableHeader: { flexDirection: "row-reverse", backgroundColor: dark, paddingVertical: 7, paddingHorizontal: 12, borderRadius: 3 },
-    tableHeaderCell: { color: "rgba(255,255,255,0.8)", fontSize: 7, fontWeight: 700, textAlign: "right" },
-    tableRow: { flexDirection: "row-reverse", paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 0.3, borderBottomColor: "#f0f3f7" },
-    tableRowAlt: { backgroundColor: "#fafbfd" },
-    tableCell: { fontSize: 10, color: dark, textAlign: "right" },
-    tableCellBold: { fontSize: 10, fontWeight: 700, color: dark, textAlign: "right" },
-    // Totals
-    totalsBox: { width: 180, marginTop: 14, borderWidth: 0.5, borderColor: "#e2e8f0", borderRadius: 4, overflow: "hidden" },
-    totalsRow: { flexDirection: "row-reverse", justifyContent: "space-between", padding: "7 14", borderBottomWidth: 0.3, borderBottomColor: "#f0f3f7" },
-    totalsLabel: { fontSize: 8, color: gray },
-    totalsValue: { fontSize: 9, fontWeight: 700, color: dark },
-    grandTotal: { flexDirection: "row-reverse", justifyContent: "space-between", padding: "10 14", backgroundColor: dark },
-    grandTotalLabel: { fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.8)" },
-    grandTotalValue: { fontSize: 16, fontWeight: 700, color: blue },
-    // Notes
-    notesBlock: { marginTop: 14, padding: "10 14", backgroundColor: lightGray, borderRightWidth: 2, borderRightColor: blue, borderRadius: 3 },
-    notesTitle: { fontSize: 7, fontWeight: 700, color: gray, letterSpacing: 1, marginBottom: 3 },
-    notesText: { fontSize: 8, color: gray, lineHeight: 1.6 },
-    // Footer
-    footer: { position: "absolute", bottom: 10, left: 30, right: 30 },
-    footerLine: { height: 0.3, backgroundColor: "#e2e8f0", marginBottom: 5 },
-    footerContent: { flexDirection: "row-reverse", justifyContent: "space-between" },
-    footerText: { fontSize: 7, color: gray },
-    // Bottom strip
-    bottomStrip: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", height: 3 },
-  });
+  let discountRow = "";
+  if (invoice.discountAmount > 0) {
+    discountRow = `<div class="totals-row discount"><span class="label">خصم (${invoice.discountType === "percentage" ? `${invoice.discountValue}%` : "ثابت"})</span><span class="value">- ${fmt(invoice.discountAmount, c).replace(c, "")} ${c === "$" ? "USD" : c}</span></div>`;
+  }
+  let taxRow = "";
+  if ((invoice.taxAmount ?? 0) > 0) {
+    taxRow = `<div class="totals-row"><span class="label">الضريبة</span><span class="value">+ ${fmt(invoice.taxAmount, c).replace(c, "")} ${c === "$" ? "USD" : c}</span></div>`;
+  }
 
-  const colWidths = ["5%", "42%", "15%", "17%", "21%"];
+  const currLabel = c === "$" ? "USD" : c;
 
-  const doc = h(Document, {},
-    h(Page, { size: "A4", style: s.page },
-      // Top strip
-      h(View, { style: s.topStrip },
-        h(View, { style: s.stripBlue }),
-        h(View, { style: s.stripDark }),
-        h(View, { style: s.stripKey }),
-      ),
-      // Header
-      h(View, { style: s.header },
-        h(View, {},
-          h(Text, { style: s.companyName }, ar("برينتكس للأحبار ولوازم الطباعة")),
-          h(Text, { style: s.tagline }, "INKS & PRINTING SUPPLIES"),
-          h(Text, { style: s.contact }, ar("الجميلية - حلب - سوريا") + "  |  kamalreklam.ist@gmail.com  |  00905465301000"),
-        ),
-        h(Text, { style: s.logoText }, "PRINTIX"),
-      ),
-      // Title bar
-      h(View, { style: s.titleBar },
-        h(View, { style: { flexDirection: "row", alignItems: "baseline", gap: 10 } },
-          h(Text, { style: s.invoiceNum }, invoice.invoiceNumber),
-          h(Text, { style: s.invoiceLabel }, ar("فاتورة")),
-        ),
-        h(Text, { style: s.invoiceDate }, invoice.createdAt.split("-").reverse().join("/")),
-      ),
-      // Content
-      h(View, { style: s.content },
-        // Client
-        h(View, { style: s.clientBlock },
-          h(Text, { style: s.clientName }, ar(invoice.clientName)),
-          h(Text, { style: s.clientLabel }, ar("العميل")),
-          (clientInfo?.phone || clientInfo?.address)
-            ? h(Text, { style: s.clientDetail }, [clientInfo.address, clientInfo.phone].filter(Boolean).map(t => ar(t!)).join("  ·  "))
-            : null,
-        ),
-        // Table header
-        h(View, { style: s.tableHeader },
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[4], textAlign: "left" } }, ar("المبلغ")),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[3], textAlign: "center" } }, ar("سعر الوحدة")),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[2], textAlign: "center" } }, ar("الكمية")),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[1] } }, ar("الوصف")),
-          h(Text, { style: { ...s.tableHeaderCell, width: colWidths[0], textAlign: "center" } }, "#"),
-        ),
-        // Table rows
-        ...items.map((item, i) =>
-          h(View, { key: i, style: [s.tableRow, i % 2 === 1 ? s.tableRowAlt : {}], wrap: false },
-            h(Text, { style: { ...s.tableCellBold, width: colWidths[4], textAlign: "left" } }, fmt(item.total, c)),
-            h(Text, { style: { ...s.tableCell, width: colWidths[3], textAlign: "center" } }, fmt(item.unitPrice, c)),
-            h(Text, { style: { ...s.tableCell, width: colWidths[2], textAlign: "center" } }, `${item.quantity} ${ar("وحدة")}`),
-            h(Text, { style: { ...s.tableCellBold, width: colWidths[1] } }, item.productName),
-            h(Text, { style: { ...s.tableCell, width: colWidths[0], textAlign: "center", color: gray, fontSize: 8 } }, String(i + 1)),
-          )
-        ),
-        // Totals box
-        h(View, { style: s.totalsBox },
-          h(View, { style: s.totalsRow },
-            h(Text, { style: s.totalsValue }, fmt(invoice.subtotal, c)),
-            h(Text, { style: s.totalsLabel }, ar("المجموع الفرعي")),
-          ),
-          invoice.discountAmount > 0
-            ? h(View, { style: s.totalsRow },
-                h(Text, { style: { ...s.totalsValue, color: blue } }, `-${fmt(invoice.discountAmount, c)}`),
-                h(Text, { style: s.totalsLabel }, ar(`الخصم ${invoice.discountType === "percentage" ? `(${invoice.discountValue}%)` : ""}`)),
-              )
-            : null,
-          (invoice.taxAmount ?? 0) > 0
-            ? h(View, { style: s.totalsRow },
-                h(Text, { style: s.totalsValue }, `+${fmt(invoice.taxAmount, c)}`),
-                h(Text, { style: s.totalsLabel }, ar("الضريبة")),
-              )
-            : null,
-          h(View, { style: s.grandTotal },
-            h(Text, { style: s.grandTotalValue }, fmt(invoice.total, c)),
-            h(Text, { style: s.grandTotalLabel }, ar("الإجمالي")),
-          ),
-        ),
-        // Notes
-        invoice.notes
-          ? h(View, { style: s.notesBlock },
-              h(Text, { style: s.notesTitle }, ar("ملاحظات")),
-              h(Text, { style: s.notesText }, ar(invoice.notes)),
-            )
-          : null,
-      ),
-      // Footer
-      h(View, { style: s.footer, fixed: true },
-        h(View, { style: s.footerLine }),
-        h(View, { style: s.footerContent },
-          h(Text, { style: s.footerText, render: ({ pageNumber, totalPages }: any) => `${pageNumber} / ${totalPages}` }),
-          h(Text, { style: s.footerText }, ar(settings.invoiceNotes || "شكراً لتعاملكم معنا")),
-        ),
-      ),
-      // Bottom strip
-      h(View, { style: s.bottomStrip, fixed: true },
-        h(View, { style: s.stripBlue }),
-        h(View, { style: s.stripDark }),
-        h(View, { style: s.stripKey }),
-      ),
-    )
-  );
+  const html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+:root {
+  --blue: #29ABE2;
+  --blue-dark: #1B8AC2;
+  --blue-light: #e8f6fc;
+  --key: #1a1a2e;
+  --text: #1a1a2e;
+  --text-secondary: #546e7a;
+  --text-muted: #90a4ae;
+  --surface: #ffffff;
+  --surface-alt: #f5f7fa;
+  --border: #e8ecf1;
+  --border-light: #f0f3f7;
+}
+
+@page { size: A4; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'IBM Plex Sans Arabic', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  direction: rtl;
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  width: 210mm;
+  min-height: 297mm;
+  position: relative;
+}
+
+/* ═══ TOP STRIP ═══ */
+.geo-strip { position:absolute; top:0; right:0; left:0; height:6px; display:flex; z-index:10; }
+.geo-strip span { flex:1; }
+.geo-strip span:nth-child(1) { background:var(--blue); }
+.geo-strip span:nth-child(2) { background:var(--blue-dark); }
+.geo-strip span:nth-child(3) { background:var(--key); }
+.geo-strip span:nth-child(4) { background:var(--key); }
+
+/* ═══ HEADER ═══ */
+.header { padding:36px 40px 28px; background:var(--key); position:relative; overflow:hidden; }
+.header::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image:radial-gradient(circle,rgba(41,171,226,0.07) 1.5px,transparent 1.5px); background-size:20px 20px; }
+.header::after { content:''; position:absolute; bottom:0; left:0; width:140px; height:140px; background:linear-gradient(135deg,transparent 50%,rgba(41,171,226,0.1) 50%); }
+.header-inner { display:flex; justify-content:space-between; align-items:center; position:relative; z-index:2; }
+.company-name { font-size:28px; font-weight:800; color:#fff; letter-spacing:-0.5px; line-height:1.1; }
+.company-tagline { font-size:11px; font-weight:500; color:var(--blue); letter-spacing:2.5px; margin-top:6px; }
+.company-contact { display:flex; gap:20px; margin-top:8px; }
+.company-contact span { font-size:10.5px; color:rgba(255,255,255,0.45); }
+.logo-placeholder { width:80px; height:80px; border:2px solid rgba(255,255,255,0.15); border-radius:12px; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,0.3); font-size:8px; font-weight:600; }
+.logo-img { height:60px; }
+
+/* ═══ TITLE BAR ═══ */
+.title-bar { display:flex; justify-content:space-between; align-items:center; padding:18px 40px; background:var(--surface-alt); border-bottom:1px solid var(--border); }
+.invoice-label { font-size:13px; font-weight:700; color:var(--blue); letter-spacing:3px; }
+.invoice-number { font-family:'Space Mono',monospace; font-size:28px; font-weight:700; color:var(--text); letter-spacing:-1px; direction:ltr; margin-right:14px; }
+.invoice-date { font-family:'Space Mono',monospace; font-size:18px; color:var(--text-secondary); direction:ltr; }
+
+/* ═══ CONTENT ═══ */
+.content { padding:28px 40px 20px; }
+
+/* Client block */
+.info-block { padding:14px 20px; border:1px solid var(--border); border-radius:6px; position:relative; overflow:hidden; display:flex; align-items:center; gap:24px; margin-bottom:30px; }
+.info-block::before { content:''; position:absolute; top:0; right:0; width:4px; height:100%; background:var(--blue); }
+.info-block-label { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:2px; white-space:nowrap; }
+.info-block .name { font-size:16px; font-weight:700; color:var(--text); white-space:nowrap; }
+.info-block .detail { font-size:12px; color:var(--text-secondary); white-space:nowrap; }
+
+/* ═══ TABLE ═══ */
+.items-table { width:100%; border-collapse:collapse; margin-bottom:24px; }
+.items-table thead { background:var(--key); }
+.items-table thead th { padding:13px 18px; font-size:11px; font-weight:700; color:rgba(255,255,255,0.75); text-align:right; letter-spacing:1.2px; white-space:nowrap; }
+.items-table thead th:first-child { border-radius:0 6px 0 0; width:36px; text-align:center; }
+.items-table thead th:last-child { border-radius:6px 0 0 0; text-align:left; }
+.items-table thead th.t-center { text-align:center; }
+.items-table tbody td { padding:14px 18px; font-size:13px; border-bottom:1px solid var(--border-light); vertical-align:middle; white-space:nowrap; }
+.items-table tbody tr:nth-child(even) { background:rgba(245,247,250,0.5); }
+.item-name { font-weight:600; white-space:normal; }
+.t-center { text-align:center; }
+.t-left { text-align:left; }
+.t-mono { font-family:'Space Mono',monospace; font-size:13px; direction:ltr; display:inline-block; }
+.row-num { font-family:'Space Mono',monospace; font-size:11px; color:var(--text-muted); font-weight:700; }
+
+/* ═══ TOTALS ═══ */
+.totals-area { display:flex; justify-content:flex-end; margin-bottom:28px; }
+.totals-box { width:310px; border:1px solid var(--border); border-radius:6px; overflow:hidden; }
+.totals-row { display:flex; justify-content:space-between; align-items:center; padding:10px 18px; border-bottom:1px solid var(--border-light); }
+.totals-row:last-of-type:not(.grand-total) { border-bottom:none; }
+.totals-row .label { font-size:12px; color:var(--text-secondary); font-weight:500; }
+.totals-row .value { font-family:'Space Mono',monospace; font-size:13px; font-weight:700; color:var(--text); direction:ltr; }
+.totals-row.discount .value { color:#d32f2f; }
+.totals-row.grand-total { background:var(--key); padding:14px 18px; border-bottom:none; }
+.totals-row.grand-total .label { font-size:13px; font-weight:700; color:rgba(255,255,255,0.8); }
+.totals-row.grand-total .value { font-size:22px; font-weight:700; color:var(--blue); letter-spacing:-0.5px; }
+
+/* ═══ NOTES ═══ */
+.notes-section { padding:16px 20px; background:var(--surface-alt); border-right:3px solid var(--blue); border-radius:0 6px 6px 0; margin-bottom:20px; }
+.notes-title { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:2px; margin-bottom:6px; }
+.notes-text { font-size:12px; color:var(--text-secondary); line-height:1.7; }
+
+/* ═══ FOOTER ═══ */
+.footer { position:absolute; bottom:0; left:0; right:0; }
+.footer-content { display:flex; justify-content:space-between; align-items:center; padding:16px 40px; background:var(--surface-alt); border-top:1px solid var(--border); }
+.footer-legal { font-size:10px; color:var(--text-muted); }
+.footer-page { font-family:'Space Mono',monospace; font-size:10px; color:var(--text-muted); }
+.footer-strip { height:4px; display:flex; }
+.footer-strip span:nth-child(1) { flex:5; background:var(--blue); }
+.footer-strip span:nth-child(2) { flex:3; background:var(--blue-dark); }
+.footer-strip span:nth-child(3) { flex:2; background:var(--key); }
+</style>
+</head>
+<body>
+
+<!-- CMYK Top Strip -->
+<div class="geo-strip"><span></span><span></span><span></span><span></span></div>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="company-name">برينتكس للأحبار ولوازم الطباعة</div>
+      <div class="company-tagline">PRINTIX</div>
+      <div class="company-contact">
+        <span dir="ltr">+905465301000</span>
+        <span>الجميلية - حلب - سوريا</span>
+      </div>
+    </div>
+    <img src="${logoUrl}" class="logo-img" onerror="this.outerHTML='<div class=\\'logo-placeholder\\'>LOGO</div>'" />
+  </div>
+</div>
+
+<!-- Title Bar -->
+<div class="title-bar">
+  <div style="display:flex;align-items:baseline;gap:14px">
+    <span class="invoice-label">فاتورة</span>
+    <span class="invoice-number">#${invoice.invoiceNumber}</span>
+  </div>
+  <span class="invoice-date">${dateStr}</span>
+</div>
+
+<!-- Content -->
+<div class="content">
+
+  <!-- Client -->
+  <div class="info-block">
+    <span class="info-block-label">العميل</span>
+    <span class="name">${invoice.clientName}</span>
+    ${clientDetail ? `<span class="detail">${clientDetail}</span>` : ""}
+  </div>
+
+  <!-- Items Table -->
+  <table class="items-table">
+    <thead><tr>
+      <th>#</th>
+      <th>الوصف</th>
+      <th class="t-center">الكمية</th>
+      <th class="t-center">سعر الوحدة</th>
+      <th style="text-align:left">المبلغ</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <!-- Totals -->
+  <div class="totals-area">
+    <div class="totals-box">
+      <div class="totals-row">
+        <span class="label">المجموع الفرعي</span>
+        <span class="value">${fmt(invoice.subtotal, c).replace(c, "")} ${currLabel}</span>
+      </div>
+      ${discountRow}
+      ${taxRow}
+      <div class="totals-row grand-total">
+        <span class="label">الإجمالي</span>
+        <span class="value">${fmt(invoice.total, c).replace(c, "")} ${currLabel}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes -->
+  ${invoice.notes ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>` : ""}
+
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <div class="footer-content">
+    <span class="footer-legal">برينتكس للأحبار ولوازم الطباعة — الجميلية - حلب - سوريا</span>
+    <span class="footer-page">1 / 1</span>
+  </div>
+  <div class="footer-strip"><span></span><span></span><span></span></div>
+</div>
+
+</body>
+</html>`;
 
   const clientPart = sanitizeFilename(invoice.clientName);
   const datePart = invoice.createdAt.replace(/\//g, "-");
-  await renderAndDownload(doc, `${clientPart}_${datePart}_${invoice.invoiceNumber}.pdf`);
+  await generatePdfFromHtml(html, `${clientPart}_${datePart}_${invoice.invoiceNumber}.pdf`);
 }
 
 // ============================================================
-// REPORT PDFs — using jsPDF (simpler, no font issues)
+// REPORT EXPORTS
 // ============================================================
 export interface ReportDateRange { from: string; to: string; }
 
-async function createReportDoc() {
-  const { jsPDF } = await import("jspdf");
-  await import("jspdf-autotable");
-  return new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-}
-
-async function buildReport(
-  title: string, subtitle: string, dateRange: ReportDateRange, settings: AppSettings,
+function buildReportHtml(
+  title: string, subtitle: string, dateRange: ReportDateRange,
+  companyName: string, companyNameEn: string,
   stats: { label: string; value: string }[],
-  tableHead: string[][], tableBody: string[][], totalsRow?: string[],
-) {
-  const doc = await createReportDoc();
-  const pageW = 210; const margin = 15;
-  const blue = [41, 171, 226]; const dark = [26, 26, 46]; const gray = [100, 116, 139]; const lightGray = [241, 245, 249];
+  headers: string[], rows: string[][], totalsRow?: string[],
+): string {
+  const statsHtml = stats.map(s => `<div class="stat"><div class="s-lbl">${s.label}</div><div class="s-val">${s.value}</div></div>`).join("");
+  const headHtml = headers.map(h => `<th>${h}</th>`).join("");
+  const bodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
+  const totHtml = totalsRow ? `<tr class="tot">${totalsRow.map(c => `<td>${c}</td>`).join("")}</tr>` : "";
 
-  doc.setFillColor(blue[0], blue[1], blue[2]); doc.rect(0, 0, pageW, 3, "F");
-  let y = 14;
-  doc.setFontSize(16); doc.setTextColor(blue[0], blue[1], blue[2]); doc.setFont("helvetica", "bold");
-  doc.text(title, pageW - margin, y, { align: "right" });
-  doc.setFontSize(9); doc.setTextColor(gray[0], gray[1], gray[2]); doc.setFont("helvetica", "normal");
-  doc.text(subtitle, pageW - margin, y + 6, { align: "right" });
-  doc.setFontSize(8); doc.text(`من ${dateRange.from} إلى ${dateRange.to}`, margin, y + 2, { align: "left" });
-  doc.setFontSize(7); doc.text(`${settings.businessName} | ${settings.businessNameEn}`, margin, y + 6, { align: "left" });
-  y = 24; doc.setDrawColor(232, 236, 241); doc.line(margin, y, pageW - margin, y);
-
-  y = 28;
-  const statW = (pageW - margin * 2) / stats.length;
-  stats.forEach((stat, i) => {
-    const x = pageW - margin - (i + 1) * statW;
-    doc.setFillColor(lightGray[0], lightGray[1], lightGray[2]); doc.rect(x + 1, y, statW - 2, 16, "F");
-    doc.setFillColor(blue[0], blue[1], blue[2]); doc.rect(x + 1, y, statW - 2, 1.5, "F");
-    doc.setFontSize(7); doc.setTextColor(gray[0], gray[1], gray[2]); doc.text(stat.label, x + statW / 2, y + 6, { align: "center" });
-    doc.setFontSize(11); doc.setTextColor(dark[0], dark[1], dark[2]); doc.setFont("helvetica", "bold"); doc.text(stat.value, x + statW / 2, y + 13, { align: "center" });
-  });
-
-  const body = totalsRow ? [...tableBody, totalsRow] : tableBody;
-  (doc as any).autoTable({
-    startY: 48, head: tableHead, body, theme: "plain",
-    styles: { font: "helvetica", fontSize: 8, cellPadding: 3, lineColor: [240, 243, 247], lineWidth: 0.2, textColor: dark, halign: "right" },
-    headStyles: { fillColor: blue, textColor: [255, 255, 255], fontSize: 7, fontStyle: "bold" },
-    alternateRowStyles: { fillColor: [250, 251, 253] },
-    margin: { left: margin, right: margin },
-    didParseCell: (data: any) => { if (totalsRow && data.section === "body" && data.row.index === tableBody.length) { data.cell.styles.fillColor = blue; data.cell.styles.textColor = [255, 255, 255]; data.cell.styles.fontStyle = "bold"; } },
-  });
-
-  const fY = 285;
-  doc.setDrawColor(232, 236, 241); doc.line(margin, fY, pageW - margin, fY);
-  doc.setFontSize(7); doc.setTextColor(gray[0], gray[1], gray[2]); doc.setFont("helvetica", "normal");
-  doc.text(`${settings.businessName} — ${settings.businessNameEn}`, pageW - margin, fY + 4, { align: "right" });
-  doc.text(new Date().toLocaleDateString("ar-SY"), margin, fY + 4, { align: "left" });
-  return doc;
+  return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:A4;margin:0}*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans Arabic',sans-serif;font-size:10px;color:#2c3e50;direction:rtl;background:#fff;padding:20px 28px}
+.bar{height:3px;background:#29ABE2;border-radius:2px;margin-bottom:12px}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;padding-bottom:8px;border-bottom:1px solid #ecf0f1;margin-bottom:10px}
+h1{font-size:16px;color:#29ABE2;font-weight:700}
+.sub{font-size:8px;color:#95a5a6;margin-top:2px}
+.dr{font-size:7px;color:#95a5a6;background:#fafbfc;padding:3px 8px;border-radius:3px}
+.co{font-size:6px;color:#bdc3c7;margin-top:2px}
+.stats{display:flex;gap:8px;margin-bottom:12px}
+.stat{flex:1;background:#fafbfc;border-radius:4px;padding:8px;border-top:2px solid #29ABE2}
+.s-lbl{font-size:7px;color:#95a5a6}.s-val{font-size:12px;font-weight:700;margin-top:1px}
+table{width:100%;border-collapse:collapse}
+th{background:#29ABE2;color:#fff;padding:6px 8px;font-size:7px;font-weight:700;text-align:right;white-space:nowrap}
+td{padding:5px 8px;font-size:8px;border-bottom:.5px solid #ecf0f1;white-space:nowrap}
+tr:nth-child(even){background:#fafbfc}
+.tot td{background:#29ABE2;color:#fff;font-weight:700}
+.ftr{position:fixed;bottom:12px;left:28px;right:28px;display:flex;justify-content:space-between;font-size:6px;color:#bdc3c7;border-top:.5px solid #ecf0f1;padding-top:4px}
+</style></head><body>
+<div class="bar"></div>
+<div class="hdr"><div><h1>${title}</h1><div class="sub">${subtitle}</div></div><div style="text-align:left"><div class="dr">من ${dateRange.from} إلى ${dateRange.to}</div><div class="co">${companyName} | ${companyNameEn}</div></div></div>
+<div class="stats">${statsHtml}</div>
+<table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}${totHtml}</tbody></table>
+<div class="ftr"><span>${companyName} — ${companyNameEn}</span><span>${new Date().toLocaleDateString("ar-SY")}</span></div>
+</body></html>`;
 }
 
 export async function exportInventoryReportPDF(products: any[], dateRange: ReportDateRange, settings: AppSettings) {
@@ -291,12 +322,12 @@ export async function exportInventoryReportPDF(products: any[], dateRange: Repor
   const tv = products.reduce((s: number, p: any) => s + p.price * p.stock, 0);
   const ts = products.reduce((s: number, p: any) => s + p.stock, 0);
   const ls = products.filter((p: any) => p.stock <= p.minStock);
-  const doc = await buildReport("تقرير المخزون", `${products.length} منتج`, dateRange, settings,
+  const html = buildReportHtml("تقرير المخزون", `${products.length} منتج`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "المنتجات", value: String(products.length) }, { label: "المخزون", value: ts.toLocaleString() }, { label: "القيمة", value: fmt(tv, c) }, { label: "منخفض", value: String(ls.length) }],
-    [["#", "المنتج", "الفئة", "السعر", "المخزون", "الوحدة", "القيمة"]],
+    ["#", "المنتج", "الفئة", "السعر", "المخزون", "الوحدة", "القيمة"],
     products.map((p: any, i: number) => [String(i + 1), p.name, p.category, fmt(p.price, c), String(p.stock), p.unit, fmt(p.price * p.stock, c)]),
     ["", `${products.length}`, "", "", String(ts), "", fmt(tv, c)]);
-  doc.save(`تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
+  await generatePdfFromHtml(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportSalesReportPDF(invoices: Invoice[], dateRange: ReportDateRange, settings: AppSettings) {
@@ -305,23 +336,23 @@ export async function exportSalesReportPDF(invoices: Invoice[], dateRange: Repor
   const tr = f.filter(i => i.status === "مدفوعة").reduce((s, i) => s + i.total, 0);
   const pc = f.filter(i => i.status === "مدفوعة").length;
   const ut = f.filter(i => i.status === "غير مدفوعة").reduce((s, i) => s + i.total, 0);
-  const doc = await buildReport("تقرير المبيعات", `${f.length} فاتورة`, dateRange, settings,
+  const html = buildReportHtml("تقرير المبيعات", `${f.length} فاتورة`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "المبيعات", value: fmt(tr, c) }, { label: "الفواتير", value: String(f.length) }, { label: "المدفوعة", value: String(pc) }, { label: "المستحقات", value: fmt(ut, c) }],
-    [["#", "الفاتورة", "العميل", "التاريخ", "الحالة", "الإجمالي"]],
+    ["#", "الفاتورة", "العميل", "التاريخ", "الحالة", "الإجمالي"],
     f.map((inv, i) => [String(i + 1), inv.invoiceNumber, inv.clientName, inv.createdAt, inv.status, fmt(inv.total, c)]),
     ["", `${f.length}`, "", "", `${pc} مدفوعة`, fmt(tr, c)]);
-  doc.save(`تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
+  await generatePdfFromHtml(html, `تقرير_المبيعات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientsReportPDF(clients: any[], invoices: Invoice[], dateRange: ReportDateRange, settings: AppSettings) {
   const c = settings.currencySymbol || "$";
   const ts = clients.reduce((s: number, cl: any) => s + cl.totalSpent, 0);
-  const doc = await buildReport("تقرير العملاء", `${clients.length} عميل`, dateRange, settings,
+  const html = buildReportHtml("تقرير العملاء", `${clients.length} عميل`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "العملاء", value: String(clients.length) }, { label: "المبيعات", value: fmt(ts, c) }, { label: "الفواتير", value: String(invoices.length) }],
-    [["#", "العميل", "الهاتف", "العنوان", "الفواتير", "الإنفاق"]],
+    ["#", "العميل", "الهاتف", "العنوان", "الفواتير", "الإنفاق"],
     clients.map((cl: any, i: number) => [String(i + 1), cl.name, cl.phone || "—", cl.address || "—", String(invoices.filter((inv: Invoice) => inv.clientId === cl.id).length), fmt(cl.totalSpent, c)]),
     ["", `${clients.length}`, "", "", String(invoices.length), fmt(ts, c)]);
-  doc.save(`تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
+  await generatePdfFromHtml(html, `تقرير_العملاء_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportAccountingReportPDF(invoices: Invoice[], dateRange: ReportDateRange, settings: AppSettings) {
@@ -330,32 +361,32 @@ export async function exportAccountingReportPDF(invoices: Invoice[], dateRange: 
   const pr = f.filter(i => i.status === "مدفوعة").reduce((s, i) => s + i.total, 0);
   const ur = f.filter(i => i.status === "غير مدفوعة").reduce((s, i) => s + i.total, 0);
   const d = f.reduce((s, i) => s + i.discountAmount, 0);
-  const doc = await buildReport("التقرير المحاسبي", `من ${dateRange.from} إلى ${dateRange.to}`, dateRange, settings,
+  const html = buildReportHtml("التقرير المحاسبي", `من ${dateRange.from} إلى ${dateRange.to}`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "الإيرادات", value: fmt(pr + ur, c) }, { label: "المحصّل", value: fmt(pr, c) }, { label: "المستحقات", value: fmt(ur, c) }, { label: "الخصومات", value: fmt(d, c) }],
-    [["#", "الفاتورة", "العميل", "التاريخ", "الحالة", "الخصم", "الإجمالي"]],
+    ["#", "الفاتورة", "العميل", "التاريخ", "الحالة", "الخصم", "الإجمالي"],
     f.map((inv, i) => [String(i + 1), inv.invoiceNumber, inv.clientName, inv.createdAt, inv.status, inv.discountAmount > 0 ? `-${fmt(inv.discountAmount, c)}` : "—", fmt(inv.total, c)]),
     ["", `${f.length}`, "", "", "", d > 0 ? `-${fmt(d, c)}` : "—", fmt(pr + ur, c)]);
-  doc.save(`التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
+  await generatePdfFromHtml(html, `التقرير_المحاسبي_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportOrdersReportPDF(orders: any[], dateRange: ReportDateRange, settings: AppSettings) {
   const f = orders.filter((o: any) => o.createdAt >= dateRange.from && o.createdAt <= dateRange.to);
-  const doc = await buildReport("تقرير الطلبات", `${f.length} طلب`, dateRange, settings,
+  const html = buildReportHtml("تقرير الطلبات", `${f.length} طلب`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "الطلبات", value: String(f.length) }, { label: "انتظار", value: String(f.filter((o: any) => o.status === "قيد الانتظار").length) }, { label: "تنفيذ", value: String(f.filter((o: any) => o.status === "قيد التنفيذ").length) }, { label: "مكتمل", value: String(f.filter((o: any) => o.status === "مكتمل").length) }],
-    [["#", "التتبع", "العميل", "الوصف", "الحالة", "التاريخ"]],
+    ["#", "التتبع", "العميل", "الوصف", "الحالة", "التاريخ"],
     f.map((o: any, i: number) => [String(i + 1), o.trackingId, o.clientName, o.description || "—", o.status, o.createdAt]));
-  doc.save(`تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
+  await generatePdfFromHtml(html, `تقرير_الطلبات_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
 export async function exportClientSheetPDF(client: any, clientInvoices: Invoice[], settings: AppSettings) {
   const c = settings.currencySymbol || "$";
   const dr = { from: clientInvoices.length > 0 ? clientInvoices[clientInvoices.length - 1].createdAt : "—", to: clientInvoices.length > 0 ? clientInvoices[0].createdAt : "—" };
-  const doc = await buildReport(`بيانات: ${client.name}`, `${client.phone || ""} — ${client.address || ""}`, dr, settings,
+  const html = buildReportHtml(`بيانات: ${client.name}`, `${client.phone || ""} — ${client.address || ""}`, dr, settings.businessName, settings.businessNameEn,
     [{ label: "المشتريات", value: fmt(client.totalSpent, c) }, { label: "الفواتير", value: String(clientInvoices.length) }, { label: "التسجيل", value: client.createdAt }],
-    [["#", "الفاتورة", "التاريخ", "الحالة", "الإجمالي"]],
+    ["#", "الفاتورة", "التاريخ", "الحالة", "الإجمالي"],
     clientInvoices.map((inv, i) => [String(i + 1), inv.invoiceNumber, inv.createdAt, inv.status, fmt(inv.total, c)]),
     ["", `${clientInvoices.length}`, "", "", fmt(client.totalSpent, c)]);
-  doc.save(`${sanitizeFilename(client.name)}_بيانات.pdf`);
+  await generatePdfFromHtml(html, `${sanitizeFilename(client.name)}_بيانات.pdf`);
 }
 
 // ============================================================
