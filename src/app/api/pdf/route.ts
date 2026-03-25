@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Increase serverless function timeout for PDF generation
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   try {
     const { html, filename } = await req.json();
@@ -8,25 +11,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing html" }, { status: 400 });
     }
 
-    // Dynamic import — puppeteer only runs server-side
-    const puppeteer = await import("puppeteer");
-    const browser = await puppeteer.default.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-    });
+    let browser;
+
+    // Use @sparticuz/chromium on Vercel (serverless), full puppeteer locally
+    const isVercel = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+    if (isVercel) {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      const puppeteerCore = await import("puppeteer-core");
+      browser = await puppeteerCore.default.launch({
+        args: chromium.args,
+        defaultViewport: { width: 794, height: 1123 },
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      } as any);
+    } else {
+      // Local development — use full puppeteer
+      const puppeteer = await import("puppeteer");
+      browser = await puppeteer.default.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      });
+    }
 
     const page = await browser.newPage();
-
-    // Set viewport to A4 dimensions
     await page.setViewport({ width: 794, height: 1123 });
-
-    // Load the HTML content
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 15000 });
-
-    // Wait for fonts to load
     await page.evaluateHandle("document.fonts.ready");
 
-    // Generate PDF
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
