@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import DOMPurify from "dompurify";
+import { loadInvoiceSettings, saveInvoiceSettings, defaultInvoiceSettings, type InvoiceSettings } from "@/lib/invoice-settings";
 import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,21 @@ export default function SettingsPage() {
   const [importing, setImporting] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+  const [invSettings, setInvSettings] = useState<InvoiceSettings>(defaultInvoiceSettings);
+
+  // Load invoice settings on mount
+  useEffect(() => {
+    setInvSettings(loadInvoiceSettings());
+  }, []);
+
+  function handleInvChange<K extends keyof InvoiceSettings>(key: K, value: InvoiceSettings[K]) {
+    setInvSettings(prev => {
+      const updated = { ...prev, [key]: value };
+      saveInvoiceSettings(updated);
+      return updated;
+    });
+    toast.success("تم حفظ إعدادات الفاتورة");
+  }
 
   // Warn before leaving with unsaved changes
   useEffect(() => {
@@ -394,74 +409,147 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Invoice Template Customizer */}
+        {/* Advanced Invoice Customizer */}
         <Card className="border border-[var(--glass-border)] shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
               <FileText className="h-5 w-5 text-primary" />
               تخصيص الفاتورة (PDF)
             </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">تخصيص شكل وبيانات الفاتورة عند التصدير — يُحفظ تلقائياً</p>
           </CardHeader>
-          <CardContent className="space-y-5">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              تحكم في شكل الفاتورة عند التصدير كـ PDF. جميع الإعدادات تُطبق تلقائياً.
-            </p>
+          <CardContent className="space-y-6">
 
-            {/* Header Style */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>نمط الترويسة</label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: "minimal", label: "بسيط", desc: "بدون خلفية" },
-                  { value: "modern", label: "عصري", desc: "شريط لوني" },
-                  { value: "classic", label: "كلاسيكي", desc: "خلفية كاملة" },
-                ] as const).map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => handleChange("customInvoiceHtml", opt.value)}
-                    className="rounded-xl border p-3 text-center transition-all"
-                    style={{
-                      borderColor: form.customInvoiceHtml === opt.value ? "var(--primary)" : "var(--border-default)",
-                      background: form.customInvoiceHtml === opt.value ? "var(--accent-soft)" : "var(--surface-2)",
-                    }}
-                  >
-                    <p className="text-sm font-semibold" style={{ color: form.customInvoiceHtml === opt.value ? "var(--primary)" : "var(--text-primary)" }}>{opt.label}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+            {/* Invoice Branding */}
+            <div className="rounded-xl border border-[var(--glass-border)] p-5 space-y-4">
+              <h4 className="text-sm font-bold flex items-center gap-2"><Building2 className="h-4 w-4 text-primary" /> بيانات الشركة في الفاتورة</h4>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">اسم الشركة (عربي)</label>
+                  <Input value={invSettings.companyName} onChange={e => handleInvChange("companyName", e.target.value)} placeholder="برينتكس للأحبار ولوازم الطباعة" />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">اسم الشركة (إنجليزي)</label>
+                  <Input value={invSettings.companyNameEn} onChange={e => handleInvChange("companyNameEn", e.target.value)} placeholder="PRINTIX" dir="ltr" />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">العنوان</label>
+                  <Input value={invSettings.companyAddress} onChange={e => handleInvChange("companyAddress", e.target.value)} placeholder="الجميلية - حلب - سوريا" />
+                </div>
+                <div className="grid gap-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">رقم الهاتف</label>
+                  <Input value={invSettings.companyPhone} onChange={e => handleInvChange("companyPhone", e.target.value)} placeholder="00905465301000" dir="ltr" />
+                </div>
+                <div className="grid gap-1.5 sm:col-span-2">
+                  <label className="text-xs font-medium text-muted-foreground">البريد الإلكتروني</label>
+                  <Input value={invSettings.companyEmail} onChange={e => handleInvChange("companyEmail", e.target.value)} placeholder="info@company.com" dir="ltr" />
+                </div>
+              </div>
+              <div className="grid gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">رابط الشعار (في مجلد public)</label>
+                <Input value={invSettings.logoUrl} onChange={e => handleInvChange("logoUrl", e.target.value)} placeholder="/logo.png" dir="ltr" />
+                <p className="text-[10px] text-muted-foreground">ضع ملف الشعار في مجلد public ثم اكتب المسار مثل: /logo.png</p>
+              </div>
+            </div>
+
+            {/* Layout Options */}
+            <div className="rounded-xl border border-[var(--glass-border)] p-5 space-y-4">
+              <h4 className="text-sm font-bold flex items-center gap-2"><Palette className="h-4 w-4 text-primary" /> التصميم والتخطيط</h4>
+
+              {/* Header Style */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">نمط الترويسة</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: "minimal" as const, label: "بسيط", desc: "خط سفلي فقط" },
+                    { value: "modern" as const, label: "عصري", desc: "تدرج لوني" },
+                    { value: "classic" as const, label: "كلاسيكي", desc: "خلفية ملونة" },
+                  ]).map(opt => (
+                    <button key={opt.value} type="button" onClick={() => handleInvChange("headerStyle", opt.value)}
+                      className="rounded-xl border p-3 text-center transition-all"
+                      style={{
+                        borderColor: invSettings.headerStyle === opt.value ? invSettings.accentColor : "var(--border-default)",
+                        background: invSettings.headerStyle === opt.value ? "var(--accent-soft)" : "var(--surface-2)",
+                      }}>
+                      <p className="text-sm font-semibold" style={{ color: invSettings.headerStyle === opt.value ? invSettings.accentColor : "var(--text-primary)" }}>{opt.label}</p>
+                      <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{opt.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Accent Color */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">لون الفاتورة</label>
+                <div className="flex gap-2 flex-wrap">
+                  {["#2a7ab5", "#2563eb", "#7c3aed", "#0d9488", "#dc2626", "#d97706", "#059669", "#db2777", "#1e293b"].map(color => (
+                    <button key={color} type="button" onClick={() => handleInvChange("accentColor", color)}
+                      className="h-8 w-8 rounded-full transition-all"
+                      style={{
+                        backgroundColor: color,
+                        outline: invSettings.accentColor === color ? `3px solid ${color}` : "none",
+                        outlineOffset: "2px",
+                      }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Toggles */}
+            <div className="rounded-xl border border-[var(--glass-border)] p-5 space-y-3">
+              <h4 className="text-sm font-bold flex items-center gap-2"><Settings className="h-4 w-4 text-primary" /> خيارات العرض</h4>
+              {([
+                { key: "showStatusBadge" as const, label: "إظهار حالة الفاتورة", desc: "مدفوعة / غير مدفوعة" },
+                { key: "showSalesperson" as const, label: "إظهار مندوب المبيعات", desc: "اسم المندوب في الترويسة" },
+                { key: "showDiscount" as const, label: "إظهار سطر الخصم", desc: "حتى لو كان صفر" },
+                { key: "showPageNumbers" as const, label: "إظهار أرقام الصفحات", desc: "في أسفل الفاتورة" },
+              ]).map(opt => (
+                <div key={opt.key} className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">{opt.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                  </div>
+                  <button onClick={() => handleInvChange(opt.key, !invSettings[opt.key])}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${invSettings[opt.key] ? "bg-primary" : "bg-muted"}`}>
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-[var(--surface-1)] shadow-sm transition-transform ${invSettings[opt.key] ? "right-0.5" : "right-5"}`} />
                   </button>
-                ))}
-              </div>
+                </div>
+              ))}
+
+              {invSettings.showSalesperson && (
+                <div className="grid gap-1.5 pt-1">
+                  <label className="text-xs font-medium text-muted-foreground">اسم المندوب</label>
+                  <Input value={invSettings.salesperson} onChange={e => handleInvChange("salesperson", e.target.value)} placeholder="BILAL TARRAB" dir="ltr" />
+                </div>
+              )}
             </div>
 
-            {/* Accent Color */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>لون الفاتورة</label>
-              <div className="flex gap-2">
-                {["#2563eb", "#7c3aed", "#0d9488", "#dc2626", "#d97706", "#059669", "#db2777"].map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => handleChange("primaryColor", color)}
-                    className="h-8 w-8 rounded-full transition-all"
-                    style={{
-                      backgroundColor: color,
-                      outline: form.primaryColor === color ? `3px solid ${color}` : "none",
-                      outlineOffset: "2px",
-                    }}
-                  />
-                ))}
-              </div>
+            {/* Footer */}
+            <div className="rounded-xl border border-[var(--glass-border)] p-5 space-y-3">
+              <h4 className="text-sm font-bold">ملاحظة أسفل الفاتورة</h4>
+              <Input value={invSettings.footerNote} onChange={e => handleInvChange("footerNote", e.target.value)} placeholder="شكراً لتعاملكم معنا" />
             </div>
 
-            {/* Footer Text */}
-            <div className="space-y-2">
-              <label className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>نص أسفل الفاتورة</label>
-              <Input
-                value={form.invoiceNotes}
-                onChange={(e) => handleChange("invoiceNotes", e.target.value)}
-                placeholder="شكراً لتعاملكم معنا"
-              />
-            </div>
+            {/* Preview button */}
+            <Button variant="outline" className="w-full gap-2" onClick={async () => {
+              try {
+                const { exportInvoicePDF } = await import("@/lib/pdf");
+                const sampleInvoice = {
+                  id: "preview", invoiceNumber: "S00001", clientId: "", clientName: "عميل تجريبي",
+                  items: [
+                    { id: "1", productId: "", productName: "Master Book Magic Black 1LT", description: "", quantity: 32, unitPrice: 6.25, total: 200 },
+                    { id: "2", productId: "", productName: "Master Book Magic Cyan 1LT", description: "", quantity: 32, unitPrice: 6.25, total: 200 },
+                  ],
+                  subtotal: 400, discountType: "fixed" as const, discountValue: 0, discountAmount: 0, taxAmount: 0,
+                  total: 400, status: "مدفوعة" as const, notes: "", createdAt: new Date().toISOString().split("T")[0],
+                };
+                await exportInvoicePDF(sampleInvoice, settings);
+                toast.success("تم تصدير فاتورة تجريبية");
+              } catch { toast.error("فشل تصدير الفاتورة التجريبية"); }
+            }}>
+              <Eye className="h-4 w-4" />
+              معاينة فاتورة تجريبية
+            </Button>
           </CardContent>
         </Card>
 
