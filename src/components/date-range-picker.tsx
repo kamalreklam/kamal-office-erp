@@ -76,7 +76,7 @@ export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: Da
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+    <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" style={{ zIndex: 9999 }}
       onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
     >
       <div

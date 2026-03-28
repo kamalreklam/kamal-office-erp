@@ -84,8 +84,9 @@ export default function InvoiceDetailPage({
     try {
       const { exportInvoicePDF } = await import("@/lib/pdf");
       await exportInvoicePDF(invoice, settings, { phone: client?.phone, address: client?.address });
-    } catch {
-      toast.error("فشل تصدير الفاتورة");
+    } catch (e) {
+      console.error("PDF export error:", e);
+      toast.error("فشل تصدير الفاتورة: " + (e instanceof Error ? e.message : "خطأ غير معروف"));
     }
   }
 

@@ -153,6 +153,18 @@ export default function ClientsPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   }
 
+  async function exportClientSheet(client: Client) {
+    try {
+      toast.success(`جاري تصدير بيانات ${client.name}...`);
+      const { exportClientSheetPDF } = await import("@/lib/pdf");
+      const clientInvoices = invoices.filter(inv => inv.clientId === client.id);
+      await exportClientSheetPDF(client, clientInvoices, settings);
+    } catch (e) {
+      console.error("Client sheet export error:", e);
+      toast.error("فشل تصدير بيانات العميل");
+    }
+  }
+
   return (
     <AppShell>
       <div className="space-y-8 page-enter">
@@ -303,6 +315,9 @@ export default function ClientsPage() {
                           <td className="px-4 py-3 text-muted-foreground text-xs">{client.createdAt}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center gap-1">
+                              <button onClick={() => exportClientSheet(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600" title="تصدير بيانات العميل">
+                                <Download className="h-3.5 w-3.5" />
+                              </button>
                               <button onClick={() => openEditDialog(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
                                 <Pencil className="h-3.5 w-3.5" />
                               </button>
@@ -399,6 +414,7 @@ export default function ClientsPage() {
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
+                        <button onClick={() => exportClientSheet(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-blue-50 hover:text-blue-600" title="تصدير بيانات العميل"><Download className="h-3.5 w-3.5" /></button>
                         <button onClick={() => openEditDialog(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
                         <button onClick={() => confirmDelete(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
                         <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]">
