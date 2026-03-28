@@ -26,28 +26,31 @@ import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 
 const categoryIcons: Record<string, typeof Package> = {
-  "طابعة": Printer,
-  "حبر": Droplets,
-  "تونر": Archive,
-  "ورق": FileStack,
-  "ملحقات": Cable,
+  "Printers": Printer,
+  "Epson V63.2": Droplets,
+  "Epson V58.3": Droplets,
+  "HP Magic": Droplets,
+  "HP Pigment": Droplets,
+  "V15": Droplets,
+  "V50.1": Droplets,
+  "EP 108": Droplets,
 };
 
 const emptyForm = {
   name: "",
-  category: "طابعة",
+  category: "Printers",
   sku: "",
   description: "",
   price: 0,
   stock: 0,
   minStock: 0,
-  unit: "قطعة",
+  unit: "عبوة",
   image: "",
 };
 
 export default function InventoryPage() {
   const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings } = useStore();
-  const categories = ["الكل", ...settings.productCategories];
+  const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [activeCategory, setActiveCategory] = useState("الكل");
@@ -603,7 +606,7 @@ export default function InventoryPage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="قطعة">قطعة</SelectItem>
-                    <SelectItem value="قنينة">قنينة</SelectItem>
+                    <SelectItem value="عبوة">عبوة</SelectItem>
                     <SelectItem value="عبوة">عبوة</SelectItem>
                     <SelectItem value="مجموعة">مجموعة</SelectItem>
                     <SelectItem value="رزمة">رزمة</SelectItem>

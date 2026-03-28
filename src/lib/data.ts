@@ -1540,7 +1540,10 @@ export function getTotalRevenue(invoicesList: Invoice[]): number {
 }
 
 export function formatCurrency(amount: number, symbol = "$"): string {
-  return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // Remove .00 but keep meaningful decimals like .50 .35
+  const clean = formatted.endsWith(".00") ? formatted.slice(0, -3) : formatted;
+  return `${symbol}${clean}`;
 }
 
 export function getCategoryLabel(category: Product["category"]): string {

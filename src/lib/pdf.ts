@@ -8,7 +8,9 @@ function sanitizeFilename(name: string): string {
 }
 
 function fmt(amount: number, symbol = "$"): string {
-  return `${symbol}${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const clean = formatted.endsWith(".00") ? formatted.slice(0, -3) : formatted;
+  return `${symbol}${clean}`;
 }
 
 async function generatePdfFromHtml(html: string, filename: string): Promise<void> {

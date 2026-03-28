@@ -222,7 +222,7 @@ export default function BundlesPage() {
                               <span className="text-sm font-bold" style={{ color: isDark ? cs.textDark : cs.textLight }}>{c.colorKey}</span>
                             </div>
                             <div className="flex items-center gap-3 text-left">
-                              <span className="text-xs font-medium text-muted-foreground">{c.product?.stock ?? 0} {c.product?.unit || "قنينة"}</span>
+                              <span className="text-xs font-medium text-muted-foreground">{c.product?.stock ?? 0} {c.product?.unit || "عبوة"}</span>
                               <span className="text-sm font-bold" style={{ color: isDark ? cs.textDark : cs.textLight }}>{formatCurrency(c.product?.price || 0)}</span>
                             </div>
                           </div>
