@@ -77,7 +77,7 @@ export default function InventoryPage() {
       case "stock-asc": return [...list].sort((a, b) => a.stock - b.stock);
       case "stock-desc": return [...list].sort((a, b) => b.stock - a.stock);
       case "name": return [...list].sort((a, b) => a.name.localeCompare(b.name, "ar"));
-      default: return list;
+      default: return [...list].sort((a, b) => a.category.localeCompare(b.category, "ar"));
     }
   }, [products, debouncedSearch, activeCategory, sortBy]);
 
