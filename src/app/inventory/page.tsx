@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  Printer, Droplets, FileStack, Cable, Archive, ArrowUpDown, ChevronLeft, ChevronRight, Download,
+  Printer, Droplets, ArrowUpDown, ChevronLeft, ChevronRight, Download,
   LayoutGrid, List,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
