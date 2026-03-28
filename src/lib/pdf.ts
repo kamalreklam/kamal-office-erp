@@ -25,8 +25,19 @@ async function generatePdfFromHtml(html: string, filename: string): Promise<void
 
   const contentType = res.headers.get("content-type") || "";
 
-  if (contentType.includes("application/pdf")) {
-    // Server generated PDF (local dev with puppeteer)
+  if (contentType.includes("application/json")) {
+    // Fallback (Vercel): open in new window for print-to-PDF
+    const data = await res.json();
+    if (data.fallback === "print" && data.html) {
+      const printWindow = window.open("", "_blank");
+      if (printWindow) {
+        printWindow.document.write(data.html);
+        printWindow.document.close();
+        setTimeout(() => { printWindow.print(); }, 1500);
+      }
+    }
+  } else {
+    // PDF blob (local dev with puppeteer)
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -36,20 +47,6 @@ async function generatePdfFromHtml(html: string, filename: string): Promise<void
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  } else {
-    // Fallback (Vercel): open in new window for print-to-PDF
-    const data = await res.json();
-    if (data.fallback === "print" && data.html) {
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(data.html);
-        printWindow.document.close();
-        // Wait for fonts to load then auto-print
-        setTimeout(() => {
-          printWindow.print();
-        }, 1500);
-      }
-    }
   }
 }
 
