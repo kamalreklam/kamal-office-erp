@@ -129,7 +129,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-3xl space-y-8 page-enter">
+      <div className="mx-auto max-w-3xl space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الإعدادات</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">تخصيص إعدادات النظام والفواتير</p>

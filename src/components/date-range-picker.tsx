@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { CalendarDays, Download, X, FileText, Loader2 } from "lucide-react";
 
 export interface DateRange {
@@ -16,7 +16,7 @@ interface DateRangePickerProps {
   label?: string;
 }
 
-function getPresets(): { label: string; emoji: string; from: string; to: string }[] {
+function getPresets(): { label: string; from: string; to: string }[] {
   const now = new Date();
   const y = now.getFullYear();
   const m = now.getMonth();
@@ -33,23 +33,47 @@ function getPresets(): { label: string; emoji: string; from: string; to: string 
   const startOfYear = new Date(y, 0, 1);
 
   return [
-    { label: "اليوم", emoji: "📅", from: fmt(now), to: fmt(now) },
-    { label: "هذا الأسبوع", emoji: "📆", from: fmt(startOfWeek), to: fmt(now) },
-    { label: "هذا الشهر", emoji: "🗓️", from: fmt(startOfMonth), to: fmt(endOfMonth) },
-    { label: "الشهر الماضي", emoji: "⏪", from: fmt(startOfLastMonth), to: fmt(endOfLastMonth) },
-    { label: "هذا الربع", emoji: "📊", from: fmt(startOfQuarter), to: fmt(now) },
-    { label: "هذا العام", emoji: "🎯", from: fmt(startOfYear), to: fmt(now) },
-    { label: "كل الوقت", emoji: "♾️", from: "2020-01-01", to: fmt(now) },
+    { label: "اليوم", from: fmt(now), to: fmt(now) },
+    { label: "هذا الأسبوع", from: fmt(startOfWeek), to: fmt(now) },
+    { label: "هذا الشهر", from: fmt(startOfMonth), to: fmt(endOfMonth) },
+    { label: "الشهر الماضي", from: fmt(startOfLastMonth), to: fmt(endOfLastMonth) },
+    { label: "هذا الربع", from: fmt(startOfQuarter), to: fmt(now) },
+    { label: "هذا العام", from: fmt(startOfYear), to: fmt(now) },
+    { label: "كل الوقت", from: "2020-01-01", to: fmt(now) },
   ];
 }
 
-export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: DateRangePickerProps) {
-  const [open, setOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
+function ExportDialog({
+  onExport,
+  label,
+  onClose,
+}: {
+  onExport: (range: DateRange) => Promise<void> | void;
+  label: string;
+  onClose: () => void;
+}) {
   const presets = getPresets();
-  const defaultRange = presets[2]; // this month
-  const [range, setRange] = useState<DateRange>({ from: defaultRange.from, to: defaultRange.to });
+  const [range, setRange] = useState<DateRange>({ from: presets[2].from, to: presets[2].to });
   const [activePreset, setActivePreset] = useState(2);
+  const [exporting, setExporting] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const close = useCallback(() => {
+    setVisible(false);
+    setTimeout(onClose, 200);
+  }, [onClose]);
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [close]);
 
   function selectPreset(idx: number) {
     setRange({ from: presets[idx].from, to: presets[idx].to });
@@ -62,112 +86,251 @@ export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: Da
       await onExport(range);
     } finally {
       setExporting(false);
-      setOpen(false);
+      close();
     }
   }
 
-  if (!open) {
-    return (
+  return createPortal(
+    <div
+      onClick={(e) => { if (e.target === e.currentTarget) close(); }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 99999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: visible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)",
+        backdropFilter: visible ? "blur(8px)" : "blur(0px)",
+        transition: "all 0.2s ease",
+      }}
+    >
+      <div
+        dir="rtl"
+        style={{
+          width: "min(440px, calc(100vw - 32px))",
+          borderRadius: "24px",
+          overflow: "hidden",
+          background: "var(--surface-1)",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.4)",
+          transform: visible ? "scale(1) translateY(0)" : "scale(0.93) translateY(16px)",
+          opacity: visible ? 1 : 0,
+          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            padding: "24px 24px 20px",
+            background: "linear-gradient(135deg, var(--surface-2), var(--surface-3))",
+            borderBottom: "1px solid var(--border-subtle)",
+            position: "relative",
+          }}
+        >
+          <button
+            onClick={close}
+            style={{
+              position: "absolute",
+              top: 16,
+              left: 16,
+              width: 32,
+              height: 32,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "var(--surface-1)",
+              color: "var(--text-muted)",
+              border: "1px solid var(--border-subtle)",
+              cursor: "pointer",
+            }}
+          >
+            <X style={{ width: 16, height: 16 }} />
+          </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 16,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "var(--primary)",
+                color: "white",
+                boxShadow: "0 4px 16px rgba(37, 99, 235, 0.3)",
+              }}
+            >
+              <CalendarDays style={{ width: 24, height: 24 }} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+                تصدير التقرير
+              </h3>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0" }}>
+                اختر الفترة الزمنية للتصدير
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+          {/* Presets */}
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>
+              فترات سريعة
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {presets.map((preset, idx) => {
+                const isActive = activePreset === idx;
+                return (
+                  <button
+                    key={preset.label}
+                    onClick={() => selectPreset(idx)}
+                    style={{
+                      gridColumn: idx === 6 ? "1 / -1" : undefined,
+                      padding: "10px 14px",
+                      borderRadius: 12,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      textAlign: "center",
+                      transition: "all 0.15s ease",
+                      background: isActive ? "var(--primary)" : "var(--surface-2)",
+                      color: isActive ? "white" : "var(--text-secondary)",
+                      border: isActive ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
+                    }}
+                  >
+                    {preset.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ height: 1, flex: 1, background: "var(--border-subtle)" }} />
+            <span style={{ fontSize: 10, fontWeight: 500, color: "var(--text-muted)" }}>أو فترة مخصصة</span>
+            <div style={{ height: 1, flex: 1, background: "var(--border-subtle)" }} />
+          </div>
+
+          {/* Custom dates */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+                من
+              </label>
+              <input
+                type="date"
+                value={range.from}
+                onChange={(e) => { setRange({ ...range, from: e.target.value }); setActivePreset(-1); }}
+                dir="ltr"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  borderRadius: 12,
+                  border: "1px solid var(--border-default)",
+                  background: "var(--surface-2)",
+                  color: "var(--text-primary)",
+                  padding: "0 12px",
+                  fontSize: 12,
+                  outline: "none",
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
+                إلى
+              </label>
+              <input
+                type="date"
+                value={range.to}
+                onChange={(e) => { setRange({ ...range, to: e.target.value }); setActivePreset(-1); }}
+                dir="ltr"
+                style={{
+                  width: "100%",
+                  height: 40,
+                  borderRadius: 12,
+                  border: "1px solid var(--border-default)",
+                  background: "var(--surface-2)",
+                  color: "var(--text-primary)",
+                  padding: "0 12px",
+                  fontSize: 12,
+                  outline: "none",
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            padding: "16px 24px",
+            background: "var(--surface-2)",
+            borderTop: "1px solid var(--border-subtle)",
+          }}
+        >
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            style={{
+              width: "100%",
+              height: 48,
+              borderRadius: 14,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: exporting ? "not-allowed" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              background: exporting ? "var(--surface-3)" : "var(--primary)",
+              color: "white",
+              border: "none",
+              transition: "all 0.15s ease",
+            }}
+          >
+            {exporting ? (
+              <>
+                <Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} />
+                جاري التصدير...
+              </>
+            ) : (
+              <>
+                <Download style={{ width: 20, height: 20 }} />
+                {label}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: DateRangePickerProps) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
       <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
         <FileText className="h-4 w-4" />
         <span className="hidden sm:inline">{label}</span>
       </Button>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200" style={{ zIndex: 9999 }}
-      onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
-    >
-      <div
-        className="w-full max-w-sm mx-4 rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200"
-        style={{
-          background: "var(--surface-1)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
-        }}
-        dir="rtl"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ background: "var(--primary)", color: "white" }}>
-              <CalendarDays className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>تصدير تقرير PDF</h3>
-              <p className="text-[10px]" style={{ color: "var(--text-muted)" }}>اختر الفترة الزمنية</p>
-            </div>
-          </div>
-          <button onClick={() => setOpen(false)} className="rounded-xl p-2 transition-colors hover:bg-[var(--surface-2)]" style={{ color: "var(--text-muted)" }}>
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        {/* Presets Grid */}
-        <div className="grid grid-cols-4 gap-1.5">
-          {presets.map((preset, idx) => {
-            const isActive = activePreset === idx;
-            return (
-              <button
-                key={preset.label}
-                onClick={() => selectPreset(idx)}
-                className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center transition-all ${
-                  idx === 6 ? "col-span-4" : idx >= 4 ? "col-span-2" : ""
-                }`}
-                style={{
-                  background: isActive ? "var(--primary)" : "var(--surface-2)",
-                  color: isActive ? "white" : "var(--text-secondary)",
-                  border: isActive ? "none" : "1px solid var(--glass-border)",
-                }}
-              >
-                <span className="text-xs">{preset.emoji}</span>
-                <span className="text-[11px] font-semibold leading-tight">{preset.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Custom range */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>من</label>
-            <Input
-              type="date"
-              value={range.from}
-              onChange={(e) => { setRange({ ...range, from: e.target.value }); setActivePreset(-1); }}
-              className="h-9 text-xs"
-              dir="ltr"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] font-semibold mb-1 block" style={{ color: "var(--text-muted)" }}>إلى</label>
-            <Input
-              type="date"
-              value={range.to}
-              onChange={(e) => { setRange({ ...range, to: e.target.value }); setActivePreset(-1); }}
-              className="h-9 text-xs"
-              dir="ltr"
-            />
-          </div>
-        </div>
-
-        {/* Export button */}
-        <Button size="lg" className="w-full gap-2 text-sm font-bold" onClick={handleExport} disabled={exporting}>
-          {exporting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              جاري التصدير...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              {label}
-            </>
-          )}
-        </Button>
-      </div>
-    </div>
+      {open && (
+        <ExportDialog
+          onExport={onExport}
+          label={label}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
   );
 }
 

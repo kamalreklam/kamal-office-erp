@@ -23,9 +23,15 @@ import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { TablePageSkeleton } from "@/components/skeletons";
+import { Sidesheet } from "@/components/sidesheet";
 
 export default function InvoicesPage() {
-  const { invoices, deleteInvoice, settings } = useStore();
+  const { invoices, deleteInvoice, settings, connectionStatus } = useStore();
+
+  if (connectionStatus === "loading") {
+    return <AppShell><TablePageSkeleton /></AppShell>;
+  }
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
@@ -36,6 +42,7 @@ export default function InvoicesPage() {
   const [sortBy, setSortBy] = useState("date-desc");
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   const filtered = useMemo(() => {
     const list = invoices.filter((inv) => {
@@ -113,7 +120,7 @@ export default function InvoicesPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 page-enter">
+      <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الفواتير</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
@@ -237,11 +244,9 @@ export default function InvoicesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Link href={`/invoices/${inv.id}`}>
-                          <button className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
-                            <Eye className="h-4 w-4" />
-                          </button>
-                        </Link>
+                        <button onClick={() => setPreviewInvoice(inv)} className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground" title="معاينة سريعة">
+                          <Eye className="h-4 w-4" />
+                        </button>
                         <button onClick={() => confirmDelete(inv)} className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -323,6 +328,85 @@ export default function InvoicesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Preview Sidesheet */}
+      <Sidesheet
+        open={!!previewInvoice}
+        onClose={() => setPreviewInvoice(null)}
+        title={previewInvoice?.invoiceNumber || ""}
+      >
+        {previewInvoice && (
+          <div className="space-y-5" dir="rtl">
+            {/* Status + Client */}
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className={`text-sm ${getStatusColor(previewInvoice.status)}`}>
+                {previewInvoice.status}
+              </Badge>
+              <span className="text-sm" style={{ color: "var(--text-muted)" }}>{previewInvoice.createdAt}</span>
+            </div>
+
+            <div className="rounded-xl p-4" style={{ background: "var(--surface-2)" }}>
+              <p className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>العميل</p>
+              <p className="text-base font-bold mt-0.5" style={{ color: "var(--text-primary)" }}>{previewInvoice.clientName}</p>
+            </div>
+
+            {/* Items */}
+            <div>
+              <p className="text-xs font-medium mb-2" style={{ color: "var(--text-muted)" }}>المنتجات ({previewInvoice.items.length})</p>
+              <div className="space-y-2">
+                {previewInvoice.items.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between rounded-lg p-3 text-sm"
+                    style={{ border: "1px solid var(--border-subtle)" }}>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate" style={{ color: "var(--text-primary)" }}>{item.productName}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        {item.quantity} × {formatCurrency(item.unitPrice)}
+                      </p>
+                    </div>
+                    <p className="font-bold shrink-0" style={{ color: "var(--text-primary)" }}>
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totals */}
+            <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--surface-2)" }}>
+              <div className="flex justify-between text-sm">
+                <span style={{ color: "var(--text-muted)" }}>المجموع الفرعي</span>
+                <span style={{ color: "var(--text-primary)" }}>{formatCurrency(previewInvoice.subtotal)}</span>
+              </div>
+              {previewInvoice.discount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span style={{ color: "var(--text-muted)" }}>الخصم</span>
+                  <span style={{ color: "var(--red-500)" }}>-{formatCurrency(previewInvoice.discount)}</span>
+                </div>
+              )}
+              {previewInvoice.taxAmount > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span style={{ color: "var(--text-muted)" }}>الضريبة</span>
+                  <span style={{ color: "var(--text-primary)" }}>{formatCurrency(previewInvoice.taxAmount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-base font-bold pt-2" style={{ borderTop: "1px solid var(--border-subtle)" }}>
+                <span style={{ color: "var(--text-primary)" }}>الإجمالي</span>
+                <span style={{ color: "var(--primary)" }}>{formatCurrency(previewInvoice.total)}</span>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2">
+              <Link href={`/invoices/${previewInvoice.id}`} className="flex-1">
+                <Button className="w-full gap-1.5" size="sm">
+                  <Eye className="h-4 w-4" />
+                  عرض التفاصيل الكاملة
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </Sidesheet>
     </AppShell>
   );
 }

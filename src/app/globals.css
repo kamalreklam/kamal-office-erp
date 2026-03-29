@@ -187,52 +187,58 @@
 
 /* ── Layer 2: Dark Mode ───────────────────────────── */
 .dark, [data-theme="dark"] {
-  --ground:     #0a0a0f;
-  --surface-1:  #0f1624;
-  --surface-2:  #131d35;
-  --surface-3:  #182645;
-  --surface-4:  #1d3058;
+  /* Deeper, richer ground — less purple, more true dark */
+  --ground:     #08090e;
+  --surface-1:  #0d1117;
+  --surface-2:  #111922;
+  --surface-3:  #16202e;
+  --surface-4:  #1c2a3d;
 
-  --border-subtle: rgba(59, 130, 246, 0.08);
-  --border-default: rgba(59, 130, 246, 0.15);
-  --border-strong: rgba(59, 130, 246, 0.25);
-  --border-glow:   rgba(56, 152, 255, 0.3);
+  /* Softer borders — less blue tint, more neutral */
+  --border-subtle: rgba(148, 163, 184, 0.06);
+  --border-default: rgba(148, 163, 184, 0.12);
+  --border-strong: rgba(148, 163, 184, 0.2);
+  --border-glow:   rgba(96, 165, 250, 0.2);
 
-  --text-primary:   #f0f0ff;
-  --text-secondary: #9898c8;
-  --text-muted:     #6868a0;
+  /* Higher contrast text */
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
 
   --accent:         var(--blue-400);
   --accent-hover:   var(--blue-300);
-  --accent-soft:    rgba(96, 165, 250, 0.15);
-  --accent-glow:    0 0 24px rgba(96, 165, 250, 0.3), 0 0 48px rgba(139, 92, 246, 0.15);
+  --accent-soft:    rgba(96, 165, 250, 0.12);
+  /* Reduced glow — less eye strain */
+  --accent-glow:    0 0 16px rgba(96, 165, 250, 0.15), 0 0 32px rgba(139, 92, 246, 0.06);
 
-  /* Override gradient for dark — brighter for visibility */
   --gradient-brand: linear-gradient(135deg, var(--blue-400), var(--purple-400));
 
-  --success-soft: rgba(34, 197, 94, 0.15);
-  --warning-soft: rgba(245, 158, 11, 0.15);
-  --danger-soft:  rgba(239, 68, 68, 0.15);
-  --info-soft:    rgba(59, 130, 246, 0.15);
+  /* Slightly more saturated soft backgrounds for better visibility */
+  --success-soft: rgba(34, 197, 94, 0.1);
+  --warning-soft: rgba(245, 158, 11, 0.1);
+  --danger-soft:  rgba(239, 68, 68, 0.1);
+  --info-soft:    rgba(59, 130, 246, 0.1);
 
-  --glass-bg:     rgba(11, 26, 50, 0.55);
-  --glass-border: rgba(56, 152, 255, 0.12);
-  --glass-blur:   blur(32px) saturate(2);
-  --glass-shine:  inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 32px rgba(56, 152, 255, 0.04);
-  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.35), 0 0 80px rgba(56, 152, 255, 0.08);
+  /* Refined glass — less saturate, cleaner look */
+  --glass-bg:     rgba(13, 17, 23, 0.7);
+  --glass-border: rgba(148, 163, 184, 0.08);
+  --glass-blur:   blur(24px) saturate(1.4);
+  --glass-shine:  inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 
-  --frost-bg:     rgba(30, 33, 72, 0.4);
-  --frost-border: rgba(139, 92, 246, 0.1);
+  --frost-bg:     rgba(22, 32, 46, 0.5);
+  --frost-border: rgba(148, 163, 184, 0.06);
 
-  --shadow-sm:   0 2px 8px rgba(15, 16, 35, 0.4);
-  --shadow-md:   0 4px 16px rgba(15, 16, 35, 0.5), 0 0 24px rgba(99, 102, 241, 0.05);
-  --shadow-lg:   0 12px 48px rgba(15, 16, 35, 0.6), 0 0 40px rgba(99, 102, 241, 0.08);
-  --shadow-glow: 0 0 48px rgba(0, 228, 184, 0.2), 0 0 80px rgba(99, 102, 241, 0.1);
+  /* Cleaner shadows — no colored glow by default */
+  --shadow-sm:   0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md:   0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg:   0 12px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 32px rgba(96, 165, 250, 0.1);
 
-  --shadow-teal:   0 4px 24px rgba(0, 228, 184, 0.15);
-  --shadow-purple: 0 4px 24px rgba(139, 92, 246, 0.15);
-  --shadow-blue:   0 4px 24px rgba(59, 130, 246, 0.15);
-  --shadow-pink:   0 4px 24px rgba(236, 72, 153, 0.15);
+  --shadow-teal:   0 4px 20px rgba(0, 228, 184, 0.1);
+  --shadow-purple: 0 4px 20px rgba(139, 92, 246, 0.1);
+  --shadow-blue:   0 4px 20px rgba(59, 130, 246, 0.1);
+  --shadow-pink:   0 4px 20px rgba(236, 72, 153, 0.1);
 
   color-scheme: dark;
 
@@ -773,20 +779,153 @@ aside, header, main, nav, table, thead, tbody, tfoot, tr, td, th,
 
 /* Button press effect */
 button, [role="button"] {
-  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
+  transition: transform var(--dur-fast) var(--ease-spring), box-shadow var(--dur-fast) ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, opacity 0.25s ease;
 }
 button:active, [role="button"]:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
-/* Card hover */
+/* Card hover — enhanced lift + glow */
 [class*="shadow-sm"] {
-  transition: box-shadow 0.35s var(--ease-out), transform 0.35s var(--ease-out), border-color 0.35s var(--ease-out);
+  transition: box-shadow 0.3s var(--ease-out), transform 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+[class*="shadow-sm"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-/* Input focus */
+/* Stat card hover — subtle glow ring */
+.stat-card {
+  transition: transform 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12);
+}
+.dark .stat-card:hover {
+  box-shadow: 0 8px 30px rgba(96, 165, 250, 0.08);
+  border-color: rgba(96, 165, 250, 0.15);
+}
+
+/* Input focus — glow ring */
 input:focus, textarea:focus, select:focus, [role="combobox"]:focus {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.dark input:focus, .dark textarea:focus, .dark select:focus, .dark [role="combobox"]:focus {
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+/* Badge pulse for alerts */
+.badge-danger {
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+/* Notification bell shake */
+@keyframes bell-ring {
+  0% { transform: rotate(0); }
+  15% { transform: rotate(12deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(6deg); }
+  60% { transform: rotate(-4deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0); }
+}
+.bell-ring {
+  animation: bell-ring 0.6s var(--ease-out);
+}
+
+/* Ripple effect for primary buttons */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(255,255,255,0.3) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.btn-ripple:active::after {
+  opacity: 1;
+  transition: opacity 0s;
+}
+
+/* Link hover underline animation */
+a[class*="hover\\:underline"] {
+  text-decoration: none;
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: right bottom;
+  transition: background-size 0.3s var(--ease-out);
+}
+a[class*="hover\\:underline"]:hover {
+  background-size: 100% 1px;
+}
+
+/* Table row hover highlight */
+tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Checkbox/toggle tick animation */
+@keyframes check-pop {
+  0% { transform: scale(0); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+input[type="checkbox"]:checked {
+  animation: check-pop 0.25s var(--ease-spring);
+}
+
+/* Scroll-driven: sticky table headers get shadow on scroll */
+@supports (animation-timeline: scroll()) {
+  .glass {
+    animation: header-compact linear;
+    animation-timeline: scroll();
+    animation-range: 0 120px;
+  }
+  @keyframes header-compact {
+    from {
+      box-shadow: none;
+    }
+    to {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+  }
+}
+
+/* Tabular numbers — align digits in tables, prices, stats */
+table, [data-slot="command-item"], .stat-card, .glass-card--flat {
+  font-variant-numeric: tabular-nums;
+}
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* View Transitions API */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: 0.2s ease-out both fade-out;
+}
+::view-transition-new(root) {
+  animation: 0.3s ease-out both fade-in-slide;
+}
+@keyframes fade-out {
+  to { opacity: 0; filter: blur(2px); }
+}
+@keyframes fade-in-slide {
+  from { opacity: 0; transform: translateY(8px); filter: blur(2px); }
 }
 
 /* Gradient text utility (legacy compat) */

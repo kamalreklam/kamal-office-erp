@@ -51,7 +51,7 @@ export default function RootLayout({
               var theme = localStorage.getItem('theme') || 'light';
               document.documentElement.classList.add(theme);
               document.documentElement.style.colorScheme = theme;
-              var bg = theme === 'dark' ? '#0a0a0f' : '#F0F5FF';
+              var bg = theme === 'dark' ? '#08090e' : '#F0F5FF';
               document.documentElement.style.backgroundColor = bg;
             } catch(e) {}
           })();

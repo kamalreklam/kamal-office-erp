@@ -197,7 +197,7 @@ export default function ReportsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 page-enter">
+      <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">التقارير المالية</h1>

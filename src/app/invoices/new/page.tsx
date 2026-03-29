@@ -282,7 +282,7 @@ export default function NewInvoicePage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-4xl space-y-8 page-enter">
+      <div className="mx-auto max-w-4xl space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

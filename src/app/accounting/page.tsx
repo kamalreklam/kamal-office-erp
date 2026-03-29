@@ -219,7 +219,7 @@ export default function AccountingPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 page-enter">
+      <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المحاسبة</h1>

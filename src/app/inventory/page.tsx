@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  Printer, Droplets, ArrowUpDown, ChevronLeft, ChevronRight, Download,
+  ArrowUpDown, ChevronLeft, ChevronRight, Download,
   LayoutGrid, List,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
@@ -24,17 +24,9 @@ import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
-
-const categoryIcons: Record<string, typeof Package> = {
-  "Printers": Printer,
-  "Epson V63.2": Droplets,
-  "Epson V58.3": Droplets,
-  "HP Magic": Droplets,
-  "HP Pigment": Droplets,
-  "V15": Droplets,
-  "V50.1": Droplets,
-  "EP 108": Droplets,
-};
+import { TablePageSkeleton } from "@/components/skeletons";
+import { FadeInView } from "@/components/fade-in-view";
+import { InlineEdit } from "@/components/inline-edit";
 
 const emptyForm = {
   name: "",
@@ -49,7 +41,11 @@ const emptyForm = {
 };
 
 export default function InventoryPage() {
-  const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
+
+  if (connectionStatus === "loading") {
+    return <AppShell><TablePageSkeleton /></AppShell>;
+  }
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -191,7 +187,7 @@ export default function InventoryPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 page-enter">
+      <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المخزون</h1>
@@ -304,26 +300,24 @@ export default function InventoryPage() {
         </div>
 
         {/* Category tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1">
+        <div className="flex flex-wrap gap-1.5">
           {categories.map((cat) => {
             const isActive = activeCategory === cat;
             const count = cat === "الكل"
               ? products.length
               : products.filter((p) => p.category === cat).length;
-            const Icon = categoryIcons[cat] || Package;
             return (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-3 text-[15px] font-medium transition-all ${
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
                   isActive
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "bg-[var(--surface-1)] text-muted-foreground border border-[var(--glass-border)] hover:bg-[var(--surface-2)]"
                 }`}
               >
-                <Icon className="h-4 w-4" />
                 {cat}
-                <span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
                   isActive ? "bg-[var(--surface-1)]/20 text-primary-foreground" : "bg-muted text-muted-foreground"
                 }`}>
                   {count}
@@ -343,6 +337,7 @@ export default function InventoryPage() {
           </Card>
         ) : viewMode === "list" ? (
           /* ===== LIST VIEW ===== */
+          <FadeInView>
           <Card className="border border-[var(--glass-border)] shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -373,10 +368,21 @@ export default function InventoryPage() {
                         <td className="px-4 py-3">
                           <Badge variant="secondary" className="text-xs">{product.category}</Badge>
                         </td>
-                        <td className="px-4 py-3 font-semibold text-primary">{formatCurrency(product.price)}</td>
+                        <td className="px-4 py-3 font-semibold text-primary">
+                          <InlineEdit
+                            value={product.price}
+                            type="currency"
+                            format={formatCurrency}
+                            onSave={(v) => updateProduct(product.id, { price: v })}
+                          />
+                        </td>
                         <td className="px-4 py-3">
-                          <span className={`font-semibold ${isLow ? "text-red-600" : "text-foreground"}`}>
-                            {product.stock}
+                          <span className={isLow ? "text-red-600" : "text-foreground"}>
+                            <InlineEdit
+                              value={product.stock}
+                              onSave={(v) => updateProduct(product.id, { stock: v })}
+                              className={`font-semibold ${isLow ? "text-red-600" : ""}`}
+                            />
                           </span>
                           <span className="text-xs text-muted-foreground mr-1">{product.unit}</span>
                         </td>
@@ -435,9 +441,10 @@ export default function InventoryPage() {
               </table>
             </div>
           </Card>
+          </FadeInView>
         ) : (
           /* ===== GRID VIEW ===== */
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 stagger-list">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {paged.map((product) => {
               const isLow = product.stock <= product.minStock;
               const img = getProductImage(product.id);

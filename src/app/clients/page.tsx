@@ -24,6 +24,7 @@ import { type Client, formatCurrency, getStatusColor, getOrderStatusColor } from
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { CardGridSkeleton } from "@/components/skeletons";
 
 const emptyClient = { name: "", phone: "", address: "", notes: "" };
 
@@ -45,7 +46,11 @@ function getAvatarColor(id: string) {
 }
 
 export default function ClientsPage() {
-  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient } = useStore();
+  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient, connectionStatus } = useStore();
+
+  if (connectionStatus === "loading") {
+    return <AppShell><CardGridSkeleton /></AppShell>;
+  }
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -167,7 +172,7 @@ export default function ClientsPage() {
 
   return (
     <AppShell>
-      <div className="space-y-8 page-enter">
+      <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">العملاء</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">

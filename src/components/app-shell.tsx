@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { motion, useScroll, useSpring } from "framer-motion";
 import Link from "next/link";
 import {
   Menu,
@@ -23,6 +24,8 @@ import {
   Moon,
 } from "lucide-react";
 import { AppSidebar } from "./app-sidebar";
+import { PageTransition } from "./page-transition";
+import { CommandPalette } from "./command-palette";
 import { useStore } from "@/lib/store";
 import { getLowStockProducts, formatCurrency } from "@/lib/data";
 
@@ -75,6 +78,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 30 });
+
   return (
     <div className="min-h-screen" style={{ background: "var(--ground)" }}>
       <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -83,8 +89,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="lg:mr-[260px]">
         {/* Header — glassmorphic with gradient accent line */}
         <header className="sticky top-0 z-30 glass">
-          {/* Gradient accent bar at top */}
-          <div className="h-[2px]" style={{ background: "var(--gradient-brand)" }} />
+          {/* Scroll progress bar */}
+          <motion.div
+            className="h-[2px] origin-right"
+            style={{
+              scaleX,
+              background: "var(--gradient-brand)",
+            }}
+          />
           <div className="flex h-[66px] items-center justify-between px-3 sm:px-5 md:px-7 lg:px-8">
             {/* Right side: menu button */}
             <div className="flex items-center gap-2 sm:gap-3">
@@ -120,6 +132,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             {/* Left side: actions */}
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Command palette trigger */}
+              <CommandPalette />
+
               {/* Theme toggle */}
               {mounted && (
                 <button
@@ -128,7 +143,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   style={{ color: "var(--text-muted)" }}
                   title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
                 >
-                  {theme === "dark" ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+                  {theme === "dark" ? (
+                    <motion.div initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                      <Sun className="h-[18px] w-[18px]" />
+                    </motion.div>
+                  ) : (
+                    <motion.div initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+                      <Moon className="h-[18px] w-[18px]" />
+                    </motion.div>
+                  )}
                 </button>
               )}
 
@@ -139,7 +162,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:text-foreground"
                   style={{ color: "var(--text-muted)", background: notifOpen ? "var(--surface-3)" : "transparent" }}
                 >
-                  <Bell className="h-[18px] w-[18px]" />
+                  <Bell className={`h-[18px] w-[18px] ${alertCount > 0 && !notifOpen ? "bell-ring" : ""}`} />
                   {alertCount > 0 && (
                     <span className="absolute top-1 left-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-bold text-white" style={{ background: "var(--red-500)" }}>
                       {alertCount > 9 ? "+9" : alertCount}
@@ -215,7 +238,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             غير متصل بقاعدة البيانات — البيانات المعروضة قد تكون قديمة
           </div>
         )}
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="p-4 md:p-6 lg:p-8">
+          <PageTransition>{children}</PageTransition>
+        </main>
       </div>
     </div>
   );
