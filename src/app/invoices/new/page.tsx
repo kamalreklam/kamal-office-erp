@@ -30,6 +30,7 @@ interface LineItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  _priceInput?: string;
 }
 
 export default function NewInvoicePage() {
@@ -128,6 +129,10 @@ export default function NewInvoicePage() {
   }
 
   function selectProduct(rowId: string, product: (typeof products)[0]) {
+    if (product.stock <= 0) {
+      toast.error(`"${product.name}" — المخزون 0، لا يمكن إضافته`);
+      return;
+    }
     setLineItems((prev) =>
       prev.map((item) =>
         item.id === rowId
@@ -141,13 +146,26 @@ export default function NewInvoicePage() {
 
   function updateQuantity(rowId: string, quantity: number) {
     setLineItems((prev) =>
-      prev.map((item) => (item.id === rowId ? { ...item, quantity, total: quantity * item.unitPrice } : item))
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        const product = products.find(p => p.id === item.productId);
+        if (product && quantity > product.stock) {
+          toast.error(`الكمية المطلوبة (${quantity}) أكبر من المخزون (${product.stock})`);
+          return item;
+        }
+        return { ...item, quantity, total: quantity * item.unitPrice };
+      })
     );
   }
 
-  function updateUnitPrice(rowId: string, unitPrice: number) {
+  function updateUnitPrice(rowId: string, value: string) {
+    // Allow typing decimals freely (e.g. "4.", "4.7", "4.75")
     setLineItems((prev) =>
-      prev.map((item) => (item.id === rowId ? { ...item, unitPrice, total: item.quantity * unitPrice } : item))
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        const unitPrice = parseFloat(value) || 0;
+        return { ...item, unitPrice, total: item.quantity * unitPrice, _priceInput: value };
+      })
     );
   }
 
@@ -210,6 +228,25 @@ export default function NewInvoicePage() {
   function confirmBundleAdd() {
     const bundle = bundles.find(b => b.id === activeBundleId);
     if (!bundle) return;
+
+    // Check for 0-stock or over-stock items
+    const blocked: string[] = [];
+    const overStock: string[] = [];
+    bundle.items.forEach(bi => {
+      const product = products.find(p => p.id === bi.productId);
+      const q = bundleQty[bi.productId] || 1;
+      if (product && product.stock <= 0) blocked.push(product.name);
+      else if (product && q > product.stock) overStock.push(`${product.name} (متوفر: ${product.stock})`);
+    });
+    if (blocked.length > 0) {
+      toast.error(`منتجات نفذ مخزونها: ${blocked.join("، ")}`);
+      return;
+    }
+    if (overStock.length > 0) {
+      toast.error(`الكمية أكبر من المخزون: ${overStock.join("، ")}`);
+      return;
+    }
+
     const newItems: LineItem[] = bundle.items.map((bi, idx) => {
       const product = products.find(p => p.id === bi.productId);
       const q = bundleQty[bi.productId] || 1;
@@ -244,6 +281,18 @@ export default function NewInvoicePage() {
     const validItems = lineItems.filter((li) => li.productId);
     if (validItems.length === 0) {
       toast.error("يرجى إضافة منتج واحد على الأقل");
+      return;
+    }
+
+    // Final stock check
+    const stockErrors: string[] = [];
+    validItems.forEach(li => {
+      const product = products.find(p => p.id === li.productId);
+      if (product && product.stock <= 0) stockErrors.push(`${product.name} (مخزون: 0)`);
+      else if (product && li.quantity > product.stock) stockErrors.push(`${product.name} (طلب: ${li.quantity}, متوفر: ${product.stock})`);
+    });
+    if (stockErrors.length > 0) {
+      toast.error(`مشكلة في المخزون: ${stockErrors.join("، ")}`);
       return;
     }
 
@@ -459,11 +508,13 @@ export default function NewInvoicePage() {
                             ) : (
                               getFilteredProducts(item.id).map((product) => {
                                 const img = getProductImage(product.id);
+                                const outOfStock = product.stock <= 0;
                                 return (
                                   <button
                                     key={product.id}
                                     onClick={() => selectProduct(item.id, product)}
-                                    className="flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors hover:bg-[var(--surface-2)]"
+                                    disabled={outOfStock}
+                                    className={`flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[var(--surface-2)]"}`}
                                   >
                                     {img ? (
                                       <img src={img} alt="" className="h-12 w-12 rounded-xl object-cover border border-[var(--glass-border)]" />
@@ -474,11 +525,15 @@ export default function NewInvoicePage() {
                                     )}
                                     <div className="flex-1 text-right">
                                       <p className="text-base font-medium">{product.name}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {product.category} · المخزون: {product.stock} {product.unit}
+                                      <p className={`text-sm ${outOfStock ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
+                                        {outOfStock ? "نفذ المخزون" : `${product.category} · المخزون: ${product.stock} ${product.unit}`}
                                       </p>
                                     </div>
-                                    <span className="text-base font-bold text-primary">{formatCurrency(product.price)}</span>
+                                    {outOfStock ? (
+                                      <Badge variant="destructive" className="text-xs shrink-0">0</Badge>
+                                    ) : (
+                                      <span className="text-base font-bold text-primary">{formatCurrency(product.price)}</span>
+                                    )}
                                   </button>
                                 );
                               })
@@ -505,8 +560,23 @@ export default function NewInvoicePage() {
                       <div>
                         <label className="mb-1 block text-xs font-medium text-muted-foreground">سعر الوحدة ($)</label>
                         <Input
-                          type="number" min={0} step={0.5} value={item.unitPrice}
-                          onChange={(e) => updateUnitPrice(item.id, parseFloat(e.target.value) || 0)}
+                          type="text"
+                          inputMode="decimal"
+                          dir="ltr"
+                          value={item._priceInput !== undefined ? item._priceInput : (item.unitPrice || "")}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                              updateUnitPrice(item.id, v);
+                            }
+                          }}
+                          onBlur={() => {
+                            // Clean up on blur — remove trailing dots
+                            setLineItems(prev => prev.map(li =>
+                              li.id === item.id ? { ...li, _priceInput: undefined } : li
+                            ));
+                          }}
+                          placeholder="0.00"
                           className="h-10"
                         />
                       </div>
@@ -691,6 +761,11 @@ export default function NewInvoicePage() {
                         <div>
                           <span className="text-sm font-bold">{bi.colorKey}</span>
                           <span className="text-xs text-muted-foreground mr-2">{cfg.label}</span>
+                          {bi.product && (
+                            <span className={`text-[10px] block ${bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
+                              {bi.product.stock <= 0 ? "نفذ المخزون!" : `المخزون: ${bi.product.stock}`}
+                            </span>
+                          )}
                         </div>
                         <Input
                           type="number" min={0} value={bundleQty[bi.productId] || 1}
@@ -698,8 +773,17 @@ export default function NewInvoicePage() {
                           className="h-9 text-center text-sm font-bold"
                         />
                         <Input
-                          type="number" min={0} step={0.25} value={bundlePrice[bi.productId] || 0}
-                          onChange={e => setBundlePrice(prev => ({ ...prev, [bi.productId]: parseFloat(e.target.value) || 0 }))}
+                          type="text"
+                          inputMode="decimal"
+                          dir="ltr"
+                          value={bundlePrice[bi.productId] ?? 0}
+                          onChange={e => {
+                            const v = e.target.value;
+                            if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                              setBundlePrice(prev => ({ ...prev, [bi.productId]: parseFloat(v) || 0 }));
+                            }
+                          }}
+                          placeholder="0.00"
                           className="h-9 text-center text-sm"
                         />
                       </div>

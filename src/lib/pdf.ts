@@ -28,14 +28,27 @@ async function generatePdfFromHtml(html: string, filename: string): Promise<void
   const contentType = res.headers.get("content-type") || "";
 
   if (contentType.includes("application/json")) {
-    // Fallback (Vercel): open in new window for print-to-PDF
+    // Fallback (Vercel): render HTML in hidden iframe, then use browser print-to-PDF
     const data = await res.json();
     if (data.fallback === "print" && data.html) {
-      const printWindow = window.open("", "_blank");
-      if (printWindow) {
-        printWindow.document.write(data.html);
-        printWindow.document.close();
-        setTimeout(() => { printWindow.print(); }, 1500);
+      // Create hidden iframe to render the invoice
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "-9999px";
+      iframe.style.top = "-9999px";
+      iframe.style.width = "794px";
+      iframe.style.height = "1123px";
+      document.body.appendChild(iframe);
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(data.html);
+        iframeDoc.close();
+        // Wait for fonts/images to load then print
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        iframe.contentWindow?.print();
+        // Clean up after print dialog closes
+        setTimeout(() => document.body.removeChild(iframe), 3000);
       }
     }
   } else {
