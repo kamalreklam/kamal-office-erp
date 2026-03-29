@@ -377,10 +377,10 @@ export default function InvoicesPage() {
                 <span style={{ color: "var(--text-muted)" }}>المجموع الفرعي</span>
                 <span style={{ color: "var(--text-primary)" }}>{formatCurrency(previewInvoice.subtotal)}</span>
               </div>
-              {previewInvoice.discount > 0 && (
+              {previewInvoice.discountAmount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span style={{ color: "var(--text-muted)" }}>الخصم</span>
-                  <span style={{ color: "var(--red-500)" }}>-{formatCurrency(previewInvoice.discount)}</span>
+                  <span style={{ color: "var(--red-500)" }}>-{formatCurrency(previewInvoice.discountAmount)}</span>
                 </div>
               )}
               {previewInvoice.taxAmount > 0 && (
