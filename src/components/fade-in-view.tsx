@@ -2,6 +2,9 @@
 
 import { motion } from "framer-motion";
 
+type Ease = [number, number, number, number];
+const ease: Ease = [0.16, 1, 0.3, 1];
+
 interface FadeInViewProps {
   children: React.ReactNode;
   className?: string;
@@ -14,11 +17,7 @@ export function FadeInView({ children, className, delay = 0 }: FadeInViewProps) 
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
-      transition={{
-        duration: 0.45,
-        delay,
-        ease: [0.16, 1, 0.3, 1],
-      }}
+      transition={{ duration: 0.45, delay, ease }}
       className={className}
     >
       {children}
@@ -64,7 +63,7 @@ export function StaggerItem({
         visible: {
           opacity: 1,
           y: 0,
-          transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+          transition: { duration: 0.4, ease },
         },
       }}
       className={className}

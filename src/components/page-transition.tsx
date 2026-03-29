@@ -3,6 +3,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname } from "next/navigation";
 
+type Ease = [number, number, number, number];
+
 const pageVariants = {
   initial: {
     opacity: 0,
@@ -15,7 +17,7 @@ const pageVariants = {
     filter: "blur(0px)",
     transition: {
       duration: 0.35,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as Ease,
     },
   },
   exit: {
@@ -24,7 +26,7 @@ const pageVariants = {
     filter: "blur(4px)",
     transition: {
       duration: 0.2,
-      ease: [0.4, 0, 1, 1],
+      ease: [0.4, 0, 1, 1] as Ease,
     },
   },
 };
