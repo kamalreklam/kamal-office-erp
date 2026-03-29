@@ -27,16 +27,15 @@ import Link from "next/link";
 
 const cardVariants = {
   hidden: { opacity: 0, y: 16, scale: 0.97 },
-  visible: (i: number) => ({
+  visible: {
     opacity: 1,
     y: 0,
     scale: 1,
     transition: {
-      delay: i * 0.06,
       duration: 0.4,
       ease: [0.16, 1, 0.3, 1],
     },
-  }),
+  },
 };
 
 export default function DashboardPage() {
@@ -67,11 +66,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 xl:grid-rows-[auto_auto_auto]">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+          className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 xl:grid-rows-[auto_auto_auto]"
+        >
 
           {/* Revenue — Large card spanning 2 cols on xl */}
           <motion.div
-            variants={cardVariants} custom={0} initial="hidden" animate="visible"
+            variants={cardVariants}
             className="col-span-2 stat-card stat-card--teal group"
           >
             <div className="flex items-center gap-4 sm:gap-5">
@@ -99,7 +103,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Invoices */}
-          <motion.div variants={cardVariants} custom={1} initial="hidden" animate="visible">
+          <motion.div variants={cardVariants}>
             <Link href="/invoices" className="block h-full">
               <div className="stat-card stat-card--blue group h-full">
                 <div className="flex flex-col items-center text-center">
@@ -124,7 +128,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Products */}
-          <motion.div variants={cardVariants} custom={2} initial="hidden" animate="visible">
+          <motion.div variants={cardVariants}>
             <Link href="/inventory" className="block h-full">
               <div className="stat-card stat-card--purple group h-full">
                 <div className="flex flex-col items-center text-center">
@@ -151,7 +155,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Orders — small */}
-          <motion.div variants={cardVariants} custom={3} initial="hidden" animate="visible">
+          <motion.div variants={cardVariants}>
             <Link href="/orders" className="block h-full">
               <div className="stat-card stat-card--amber group h-full">
                 <div className="flex flex-col items-center text-center">
@@ -172,7 +176,7 @@ export default function DashboardPage() {
           </motion.div>
 
           {/* Clients — small */}
-          <motion.div variants={cardVariants} custom={4} initial="hidden" animate="visible">
+          <motion.div variants={cardVariants}>
             <Link href="/clients" className="block h-full">
               <div className="stat-card group h-full" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
                 <div className="flex flex-col items-center text-center">
@@ -192,7 +196,7 @@ export default function DashboardPage() {
             </Link>
           </motion.div>
 
-        </div>
+        </motion.div>
 
         {/* Draggable widget sections */}
         <SortableWidgets
