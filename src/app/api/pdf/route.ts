@@ -14,7 +14,7 @@ async function generatePdf(html: string) {
       args: chromium.args,
       defaultViewport: { width: 794, height: 1123 },
       executablePath: await chromium.executablePath(
-        "https://github.com/nicholasgriffintn/playwright-aws-chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar"
+        "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar"
       ),
       headless: true,
     });
