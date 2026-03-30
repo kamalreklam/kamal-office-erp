@@ -27,6 +27,19 @@ async function generatePdfFromHtml(html: string, filename: string): Promise<void
 
   // Always returns PDF blob now (both local and Vercel)
   const blob = await res.blob();
+  const file = new File([blob], filename, { type: "application/pdf" });
+
+  // On mobile (iOS/Android): use Web Share API for proper filename in WhatsApp etc.
+  if (navigator.share && navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      return;
+    } catch {
+      // User cancelled or share failed — fall through to download
+    }
+  }
+
+  // Desktop: standard download
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
