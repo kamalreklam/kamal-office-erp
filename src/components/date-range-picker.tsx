@@ -314,15 +314,22 @@ function ExportDialog({
   );
 }
 
-export function DateRangeExportButton({ onExport, label = "تصدير PDF" }: DateRangePickerProps) {
+export function DateRangeExportButton({ onExport, label = "تصدير PDF", buttonStyle }: DateRangePickerProps & { buttonStyle?: React.CSSProperties }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
-        <FileText className="h-4 w-4" />
-        <span className="hidden sm:inline">{label}</span>
-      </Button>
+      {buttonStyle ? (
+        <button onClick={() => setOpen(true)} style={buttonStyle}>
+          <FileText style={{ width: 18, height: 18 }} />
+          {label}
+        </button>
+      ) : (
+        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+          <FileText className="h-4 w-4" />
+          <span className="hidden sm:inline">{label}</span>
+        </Button>
+      )}
       {open && (
         <ExportDialog
           onExport={onExport}

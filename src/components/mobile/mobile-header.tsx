@@ -74,7 +74,7 @@ export function MobileHeader() {
             <Bell className={`h-5 w-5 ${alertCount > 0 ? "bell-ring" : ""}`} />
             {alertCount > 0 && (
               <span
-                className="absolute top-1 left-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                className="absolute top-1 right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
                 style={{ background: "var(--red-500)" }}
               >
                 {alertCount > 9 ? "+9" : alertCount}

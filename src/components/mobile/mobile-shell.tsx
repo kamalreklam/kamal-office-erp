@@ -8,7 +8,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen" style={{ background: "var(--ground)" }}>
       <MobileHeader />
-      <main className="px-4 py-4 pb-24">
+      <main className="px-4 py-4 pb-28">
         <PageTransition>{children}</PageTransition>
       </main>
       <MobileTabBar />

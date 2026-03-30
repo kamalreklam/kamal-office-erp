@@ -4,13 +4,12 @@ import Link from "next/link";
 import { Plus, BarChart3, Package, FileText, Users, ClipboardList, AlertTriangle, TrendingUp } from "lucide-react";
 import { AnimatedCounter } from "@/components/animated-counter";
 import { useStore } from "@/lib/store";
-import { getLowStockProducts, getTotalRevenue, formatCurrency, getStatusColor } from "@/lib/data";
+import { getLowStockProducts, formatCurrency, getStatusColor } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 
 export function MobileDashboard() {
   const { invoices, products, clients, orders, settings } = useStore();
 
-  const totalRevenue = getTotalRevenue(invoices);
   const lowStockItems = getLowStockProducts(products);
   const recentInvoices = [...invoices].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 4);
   const paidCount = invoices.filter((i) => i.status === "مدفوعة").length;
@@ -47,15 +46,14 @@ export function MobileDashboard() {
         </Link>
       </div>
 
-      {/* Revenue — Hero card */}
+      {/* Invoice summary card */}
       <div className="rounded-3xl p-6" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
         <div className="flex items-center gap-2 mb-2">
           <TrendingUp className="h-5 w-5" style={{ color: "var(--green-500)" }} />
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)" }}>إجمالي الإيرادات</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)" }}>ملخص الفواتير</span>
         </div>
         <AnimatedCounter
-          value={totalRevenue}
-          format={formatCurrency}
+          value={invoices.length}
           className="block"
           style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)" }}
         />

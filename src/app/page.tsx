@@ -87,7 +87,7 @@ function DesktopDashboard() {
           className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 xl:grid-rows-[auto_auto_auto]"
         >
 
-          {/* Revenue — Large card spanning 2 cols on xl */}
+          {/* Invoice Summary — Large card spanning 2 cols on xl */}
           <motion.div
             variants={cardVariants}
             className="col-span-2 stat-card stat-card--teal group"
@@ -95,13 +95,12 @@ function DesktopDashboard() {
             <div className="flex items-center gap-4 sm:gap-5">
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl transition-transform group-hover:scale-110 sm:h-16 sm:w-16"
                 style={{ background: "rgba(79, 70, 229, 0.1)", color: "var(--primary)" }}>
-                <DollarSign className="h-7 w-7 sm:h-8 sm:w-8" />
+                <FileText className="h-7 w-7 sm:h-8 sm:w-8" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--text-secondary)" }}>إجمالي الإيرادات</p>
+                <p className="text-xs font-medium sm:text-sm" style={{ color: "var(--text-secondary)" }}>ملخص الفواتير</p>
                 <AnimatedCounter
-                  value={totalRevenue}
-                  format={formatCurrency}
+                  value={invoices.length}
                   className="text-2xl font-extrabold sm:text-3xl block mt-0.5"
                   style={{ color: "var(--text-primary)" }}
                 />

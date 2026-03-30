@@ -203,7 +203,7 @@ function DesktopInventory() {
     <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
-        <div className="animate-fade-in-up text-center">
+        <div className="animate-fade-in-up text-center hidden lg:block">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المخزون</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             إدارة ومتابعة جميع المنتجات ({products.length} منتج)

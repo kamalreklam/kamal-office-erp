@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { loadInvoiceTemplate, saveInvoiceTemplate, resetInvoiceTemplate, DEFAULT_TEMPLATE, TEMPLATE_VARIABLES } from "@/lib/invoice-settings";
 import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileSettings } from "@/components/mobile/mobile-settings";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +25,11 @@ import { useStore, type AppSettings, type OdooImportData } from "@/lib/store";
 import { toast } from "sonner";
 
 export default function SettingsPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileShell><MobileSettings /></MobileShell>;
+  return <DesktopSettings />;
+}
+function DesktopSettings() {
   const { settings, updateSettings, importOdooData } = useStore();
   const [form, setForm] = useState<AppSettings>({ ...settings });
   const [hasChanges, setHasChanges] = useState(false);
@@ -130,8 +138,8 @@ export default function SettingsPage() {
   return (
     <ResponsiveShell>
       <div className="mx-auto max-w-3xl space-y-8">
-        <div className="animate-fade-in-up text-center">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الإعدادات</h1>
+        <div className="animate-fade-in-up lg:text-center">
+          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">الإعدادات</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">تخصيص إعدادات النظام والفواتير</p>
           {hasChanges && (
             <div className="mt-4 flex justify-center">

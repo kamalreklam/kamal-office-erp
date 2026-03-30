@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileBundles } from "@/components/mobile/mobile-bundles";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +45,11 @@ function getColorKey(productName: string): string {
 }
 
 export default function BundlesPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileShell><MobileBundles /></MobileShell>;
+  return <DesktopBundles />;
+}
+function DesktopBundles() {
   const { bundles, products, addBundle, updateBundle, deleteBundle } = useStore();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -155,8 +163,8 @@ export default function BundlesPage() {
   return (
     <ResponsiveShell>
       <div className="space-y-8">
-        <div className="animate-fade-in-up text-center">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">مجموعات الأحبار</h1>
+        <div className="animate-fade-in-up lg:text-center">
+          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">مجموعات الأحبار</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             مجموعات ألوان جاهزة (CMYK) لإضافتها بسرعة للفواتير
           </p>

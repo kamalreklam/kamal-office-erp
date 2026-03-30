@@ -516,24 +516,32 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
               onClick={() => handleSave("مدفوعة")}
               disabled={saving}
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
-              style={{ height: 56, fontSize: 18, fontWeight: 800, background: "var(--green-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--green-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
             >
               <CheckCircle2 className="h-5 w-5" /> مدفوعة
+            </button>
+            <button
+              onClick={() => handleSave("مدفوعة جزئياً")}
+              disabled={saving}
+              className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
+              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--blue-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+            >
+              جزئياً
             </button>
             <button
               onClick={() => handleSave("غير مدفوعة")}
               disabled={saving}
               className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
-              style={{ height: 56, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--amber-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
             >
-              <FileText className="h-5 w-5" /> آجل
+              آجل
             </button>
           </div>
           <button
             onClick={() => handleSave("مسودة")}
             disabled={saving}
             className="flex w-full items-center justify-center gap-2 rounded-2xl"
-            style={{ height: 48, fontSize: 16, fontWeight: 700, background: "var(--surface-2)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+            style={{ height: 44, fontSize: 14, fontWeight: 700, background: "var(--surface-2)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
           >
             <Save className="h-4 w-4" /> مسودة
           </button>

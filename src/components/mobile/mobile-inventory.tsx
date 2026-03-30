@@ -1,20 +1,31 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useDebounce } from "@/lib/use-debounce";
-import { Search, Package, AlertTriangle, BarChart3 } from "lucide-react";
+import { Search, Package, AlertTriangle, BarChart3, Plus, Pencil, Trash2, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
-import { formatCurrency, getLowStockProducts } from "@/lib/data";
+import { formatCurrency, getLowStockProducts, type Product } from "@/lib/data";
+import { toast } from "sonner";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 
 export function MobileInventory() {
-  const { products, settings } = useStore();
+  const { products, settings, addProduct, updateProduct, deleteProduct } = useStore();
+
+  function shareWhatsApp() {
+    const lines = [`📦 *تقرير المخزون — ${settings.businessName}*`, `عدد المنتجات: ${products.length}`, ""];
+    products.slice(0, 20).forEach((p) => { lines.push(`• ${p.name}: ${p.stock} ${p.unit} (${formatCurrency(p.price)})`); });
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
   const categories = ["الكل", ...Array.from(new Set(products.map((p) => p.category))).sort()];
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [activeCategory, setActiveCategory] = useState("الكل");
   const [showReport, setShowReport] = useState(false);
+  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
@@ -46,6 +57,13 @@ export function MobileInventory() {
       {/* Quick actions */}
       <div className="flex gap-2">
         <button
+          onClick={() => { setEditProduct(null); setShowAddForm(true); }}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
+          style={{ height: 52, fontSize: 16, fontWeight: 700, background: "var(--primary)", color: "white", border: "none", cursor: "pointer" }}
+        >
+          <Plus className="h-5 w-5" /> منتج جديد
+        </button>
+        <button
           onClick={() => setShowReport(!showReport)}
           className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
           style={{
@@ -56,8 +74,17 @@ export function MobileInventory() {
             cursor: "pointer",
           }}
         >
-          <BarChart3 className="h-5 w-5" />
-          تقرير المخزون
+          <BarChart3 className="h-5 w-5" /> تقرير
+        </button>
+      </div>
+
+      {/* Export actions */}
+      <div className="flex gap-2">
+        <DateRangeExportButton label="تصدير PDF" buttonStyle={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }} onExport={async (range: DateRange) => {
+          try { const { exportInventoryReportPDF } = await import("@/lib/pdf"); await exportInventoryReportPDF(products, range, settings); toast.success("تم التصدير"); } catch { toast.error("فشل التصدير"); }
+        }} />
+        <button onClick={shareWhatsApp} style={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "#25D366", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          واتساب
         </button>
       </div>
 
@@ -198,13 +225,13 @@ export function MobileInventory() {
               >
                 <div className="flex items-start gap-3">
                   <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl"
                     style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
                   >
-                    <Package className="h-6 w-6" />
+                    <Package className="h-8 w-8" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4 }}>
+                    <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, textAlign: "center" }}>
                       {product.name}
                     </p>
                     <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{product.category}</p>
@@ -230,12 +257,101 @@ export function MobileInventory() {
                   <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)" }}>
                     القيمة: {formatCurrency(product.price * product.stock)}
                   </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => { setEditProduct(product); setShowAddForm(true); }}
+                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "var(--primary)", border: "none", cursor: "pointer" }}>
+                      <Pencil style={{ width: 15, height: 15 }} />
+                    </button>
+                    <button onClick={() => { deleteProduct(product.id); toast.success("تم حذف المنتج"); }}
+                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--danger-soft)", color: "var(--red-500)", border: "none", cursor: "pointer" }}>
+                      <Trash2 style={{ width: 15, height: 15 }} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })
         )}
       </div>
+
+      {/* Add/Edit Product Sheet */}
+      {showAddForm && <ProductFormSheet product={editProduct} onClose={() => { setShowAddForm(false); setEditProduct(null); }} onSave={(data) => {
+        if (editProduct) { updateProduct(editProduct.id, data); toast.success("تم تحديث المنتج"); }
+        else { addProduct(data); toast.success("تم إضافة المنتج"); }
+        setShowAddForm(false); setEditProduct(null);
+      }} />}
     </div>
+  );
+}
+
+function ProductFormSheet({ product, onClose, onSave }: {
+  product: Product | null;
+  onClose: () => void;
+  onSave: (data: { name: string; category: string; sku: string; description: string; price: number; stock: number; minStock: number; unit: string }) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const [form, setForm] = useState({
+    name: product?.name || "",
+    category: product?.category || "",
+    sku: product?.sku || "",
+    description: product?.description || "",
+    price: String(product?.price || ""),
+    stock: String(product?.stock || 0),
+    minStock: String(product?.minStock || 5),
+    unit: product?.unit || "عبوة",
+  });
+
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+
+  function close() { setVisible(false); setTimeout(onClose, 250); }
+
+  function handleSave() {
+    if (!form.name.trim()) { toast.error("أدخل اسم المنتج"); return; }
+    onSave({
+      name: form.name, category: form.category, sku: form.sku, description: form.description,
+      price: parseFloat(form.price) || 0, stock: parseInt(form.stock) || 0,
+      minStock: parseInt(form.minStock) || 5, unit: form.unit,
+    });
+  }
+
+  const inputStyle = { width: "100%", height: 48, borderRadius: 12, fontSize: 16, padding: "0 14px", background: "var(--surface-2)", color: "var(--text-primary)", border: "1px solid var(--border-default)", outline: "none" };
+  const labelStyle = { fontSize: 14, fontWeight: 700 as const, color: "var(--text-muted)", display: "block" as const, marginBottom: 6 };
+
+  return createPortal(
+    <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 99999, background: visible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)", backdropFilter: visible ? "blur(4px)" : "blur(0)", transition: "all 0.25s ease" }}>
+      <div onClick={(e) => e.stopPropagation()} dir="rtl" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100000, background: "var(--surface-1)",
+        borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "90vh", overflowY: "auto",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)",
+        transform: visible ? "translateY(0)" : "translateY(100%)", transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+          <div style={{ height: 4, width: 40, borderRadius: 4, background: "var(--border-strong)" }} />
+        </div>
+        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>{product ? "تعديل المنتج" : "منتج جديد"}</h3>
+            <button onClick={close} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-2)", color: "var(--text-muted)", border: "none", cursor: "pointer" }}>
+              <X style={{ width: 18, height: 18 }} />
+            </button>
+          </div>
+          <div><label style={labelStyle}>اسم المنتج</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} /></div>
+          <div><label style={labelStyle}>الفئة</label><input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} style={inputStyle} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label style={labelStyle}>السعر ($)</label><input type="text" inputMode="decimal" dir="ltr" value={form.price} onChange={(e) => { if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setForm({ ...form, price: e.target.value }); }} style={inputStyle} /></div>
+            <div><label style={labelStyle}>المخزون</label><input type="number" dir="ltr" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} style={inputStyle} /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label style={labelStyle}>الحد الأدنى</label><input type="number" dir="ltr" value={form.minStock} onChange={(e) => setForm({ ...form, minStock: e.target.value })} style={inputStyle} /></div>
+            <div><label style={labelStyle}>الوحدة</label><input value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} style={inputStyle} /></div>
+          </div>
+          <div><label style={labelStyle}>الكود (SKU)</label><input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} style={inputStyle} dir="ltr" /></div>
+          <button onClick={handleSave} style={{ width: "100%", height: 56, borderRadius: 16, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer", marginTop: 8 }}>
+            {product ? "تحديث" : "إضافة المنتج"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }

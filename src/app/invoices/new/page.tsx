@@ -716,6 +716,10 @@ function DesktopInvoicePage() {
             <FileText className="h-4 w-4" />
             غير مدفوعة
           </Button>
+          <Button variant="outline" size="lg" className="gap-2" onClick={() => handleSave("مدفوعة جزئياً")}>
+            <FileText className="h-4 w-4" />
+            مدفوعة جزئياً
+          </Button>
           <Button size="lg" className="gap-2" onClick={() => handleSave("مدفوعة")}>
             <Save className="h-4 w-4" />
             مدفوعة

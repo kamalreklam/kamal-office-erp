@@ -126,29 +126,29 @@ export function MobileTabBar() {
         }}
         dir="rtl"
       >
-        <div className="flex h-16 items-stretch justify-around">
+        <div className="flex h-20 items-stretch justify-around">
           {tabs.map((tab) => {
             const active = isActive(tab.href);
             return (
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-1 flex-col items-center justify-center gap-0.5 relative"
+                className="flex flex-1 flex-col items-center justify-center gap-1 relative"
               >
                 {active && (
                   <motion.div
                     layoutId="tab-indicator"
-                    className="absolute top-0 h-[3px] w-8 rounded-full"
+                    className="absolute top-0 h-[3px] w-10 rounded-full"
                     style={{ background: "var(--primary)" }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
                   />
                 )}
                 <tab.icon
-                  className="h-6 w-6"
+                  className="h-7 w-7"
                   style={{ color: active ? "var(--primary)" : "var(--text-muted)" }}
                 />
                 <span
-                  className="text-[11px] font-bold"
+                  className="text-[13px] font-bold"
                   style={{ color: active ? "var(--primary)" : "var(--text-muted)" }}
                 >
                   {tab.label}
@@ -160,21 +160,21 @@ export function MobileTabBar() {
           {/* More tab */}
           <button
             onClick={() => setMoreOpen(true)}
-            className="flex flex-1 flex-col items-center justify-center gap-0.5 relative"
+            className="flex flex-1 flex-col items-center justify-center gap-1 relative"
           >
             {moreActive && (
               <motion.div
                 layoutId="tab-indicator"
-                className="absolute top-0 h-[3px] w-8 rounded-full"
+                className="absolute top-0 h-[3px] w-10 rounded-full"
                 style={{ background: "var(--primary)" }}
               />
             )}
             <MoreHorizontal
-              className="h-6 w-6"
+              className="h-7 w-7"
               style={{ color: moreActive ? "var(--primary)" : "var(--text-muted)" }}
             />
             <span
-              className="text-[11px] font-bold"
+              className="text-[13px] font-bold"
               style={{ color: moreActive ? "var(--primary)" : "var(--text-muted)" }}
             >
               المزيد

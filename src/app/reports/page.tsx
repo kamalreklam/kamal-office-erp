@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileReports } from "@/components/mobile/mobile-reports";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/data";
@@ -35,6 +38,11 @@ function getMonthKey(dateStr: string) {
 }
 
 export default function ReportsPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileShell><MobileReports /></MobileShell>;
+  return <DesktopReports />;
+}
+function DesktopReports() {
   const { invoices, clients, products, orders, settings } = useStore();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -199,8 +207,8 @@ export default function ReportsPage() {
     <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
-        <div className="animate-fade-in-up text-center">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">التقارير المالية</h1>
+        <div className="animate-fade-in-up lg:text-center">
+          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">التقارير المالية</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             تحليل شامل لأداء الأعمال والإيرادات
           </p>

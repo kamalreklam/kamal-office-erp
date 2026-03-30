@@ -187,10 +187,10 @@ function DesktopClients() {
   return (
     <ResponsiveShell>
       <div className="space-y-8">
-        <div className="animate-fade-in-up text-center">
+        <div className="animate-fade-in-up text-center hidden lg:block">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">العملاء</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
-            {clients.length} عميل مسجل · إجمالي المبيعات: {formatCurrency(clients.reduce((s, c) => s + c.totalSpent, 0))}
+            {clients.length} عميل مسجل
           </p>
           <div className="mt-4 flex justify-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {

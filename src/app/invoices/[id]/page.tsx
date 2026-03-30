@@ -107,7 +107,14 @@ export default function InvoiceDetailPage({
   }
 
   function togglePaid() {
-    const newStatus = invoice.status === "مدفوعة" ? "غير مدفوعة" : "مدفوعة";
+    const cycle: Record<string, import("@/lib/data").InvoiceStatus> = {
+      "غير مدفوعة": "مدفوعة جزئياً",
+      "مدفوعة جزئياً": "مدفوعة",
+      "مدفوعة": "غير مدفوعة",
+      "مسودة": "غير مدفوعة",
+      "ملغاة": "غير مدفوعة",
+    };
+    const newStatus = cycle[invoice.status] || "غير مدفوعة";
     updateInvoiceStatus(invoice.id, newStatus);
     toast.success(`تم تغيير الحالة إلى: ${newStatus}`);
   }
@@ -135,7 +142,9 @@ export default function InvoiceDetailPage({
             </Link>
             <Button variant="outline" size="sm" className="gap-1.5 transition-all hover:scale-105" onClick={togglePaid}>
               {invoice.status === "مدفوعة" ? (
-                <><XCircle className="h-4 w-4 text-amber-500" /><span className="hidden sm:inline">غير مدفوعة</span></>
+                <><XCircle className="h-4 w-4 text-amber-500" /><span className="hidden sm:inline">إلغاء الدفع</span></>
+              ) : invoice.status === "مدفوعة جزئياً" ? (
+                <><CheckCircle2 className="h-4 w-4 text-emerald-500" /><span className="hidden sm:inline">تم الدفع الكامل</span></>
               ) : (
                 <><CheckCircle2 className="h-4 w-4 text-emerald-500" /><span className="hidden sm:inline">تم الدفع</span></>
               )}

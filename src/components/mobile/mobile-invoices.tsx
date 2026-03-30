@@ -4,25 +4,32 @@ import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
-import { Search, Plus, FileText, DollarSign, ChevronLeft, X } from "lucide-react";
+import { Search, Plus, FileText, ChevronLeft, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 
-const statuses = ["الكل", "مدفوعة", "غير مدفوعة", "مسودة", "ملغاة"];
+const statuses = ["الكل", "مدفوعة", "مدفوعة جزئياً", "غير مدفوعة", "مسودة", "ملغاة"];
 
 export function MobileInvoices() {
   const { invoices, settings } = useStore();
+
+  function shareWhatsApp() {
+    const paid = invoices.filter((i) => i.status === "مدفوعة");
+    const unpaid = invoices.filter((i) => i.status === "غير مدفوعة" || i.status === "مدفوعة جزئياً");
+    const lines = [`📄 *ملخص الفواتير — ${settings.businessName}*`, `عدد الفواتير: ${invoices.length}`, `✅ مدفوعة: ${paid.length}`, `⏳ معلقة: ${unpaid.length}`, ""];
+    invoices.slice(0, 10).forEach((inv, i) => {
+      const emoji = inv.status === "مدفوعة" ? "✅" : inv.status === "مدفوعة جزئياً" ? "🔵" : "🔴";
+      lines.push(`${i + 1}. ${inv.invoiceNumber} | ${inv.clientName} | ${emoji} ${formatCurrency(inv.total)}`);
+    });
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+  }
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
   const [previewInv, setPreviewInv] = useState<Invoice | null>(null);
-
-  const totalRevenue = useMemo(() => {
-    return invoices
-      .filter((i) => i.status !== "ملغاة" && i.status !== "مسودة")
-      .reduce((s, i) => s + i.total, 0);
-  }, [invoices]);
 
   const filtered = useMemo(() => {
     return invoices
@@ -49,8 +56,12 @@ export function MobileInvoices() {
           <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>فاتورة</p>
         </div>
         <div className="flex-1 rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--green-500)" }}>{formatCurrency(totalRevenue)}</p>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>الإيرادات</p>
+          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--green-500)" }}>{statusCounts["مدفوعة"] || 0}</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>مدفوعة</p>
+        </div>
+        <div className="flex-1 rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
+          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--amber-500)" }}>{statusCounts["غير مدفوعة"] || 0}</p>
+          <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>معلقة</p>
         </div>
       </div>
 
@@ -65,15 +76,25 @@ export function MobileInvoices() {
         </div>
       </Link>
 
+      {/* Export actions */}
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <DateRangeExportButton label="تصدير PDF" buttonStyle={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }} onExport={async (range: DateRange) => {
+          try { const { exportSalesReportPDF } = await import("@/lib/pdf"); await exportSalesReportPDF(invoices, range, settings); toast.success("تم التصدير"); } catch { toast.error("فشل التصدير"); }
+        }} />
+        <button onClick={shareWhatsApp} style={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "#25D366", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          واتساب
+        </button>
+      </div>
+
       {/* Search */}
-      <div className="relative" style={{ marginTop: 12 }}>
-        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+      <div className="relative">
+        <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
         <input
           type="text"
           placeholder="ابحث برقم الفاتورة أو العميل..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border-2 pr-4 pl-12"
+          className="w-full rounded-2xl border-2 pr-12 pl-4"
           style={{ height: 52, fontSize: 18, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
         />
       </div>

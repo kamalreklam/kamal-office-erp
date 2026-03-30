@@ -83,7 +83,7 @@ function DesktopInvoices() {
   const filterKey = `${search}|${statusFilter}|${dateFrom}|${dateTo}|${sortBy}`;
   useEffect(() => { setPage(1); }, [filterKey]);
 
-  const statuses = ["الكل", "مدفوعة", "غير مدفوعة", "مسودة", "ملغاة"];
+  const statuses = ["الكل", "مدفوعة", "مدفوعة جزئياً", "غير مدفوعة", "مسودة", "ملغاة"];
 
   const totalRevenue = invoices.filter((i) => i.status === "مدفوعة").reduce((s, i) => s + i.total, 0);
 
@@ -135,10 +135,10 @@ function DesktopInvoices() {
   return (
     <ResponsiveShell>
       <div className="space-y-8">
-        <div className="animate-fade-in-up text-center">
+        <div className="animate-fade-in-up text-center hidden lg:block">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الفواتير</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
-            {invoices.length} فاتورة · إجمالي الإيرادات: {formatCurrency(totalRevenue)}
+            {invoices.length} فاتورة
           </p>
           <div className="mt-4 flex justify-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExport}>

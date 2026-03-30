@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileOrders } from "@/components/mobile/mobile-orders";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +36,12 @@ const statusConfig: Record<OrderStatus, { icon: typeof Clock; bg: string; border
 };
 
 export default function OrdersPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileShell><MobileOrders /></MobileShell>;
+  return <DesktopOrders />;
+}
+
+function DesktopOrders() {
   const { orders, clients, addOrder, updateOrder, deleteOrder, settings } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -208,8 +217,8 @@ export default function OrdersPage() {
   return (
     <ResponsiveShell>
       <div className="space-y-8">
-        <div className="animate-fade-in-up text-center">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">تتبع الطلبات</h1>
+        <div className="animate-fade-in-up lg:text-center">
+          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">تتبع الطلبات</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">متابعة طلبات الصيانة والطباعة ({orders.length} طلب)</p>
           <div className="mt-4 flex justify-center gap-2">
             <DateRangeExportButton

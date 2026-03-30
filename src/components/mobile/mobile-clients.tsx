@@ -3,19 +3,21 @@
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDebounce } from "@/lib/use-debounce";
-import { Search, Users, Phone, MapPin, DollarSign, FileText, X, ChevronLeft } from "lucide-react";
+import { Search, Users, Phone, MapPin, X, Plus, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Client } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 
 export function MobileClients() {
-  const { clients, invoices } = useStore();
+  const { clients, invoices, settings, addClient, updateClient, deleteClient } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [previewClient, setPreviewClient] = useState<Client | null>(null);
-
-  const totalSpent = useMemo(() => clients.reduce((s, c) => s + c.totalSpent, 0), [clients]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
 
   const filtered = useMemo(() => {
     if (!debouncedSearch) return clients;
@@ -29,26 +31,41 @@ export function MobileClients() {
   return (
     <div className="space-y-4" dir="rtl">
       {/* Stats */}
-      <div className="flex gap-3">
-        <div className="flex-1 rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--primary)" }}>{clients.length}</p>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>عميل</p>
-        </div>
-        <div className="flex-1 rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-          <p style={{ fontSize: 26, fontWeight: 800, color: "var(--green-500)" }}>{formatCurrency(totalSpent)}</p>
-          <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>إجمالي المبيعات</p>
-        </div>
+      <div className="rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
+        <p style={{ fontSize: 26, fontWeight: 800, color: "var(--primary)" }}>{clients.length}</p>
+        <p style={{ fontSize: 14, color: "var(--text-muted)", fontWeight: 600 }}>عميل مسجل</p>
+      </div>
+
+      {/* Add client */}
+      <button onClick={() => { setEditingClient(null); setShowAddForm(true); }}
+        style={{ width: "100%", height: 52, borderRadius: 16, fontSize: 17, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <Plus style={{ width: 20, height: 20 }} /> عميل جديد
+      </button>
+
+      {/* Export actions */}
+      <div className="flex gap-2" style={{ marginTop: 8 }}>
+        <DateRangeExportButton label="تصدير PDF" buttonStyle={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }} onExport={async (range: DateRange) => {
+            try { const { exportClientsReportPDF } = await import("@/lib/pdf"); await exportClientsReportPDF(clients, invoices, range, settings); toast.success("تم التصدير"); } catch { toast.error("فشل التصدير"); }
+          }} />
+        
+        <button onClick={() => {
+          const lines = [`👥 *العملاء — ${settings.businessName}*`, `عدد العملاء: ${clients.length}`, ""];
+          clients.slice(0, 15).forEach((c, i) => { lines.push(`${i + 1}. ${c.name} | ${c.phone || "-"}`); });
+          window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
+        }} style={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "#25D366", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+          واتساب
+        </button>
       </div>
 
       {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+      <div className="relative" style={{ marginTop: 8 }}>
+        <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
         <input
           type="text"
           placeholder="ابحث عن عميل..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border-2 pr-4 pl-12"
+          className="w-full rounded-2xl border-2 pr-12 pl-4"
           style={{ height: 52, fontSize: 18, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
         />
       </div>
@@ -105,8 +122,17 @@ export function MobileClients() {
           client={previewClient}
           invoices={getClientInvoices(previewClient.id)}
           onClose={() => setPreviewClient(null)}
+          onEdit={(c) => { setPreviewClient(null); setEditingClient(c); setShowAddForm(true); }}
+          onDelete={(id) => { deleteClient(id); setPreviewClient(null); toast.success("تم حذف العميل"); }}
         />
       )}
+
+      {/* Add/Edit Client Sheet */}
+      {showAddForm && <ClientFormSheet client={editingClient} onClose={() => { setShowAddForm(false); setEditingClient(null); }} onSave={(data) => {
+        if (editingClient) { updateClient(editingClient.id, data); toast.success("تم تحديث العميل"); }
+        else { addClient(data); toast.success("تم إضافة العميل"); }
+        setShowAddForm(false); setEditingClient(null);
+      }} />}
     </div>
   );
 }
@@ -115,10 +141,14 @@ function ClientSheet({
   client,
   invoices: clientInvoices,
   onClose,
+  onEdit,
+  onDelete,
 }: {
   client: Client;
   invoices: { id: string; invoiceNumber: string; clientName: string; total: number; status: import("@/lib/data").InvoiceStatus; createdAt: string }[];
   onClose: () => void;
+  onEdit: (client: Client) => void;
+  onDelete: (id: string) => void;
 }) {
   const [visible, setVisible] = useState(false);
 
@@ -160,7 +190,7 @@ function ClientSheet({
         {/* Handle */}
         <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
           <div style={{ height: 4, width: 40, borderRadius: 4, background: "var(--border-strong)" }} />
-        </div>
+        
 
         <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Header */}
@@ -217,19 +247,71 @@ function ClientSheet({
           )}
 
           {/* WhatsApp */}
-          {client.phone && (
-            <a
-              href={`https://wa.me/${client.phone.replace(/[^0-9]/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                height: 52, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                fontSize: 17, fontWeight: 700, background: "#25D366", color: "white", textDecoration: "none",
-              }}
-            >
-              واتساب
-            </a>
-          )}
+          {/* Actions */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => onEdit(client)} style={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "var(--accent-soft)", color: "var(--primary)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <Pencil style={{ width: 16, height: 16 }} /> تعديل
+            </button>
+            <button onClick={() => onDelete(client.id)} style={{ height: 48, width: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--danger-soft)", color: "var(--red-500)", border: "none", cursor: "pointer" }}>
+              <Trash2 style={{ width: 18, height: 18 }} />
+            </button>
+            {client.phone && (
+              <a href={`https://wa.me/${client.phone.replace(/[^0-9]/g, "")}`} target="_blank" rel="noopener noreferrer"
+                style={{ flex: 1, height: 48, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontSize: 16, fontWeight: 700, background: "#25D366", color: "white", textDecoration: "none" }}>
+                واتساب
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+function ClientFormSheet({ client, onClose, onSave }: {
+  client: Client | null;
+  onClose: () => void;
+  onSave: (data: { name: string; phone: string; address: string; notes: string }) => void;
+}) {
+  const [visible, setVisible] = useState(false);
+  const [form, setForm] = useState({ name: client?.name || "", phone: client?.phone || "", address: client?.address || "", notes: "" });
+
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
+  function close() { setVisible(false); setTimeout(onClose, 250); }
+
+  function handleSave() {
+    if (!form.name.trim()) { toast.error("أدخل اسم العميل"); return; }
+    onSave(form);
+  }
+
+  const inputStyle = { width: "100%", height: 48, borderRadius: 12, fontSize: 16, padding: "0 14px", background: "var(--surface-2)", color: "var(--text-primary)", border: "1px solid var(--border-default)", outline: "none" };
+  const labelStyle = { fontSize: 14, fontWeight: 700 as const, color: "var(--text-muted)", display: "block" as const, marginBottom: 6 };
+
+  return createPortal(
+    <div onClick={close} style={{ position: "fixed", inset: 0, zIndex: 99999, background: visible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)", backdropFilter: visible ? "blur(4px)" : "blur(0)", transition: "all 0.25s ease" }}>
+      <div onClick={(e) => e.stopPropagation()} dir="rtl" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100000, background: "var(--surface-1)",
+        borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)",
+        transform: visible ? "translateY(0)" : "translateY(100%)", transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 8px" }}>
+          <div style={{ height: 4, width: 40, borderRadius: 4, background: "var(--border-strong)" }} />
+        </div>
+        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>{client ? "تعديل العميل" : "عميل جديد"}</h3>
+            <button onClick={close} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-2)", color: "var(--text-muted)", border: "none", cursor: "pointer" }}>
+              <X style={{ width: 18, height: 18 }} />
+            </button>
+          </div>
+          <div><label style={labelStyle}>اسم العميل</label><input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={inputStyle} /></div>
+          <div><label style={labelStyle}>الهاتف</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} style={inputStyle} dir="ltr" inputMode="tel" /></div>
+          <div><label style={labelStyle}>العنوان</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} style={inputStyle} /></div>
+          <button onClick={handleSave} style={{ width: "100%", height: 56, borderRadius: 16, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer", marginTop: 8 }}>
+            {client ? "تحديث" : "إضافة العميل"}
+          </button>
         </div>
       </div>
     </div>,

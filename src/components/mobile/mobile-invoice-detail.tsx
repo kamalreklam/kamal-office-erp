@@ -40,7 +40,14 @@ export function MobileInvoiceDetail({ invoice }: { invoice: Invoice }) {
   }
 
   function togglePaid() {
-    const newStatus = invoice.status === "مدفوعة" ? "غير مدفوعة" : "مدفوعة";
+    const cycle: Record<string, import("@/lib/data").InvoiceStatus> = {
+      "غير مدفوعة": "مدفوعة جزئياً",
+      "مدفوعة جزئياً": "مدفوعة",
+      "مدفوعة": "غير مدفوعة",
+      "مسودة": "غير مدفوعة",
+      "ملغاة": "غير مدفوعة",
+    };
+    const newStatus = cycle[invoice.status] || "غير مدفوعة";
     updateInvoiceStatus(invoice.id, newStatus);
     toast.success(`تم تغيير الحالة إلى: ${newStatus}`);
   }
@@ -51,7 +58,7 @@ export function MobileInvoiceDetail({ invoice }: { invoice: Invoice }) {
         {/* Back + Title */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button
-            onClick={() => router.push("/invoices")}
+            onClick={() => router.back()}
             style={{
               width: 44, height: 44, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center",
               background: "var(--surface-2)", color: "var(--text-muted)", border: "none", cursor: "pointer",

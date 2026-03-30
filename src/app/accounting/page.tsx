@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileAccounting } from "@/components/mobile/mobile-accounting";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +39,11 @@ function daysBetween(d1: string, d2: string) {
 }
 
 export default function AccountingPage() {
+  const isMobile = useIsMobile();
+  if (isMobile) return <MobileShell><MobileAccounting /></MobileShell>;
+  return <DesktopAccounting />;
+}
+function DesktopAccounting() {
   const { invoices, settings, clients } = useStore();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
@@ -221,8 +229,8 @@ export default function AccountingPage() {
     <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
-        <div className="animate-fade-in-up text-center">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المحاسبة</h1>
+        <div className="animate-fade-in-up lg:text-center">
+          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">المحاسبة</h1>
           <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
             قائمة الأرباح والخسائر · المستحقات · الضرائب
           </p>

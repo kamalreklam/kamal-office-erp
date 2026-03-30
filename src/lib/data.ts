@@ -25,7 +25,7 @@ export interface Product {
   createdAt: string;
 }
 
-export type InvoiceStatus = "مسودة" | "مدفوعة" | "غير مدفوعة" | "ملغاة";
+export type InvoiceStatus = "مسودة" | "مدفوعة" | "مدفوعة جزئياً" | "غير مدفوعة" | "ملغاة";
 export type OrderStatus = "قيد الانتظار" | "قيد التنفيذ" | "جاهز للاستلام" | "مكتمل";
 
 export interface InvoiceItem {
@@ -1554,6 +1554,8 @@ export function getStatusColor(status: InvoiceStatus): string {
   switch (status) {
     case "مدفوعة":
       return "status-badge status-badge--success";
+    case "مدفوعة جزئياً":
+      return "status-badge status-badge--info";
     case "غير مدفوعة":
       return "status-badge status-badge--warning";
     case "مسودة":
