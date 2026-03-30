@@ -2,7 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileInvoiceWizard } from "@/components/mobile/invoice-wizard/mobile-invoice-wizard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,18 @@ interface LineItem {
 }
 
 export default function NewInvoicePage() {
+  const isMobile = useIsMobile();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("edit");
+
+  if (isMobile) {
+    return <MobileInvoiceWizard editId={editId} />;
+  }
+
+  return <DesktopInvoicePage />;
+}
+
+function DesktopInvoicePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get("edit");
@@ -113,6 +127,7 @@ export default function NewInvoicePage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
 
   function selectClient(client: (typeof clients)[0]) {
     setSelectedClient(client);
@@ -330,7 +345,7 @@ export default function NewInvoicePage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -809,6 +824,6 @@ export default function NewInvoicePage() {
           })()}
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

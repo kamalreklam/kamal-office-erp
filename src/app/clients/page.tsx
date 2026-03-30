@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,9 @@ import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 import { CardGridSkeleton } from "@/components/skeletons";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileClients } from "@/components/mobile/mobile-clients";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 
 const emptyClient = { name: "", phone: "", address: "", notes: "" };
 
@@ -46,11 +49,22 @@ function getAvatarColor(id: string) {
 }
 
 export default function ClientsPage() {
-  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient, connectionStatus } = useStore();
+  const isMobile = useIsMobile();
+  const { connectionStatus } = useStore();
 
   if (connectionStatus === "loading") {
-    return <AppShell><CardGridSkeleton /></AppShell>;
+    return <ResponsiveShell><CardGridSkeleton /></ResponsiveShell>;
   }
+
+  if (isMobile) {
+    return <MobileShell><MobileClients /></MobileShell>;
+  }
+
+  return <DesktopClients />;
+}
+
+function DesktopClients() {
+  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -171,7 +185,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">العملاء</h1>
@@ -513,6 +527,6 @@ export default function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

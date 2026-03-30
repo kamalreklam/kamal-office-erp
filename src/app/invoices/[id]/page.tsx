@@ -3,7 +3,7 @@
 import { use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import DOMPurify from "dompurify";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileInvoiceDetail } from "@/components/mobile/mobile-invoice-detail";
 
 export default function InvoiceDetailPage({
   params,
@@ -23,6 +25,7 @@ export default function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
+  const isMobile = useIsMobile();
   const router = useRouter();
   const { invoices, clients, settings, updateInvoiceStatus, getProductImage } = useStore();
 
@@ -30,7 +33,7 @@ export default function InvoiceDetailPage({
 
   if (!foundInvoice) {
     return (
-      <AppShell>
+      <ResponsiveShell>
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground animate-in fade-in duration-500">
           <FileText className="mb-3 h-12 w-12 opacity-40" />
           <p className="text-lg font-medium">الفاتورة غير موجودة</p>
@@ -38,8 +41,12 @@ export default function InvoiceDetailPage({
             العودة للفواتير
           </Button>
         </div>
-      </AppShell>
+      </ResponsiveShell>
     );
+  }
+
+  if (isMobile) {
+    return <MobileInvoiceDetail invoice={foundInvoice} />;
   }
 
   // Normalize items — handle { _items, _taxAmount } meta format from DB
@@ -106,7 +113,7 @@ export default function InvoiceDetailPage({
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="mx-auto max-w-3xl space-y-8 print:max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
         {/* Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
@@ -259,6 +266,6 @@ export default function InvoiceDetailPage({
           </CardContent>
         </Card>
       </div>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

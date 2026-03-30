@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -206,7 +206,7 @@ export default function OrdersPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">تتبع الطلبات</h1>
@@ -358,6 +358,6 @@ export default function OrdersPage() {
           <DialogFooter className="gap-2 sm:gap-0"><Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button><Button variant="destructive" onClick={handleDelete}>حذف</Button></DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

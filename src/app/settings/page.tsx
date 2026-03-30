@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { loadInvoiceTemplate, saveInvoiceTemplate, resetInvoiceTemplate, DEFAULT_TEMPLATE, TEMPLATE_VARIABLES } from "@/lib/invoice-settings";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,7 +128,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="mx-auto max-w-3xl space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الإعدادات</h1>
@@ -507,6 +507,6 @@ export default function SettingsPage() {
           </ResetDialogFooter>
         </ResetDialogContent>
       </ResetDialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -25,13 +25,27 @@ import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { Sidesheet } from "@/components/sidesheet";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileInvoices } from "@/components/mobile/mobile-invoices";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 
 export default function InvoicesPage() {
-  const { invoices, deleteInvoice, settings, connectionStatus } = useStore();
+  const isMobile = useIsMobile();
+  const { connectionStatus } = useStore();
 
   if (connectionStatus === "loading") {
-    return <AppShell><TablePageSkeleton /></AppShell>;
+    return <ResponsiveShell><TablePageSkeleton /></ResponsiveShell>;
   }
+
+  if (isMobile) {
+    return <MobileShell><MobileInvoices /></MobileShell>;
+  }
+
+  return <DesktopInvoices />;
+}
+
+function DesktopInvoices() {
+  const { invoices, deleteInvoice, settings, connectionStatus } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
@@ -119,7 +133,7 @@ export default function InvoicesPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">الفواتير</h1>
@@ -407,6 +421,6 @@ export default function InvoicesPage() {
           </div>
         )}
       </Sidesheet>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useDebounce } from "@/lib/use-debounce";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +27,9 @@ import { DateRangeExportButton, type DateRange } from "@/components/date-range-p
 import { TablePageSkeleton } from "@/components/skeletons";
 import { FadeInView } from "@/components/fade-in-view";
 import { InlineEdit } from "@/components/inline-edit";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileInventory } from "@/components/mobile/mobile-inventory";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 
 const emptyForm = {
   name: "",
@@ -41,11 +44,22 @@ const emptyForm = {
 };
 
 export default function InventoryPage() {
-  const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
+  const isMobile = useIsMobile();
+  const { connectionStatus } = useStore();
 
   if (connectionStatus === "loading") {
-    return <AppShell><TablePageSkeleton /></AppShell>;
+    return <ResponsiveShell><TablePageSkeleton /></ResponsiveShell>;
   }
+
+  if (isMobile) {
+    return <MobileShell><MobileInventory /></MobileShell>;
+  }
+
+  return <DesktopInventory />;
+}
+
+function DesktopInventory() {
+  const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -186,7 +200,7 @@ export default function InventoryPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
@@ -678,6 +692,6 @@ export default function InventoryPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

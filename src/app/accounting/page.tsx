@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -218,7 +218,7 @@ export default function AccountingPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
@@ -552,6 +552,6 @@ export default function AccountingPage() {
           </Card>
         )}
       </div>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

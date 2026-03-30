@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/data";
@@ -196,7 +196,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         {/* Header */}
         <div className="animate-fade-in-up text-center">
@@ -440,6 +440,6 @@ export default function ReportsPage() {
           </Card>
         </div>
       </div>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

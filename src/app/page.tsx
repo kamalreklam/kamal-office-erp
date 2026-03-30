@@ -1,8 +1,11 @@
 "use client";
 
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Badge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/skeletons";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { MobileDashboard } from "@/components/mobile/mobile-dashboard";
+import { MobileShell } from "@/components/mobile/mobile-shell";
 import { AnimatedCounter } from "@/components/animated-counter";
 import { SortableWidgets } from "@/components/sortable-widgets";
 import { motion } from "framer-motion";
@@ -39,11 +42,22 @@ const cardVariants = {
 };
 
 export default function DashboardPage() {
-  const { invoices, products, clients, orders, settings, connectionStatus } = useStore();
+  const isMobile = useIsMobile();
+  const { connectionStatus } = useStore();
 
   if (connectionStatus === "loading") {
-    return <AppShell><DashboardSkeleton /></AppShell>;
+    return <ResponsiveShell><DashboardSkeleton /></ResponsiveShell>;
   }
+
+  if (isMobile) {
+    return <MobileShell><MobileDashboard /></MobileShell>;
+  }
+
+  return <DesktopDashboard />;
+}
+
+function DesktopDashboard() {
+  const { invoices, products, clients, orders, settings } = useStore();
 
   const totalRevenue = getTotalRevenue(invoices);
   const lowStockItems = getLowStockProducts(products);
@@ -55,7 +69,7 @@ export default function DashboardPage() {
   const activeOrders = orders.filter((o) => o.status !== "مكتمل").length;
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-5 sm:space-y-6">
         {/* Header */}
         <div>
@@ -296,6 +310,6 @@ export default function DashboardPage() {
           ]}
         />
       </div>
-    </AppShell>
+    </ResponsiveShell>
   );
 }

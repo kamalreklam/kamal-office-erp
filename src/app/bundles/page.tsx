@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { AppShell } from "@/components/app-shell";
+import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -153,7 +153,7 @@ export default function BundlesPage() {
   }
 
   return (
-    <AppShell>
+    <ResponsiveShell>
       <div className="space-y-8">
         <div className="animate-fade-in-up text-center">
           <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">مجموعات الأحبار</h1>
@@ -361,6 +361,6 @@ export default function BundlesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppShell>
+    </ResponsiveShell>
   );
 }
