@@ -6,19 +6,20 @@ async function generatePdf(html: string) {
   const isVercel = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
   if (isVercel) {
-    // Vercel/serverless: use puppeteer-core + @sparticuz/chromium
-    const chromium = (await import("@sparticuz/chromium")).default;
+    // Vercel: use puppeteer-core + chromium-min (downloads binary from CDN at runtime)
+    const chromium = (await import("@sparticuz/chromium-min")).default;
     const puppeteerCore = await import("puppeteer-core");
 
     const browser = await puppeteerCore.default.launch({
       args: chromium.args,
       defaultViewport: { width: 794, height: 1123 },
-      executablePath: await chromium.executablePath(),
+      executablePath: await chromium.executablePath(
+        "https://github.com/nicholasgriffintn/playwright-aws-chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar"
+      ),
       headless: true,
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 794, height: 1123 });
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 20000 });
     await page.evaluateHandle("document.fonts.ready");
     const pdfBuffer = await page.pdf({
