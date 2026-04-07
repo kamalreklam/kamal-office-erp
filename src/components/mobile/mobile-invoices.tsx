@@ -4,9 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
-import { Search, Plus, FileText, ChevronLeft, X } from "lucide-react";
+import { Search, Plus, FileText, ChevronLeft, X, Download, CheckCircle2, RotateCcw, Trash2, Eye } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
+import { formatCurrency, getStatusColor, type Invoice, type InvoiceStatus } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -14,7 +14,7 @@ import { DateRangeExportButton, type DateRange } from "@/components/date-range-p
 const statuses = ["الكل", "مدفوعة", "مدفوعة جزئياً", "غير مدفوعة", "مسودة", "ملغاة"];
 
 export function MobileInvoices() {
-  const { invoices, settings } = useStore();
+  const { invoices, settings, clients, updateInvoiceStatus, deleteInvoice } = useStore();
 
   function shareWhatsApp() {
     const paid = invoices.filter((i) => i.status === "مدفوعة");
@@ -170,7 +170,9 @@ export function MobileInvoices() {
 }
 
 function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
+  const { settings, clients, updateInvoiceStatus, deleteInvoice } = useStore();
   const [visible, setVisible] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true));
@@ -275,13 +277,72 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
             </div>
           </div>
 
-          {/* Action */}
-          <Link href={`/invoices/${invoice.id}`} onClick={close}>
-            <div style={{ height: 56, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              عرض التفاصيل الكاملة
-              <ChevronLeft style={{ width: 20, height: 20 }} />
-            </div>
-          </Link>
+          {/* Action Buttons */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {/* View Details */}
+            <Link href={`/invoices/${invoice.id}`} onClick={close} style={{ textDecoration: "none" }}>
+              <div style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "var(--primary)", color: "white", cursor: "pointer" }}>
+                <Eye style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>عرض التفاصيل</span>
+              </div>
+            </Link>
+
+            {/* Download PDF */}
+            <button
+              onClick={async () => {
+                try {
+                  const { exportInvoicePDF } = await import("@/lib/pdf");
+                  const client = clients.find(c => c.id === invoice.clientId);
+                  await exportInvoicePDF(invoice, settings, { phone: client?.phone, address: client?.address });
+                  toast.success("تم تحميل الفاتورة");
+                } catch { toast.error("فشل التحميل"); }
+              }}
+              style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(37, 99, 235, 0.1)", color: "#2563eb", border: "none", cursor: "pointer" }}
+            >
+              <Download style={{ width: 22, height: 22 }} />
+              <span style={{ fontSize: 14, fontWeight: 800 }}>تحميل PDF</span>
+            </button>
+
+            {/* Mark Paid / Return */}
+            {invoice.status !== "مدفوعة" && invoice.status !== "ملغاة" ? (
+              <button
+                onClick={() => { updateInvoiceStatus(invoice.id, "مدفوعة"); toast.success("تم تحديد كمدفوعة"); close(); }}
+                style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(16, 185, 129, 0.1)", color: "#10b981", border: "none", cursor: "pointer" }}
+              >
+                <CheckCircle2 style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>تحديد مدفوعة</span>
+              </button>
+            ) : invoice.status === "مدفوعة" ? (
+              <button
+                onClick={() => { updateInvoiceStatus(invoice.id, "غير مدفوعة"); toast.success("تم الإرجاع"); close(); }}
+                style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(245, 158, 11, 0.1)", color: "#f59e0b", border: "none", cursor: "pointer" }}
+              >
+                <RotateCcw style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>إرجاع</span>
+              </button>
+            ) : (
+              <div />
+            )}
+
+            {/* Delete */}
+            {!confirmDelete ? (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", border: "none", cursor: "pointer" }}
+              >
+                <Trash2 style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>حذف</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => { deleteInvoice(invoice.id); toast.success("تم حذف الفاتورة"); close(); }}
+                style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "#ef4444", color: "white", border: "none", cursor: "pointer" }}
+              >
+                <Trash2 style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>تأكيد الحذف</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>,
