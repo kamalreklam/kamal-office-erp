@@ -44,7 +44,7 @@ export default function AccountingPage() {
   return <DesktopAccounting />;
 }
 function DesktopAccounting() {
-  const { invoices, settings, clients } = useStore();
+  const { invoices, products, settings, clients } = useStore();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
 
@@ -72,8 +72,21 @@ function DesktopAccounting() {
     const netRevenue = paid.reduce((s, i) => s + i.total, 0);
     const revenueAfterTax = netRevenue - taxAmount;
 
-    return { grossRevenue, totalDiscount, netRevenue, taxAmount, revenueAfterTax, invoiceCount: paid.length };
-  }, [yearInvoices, settings]);
+    // COGS: sum of cost prices for all sold items
+    const cogs = paid.reduce((s, inv) => {
+      const items = Array.isArray(inv.items) ? inv.items : [];
+      return s + items.reduce((itemSum, item) => {
+        const product = products.find(p => p.id === item.productId);
+        const costPrice = product?.price ?? 0;
+        return itemSum + (costPrice * item.quantity);
+      }, 0);
+    }, 0);
+
+    const grossProfit = netRevenue - cogs;
+    const profitMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
+
+    return { grossRevenue, totalDiscount, netRevenue, taxAmount, revenueAfterTax, cogs, grossProfit, profitMargin, invoiceCount: paid.length };
+  }, [yearInvoices, products, settings]);
 
   // =============================================
   // ACCOUNTS RECEIVABLE (Unpaid Invoices with Aging)
@@ -183,17 +196,22 @@ function DesktopAccounting() {
       ["إجمالي الإيرادات (قبل الخصم)", String(pnl.grossRevenue)],
       ["إجمالي الخصومات", String(pnl.totalDiscount)],
       ["صافي الإيرادات", String(pnl.netRevenue)],
+      ["تكلفة البضاعة المباعة", String(pnl.cogs)],
+      ["إجمالي الربح", String(pnl.grossProfit)],
+      ["هامش الربح %", `${pnl.profitMargin.toFixed(1)}%`],
       ...(settings.taxEnabled ? [["الضريبة المستحقة", String(pnl.taxAmount)]] : []),
-      ...(settings.taxEnabled ? [["الإيرادات بعد الضريبة", String(pnl.revenueAfterTax)]] : []),
+      ...(settings.taxEnabled ? [["صافي الربح بعد الضريبة", String(pnl.grossProfit - pnl.taxAmount)]] : []),
     ]);
     toast.success("تم تصدير قائمة الأرباح");
   }
 
   const kpis = [
     { label: "صافي الإيرادات", value: formatCurrency(pnl.netRevenue), icon: DollarSign, color: "text-emerald-600 bg-emerald-50" },
+    { label: "إجمالي الربح", value: formatCurrency(pnl.grossProfit), icon: TrendingUp, color: "text-green-600 bg-green-50" },
+    { label: "هامش الربح", value: `${pnl.profitMargin.toFixed(1)}%`, icon: Calculator, color: "text-violet-600 bg-violet-50" },
     { label: "المستحقات المتأخرة", value: formatCurrency(receivables.totalReceivable), icon: Clock, color: "text-amber-600 bg-amber-50" },
-    { label: "إجمالي الخصومات", value: formatCurrency(pnl.totalDiscount), icon: Receipt, color: "text-sky-600 bg-sky-50" },
-    { label: settings.taxEnabled ? `الضريبة (${settings.taxRate}%)` : "الضريبة", value: settings.taxEnabled ? formatCurrency(pnl.taxAmount) : "معطلة", icon: Calculator, color: "text-violet-600 bg-violet-50" },
+    { label: "تكلفة البضاعة", value: formatCurrency(pnl.cogs), icon: Receipt, color: "text-sky-600 bg-sky-50" },
+    { label: "الخصومات", value: formatCurrency(pnl.totalDiscount), icon: TrendingDown, color: "text-red-600 bg-red-50" },
   ];
 
   function shareWhatsApp() {
@@ -206,6 +224,9 @@ function DesktopAccounting() {
       `  • إجمالي الإيرادات: ${settings.currencySymbol}${pnl.grossRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
       `  • الخصومات: -${settings.currencySymbol}${pnl.totalDiscount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
       `  • صافي الإيرادات: ${settings.currencySymbol}${pnl.netRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • تكلفة البضاعة: -${settings.currencySymbol}${pnl.cogs.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • ✅ إجمالي الربح: ${settings.currencySymbol}${pnl.grossProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • 📈 هامش الربح: ${pnl.profitMargin.toFixed(1)}%`,
     ];
     if (settings.taxEnabled) {
       lines.push(`  • الضريبة (${settings.taxRate}%): ${settings.currencySymbol}${pnl.taxAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
@@ -265,7 +286,7 @@ function DesktopAccounting() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 stagger-list">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 stagger-list">
           {kpis.map((kpi) => (
             <Card key={kpi.label} className="border border-[var(--glass-border)] shadow-sm hover-lift">
               <CardContent className="flex flex-col items-center p-4 sm:p-6">
@@ -305,15 +326,32 @@ function DesktopAccounting() {
                 <span className="text-sm font-bold text-primary">صافي الإيرادات</span>
                 <span className="text-lg font-extrabold text-primary">{formatCurrency(pnl.netRevenue)}</span>
               </div>
+
+              {/* COGS & Profit */}
+              <div className="my-2 h-px bg-border" />
+              <div className="flex items-center justify-between rounded-xl p-4">
+                <span className="text-sm text-muted-foreground">(-) تكلفة البضاعة المباعة</span>
+                <span className="text-base font-medium text-red-600">-{formatCurrency(pnl.cogs)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-4 border border-emerald-100">
+                <span className="text-sm font-bold text-emerald-700">إجمالي الربح</span>
+                <span className="text-lg font-extrabold text-emerald-700">{formatCurrency(pnl.grossProfit)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-emerald-50/50 p-4">
+                <span className="text-sm font-medium text-emerald-600">هامش الربح</span>
+                <span className="text-lg font-extrabold text-emerald-600">{pnl.profitMargin.toFixed(1)}%</span>
+              </div>
+
               {settings.taxEnabled && (
                 <>
+                  <div className="my-2 h-px bg-border" />
                   <div className="flex items-center justify-between rounded-xl p-4">
                     <span className="text-sm text-muted-foreground">(-) الضريبة ({settings.taxRate}%)</span>
                     <span className="text-base font-medium text-red-600">-{formatCurrency(pnl.taxAmount)}</span>
                   </div>
                   <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-4 border border-emerald-100">
-                    <span className="text-sm font-bold text-emerald-700">الإيرادات بعد الضريبة</span>
-                    <span className="text-lg font-extrabold text-emerald-700">{formatCurrency(pnl.revenueAfterTax)}</span>
+                    <span className="text-sm font-bold text-emerald-700">صافي الربح بعد الضريبة</span>
+                    <span className="text-lg font-extrabold text-emerald-700">{formatCurrency(pnl.grossProfit - pnl.taxAmount)}</span>
                   </div>
                 </>
               )}
