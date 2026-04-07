@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download, MessageCircle } from "lucide-react";
+import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download, MessageCircle, RotateCcw, CheckCircle2 } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -45,7 +45,7 @@ export default function InvoicesPage() {
 }
 
 function DesktopInvoices() {
-  const { invoices, deleteInvoice, settings, connectionStatus } = useStore();
+  const { invoices, deleteInvoice, updateInvoiceStatus, settings, clients, connectionStatus } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [statusFilter, setStatusFilter] = useState("الكل");
@@ -97,6 +97,22 @@ function DesktopInvoices() {
     deleteInvoice(deletingInvoice.id);
     toast.success("تم حذف الفاتورة");
     setDeleteDialogOpen(false);
+  }
+
+  async function handleDownloadPDF(inv: Invoice) {
+    try {
+      const { exportInvoicePDF } = await import("@/lib/pdf");
+      const client = clients.find(c => c.id === inv.clientId);
+      await exportInvoicePDF(inv, settings, { phone: client?.phone, address: client?.address });
+      toast.success("تم تحميل الفاتورة");
+    } catch {
+      toast.error("فشل تحميل الفاتورة");
+    }
+  }
+
+  function handleStatusChange(inv: Invoice, newStatus: "مدفوعة" | "غير مدفوعة" | "ملغاة") {
+    updateInvoiceStatus(inv.id, newStatus);
+    toast.success(`تم تحديث الحالة إلى: ${newStatus}`);
   }
 
   function handleExport() {
@@ -247,9 +263,13 @@ function DesktopInvoices() {
                 </TableRow>
               ) : (
                 paged.map((inv) => (
-                  <TableRow key={inv.id} className="transition-colors hover:bg-[var(--surface-2)]/30">
-                    <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                    <TableCell>{inv.clientName}</TableCell>
+                  <TableRow
+                    key={inv.id}
+                    className="cursor-pointer transition-colors hover:bg-[var(--surface-2)]/50"
+                    onClick={() => window.location.href = `/invoices/${inv.id}`}
+                  >
+                    <TableCell className="font-medium" style={{ color: "var(--primary)" }}>{inv.invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">{inv.clientName}</TableCell>
                     <TableCell className="text-muted-foreground">{inv.createdAt}</TableCell>
                     <TableCell>{inv.items.length} عناصر</TableCell>
                     <TableCell className="font-bold">{formatCurrency(inv.total)}</TableCell>
@@ -257,11 +277,24 @@ function DesktopInvoices() {
                       <Badge variant="outline" className={`text-xs ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        <button onClick={() => setPreviewInvoice(inv)} className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground" title="معاينة سريعة">
+                      <div className="flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleDownloadPDF(inv)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600" title="تحميل PDF">
+                          <Download className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => setPreviewInvoice(inv)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground" title="معاينة سريعة">
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button onClick={() => confirmDelete(inv)} className="rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
+                        {inv.status !== "مدفوعة" && inv.status !== "ملغاة" && (
+                          <button onClick={() => handleStatusChange(inv, "مدفوعة")} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-green-50 hover:text-green-600" title="تحديد كمدفوعة">
+                            <CheckCircle2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {inv.status === "مدفوعة" && (
+                          <button onClick={() => handleStatusChange(inv, "غير مدفوعة")} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-amber-50 hover:text-amber-600" title="إرجاع / غير مدفوعة">
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button onClick={() => confirmDelete(inv)} className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600" title="حذف">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
