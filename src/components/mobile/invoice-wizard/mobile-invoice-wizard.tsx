@@ -512,8 +512,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                     </button>
                   </div>
 
-                  {/* Row 2: qty, price, discount%, line total */}
-                  <div className="grid grid-cols-4 gap-2">
+                  {/* Row 2: qty, price, line total */}
+                  <div className="grid grid-cols-3 gap-2">
                     {/* Quantity */}
                     <div>
                       <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
@@ -551,20 +551,6 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                         value={item._priceInput ?? String(item.unitPrice)}
                         onChange={(e) => updateCartPrice(item.productId, e.target.value)}
                         className="w-full rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                      />
-                    </div>
-
-                    {/* Discount % */}
-                    <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">خصم %</label>
-                      <input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={item.discount || 0}
-                        onChange={(e) => updateCartDiscount(item.productId, parseFloat(e.target.value) || 0)}
-                        className="w-full rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        dir="ltr"
                       />
                     </div>
 

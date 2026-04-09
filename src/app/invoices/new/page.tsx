@@ -526,44 +526,28 @@ function DesktopInvoicePage() {
                 </div>
               </div>
 
-              {/* Payment Terms (Discount) */}
+              {/* Payment Terms */}
               <div>
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
-                <div className="flex gap-2">
-                  <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
-                    <SelectTrigger className="h-10 w-[130px] rounded-[10px] border-[1.5px] border-[#e2e8f0]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">نسبة %</SelectItem>
-                      <SelectItem value="fixed">مبلغ ثابت</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    type="number" min={0} max={discountType === "percentage" ? 100 : subtotal}
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                    className="h-10 flex-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono"
-                  />
-                </div>
-              </div>
-
-              {/* Discount amount preview */}
-              <div>
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">قيمة الخصم</label>
-                <div className="flex h-10 items-center rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 text-sm font-mono font-bold text-red-500">
-                  {discountAmount > 0 ? `-${formatCurrency(discountAmount)}` : formatCurrency(0)}
-                </div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">شروط الدفع</label>
+                <Select defaultValue="immediate">
+                  <SelectTrigger className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="immediate">فوري</SelectItem>
+                    <SelectItem value="30">30 يوم</SelectItem>
+                    <SelectItem value="60">60 يوم</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Line items table */}
             <div className="p-6">
               {/* Table header — hidden on mobile */}
-              <div className="hidden sm:grid grid-cols-[36px_1fr_80px_100px_70px_90px_32px] gap-2 items-center px-2 py-2 rounded-[10px] bg-[#f8fafc] mb-2">
+              <div className="hidden sm:grid grid-cols-[36px_1fr_80px_100px_90px_32px] gap-2 items-center px-2 py-2 rounded-[10px] bg-[#f8fafc] mb-2">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">#</span>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتج</span>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">الكمية</span>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">السعر</span>
-                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">خصم %</span>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">الإجمالي</span>
                 <span />
               </div>
@@ -573,7 +557,7 @@ function DesktopInvoicePage() {
                 {lineItems.map((item, index) => (
                   <div key={item.id} data-product-row className="group relative">
                     {/* Desktop row */}
-                    <div className={`hidden sm:grid grid-cols-[36px_1fr_80px_100px_70px_90px_32px] gap-2 items-center rounded-[10px] px-2 py-2 transition-colors hover:bg-[#f8fafc] ${item.isTemporary ? "bg-[#fefce8]" : ""}`}>
+                    <div className={`hidden sm:grid grid-cols-[36px_1fr_80px_100px_90px_32px] gap-2 items-center rounded-[10px] px-2 py-2 transition-colors hover:bg-[#f8fafc] ${item.isTemporary ? "bg-[#fefce8]" : ""}`}>
                       {/* Row # */}
                       <span className="text-xs font-bold text-[#94a3b8] text-center font-mono">{index + 1}</span>
 
@@ -703,14 +687,6 @@ function DesktopInvoicePage() {
                         className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-center text-sm font-mono"
                       />
 
-                      {/* Discount % */}
-                      <Input
-                        type="number" min={0} max={100}
-                        value={item.discount || 0}
-                        onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
-                        className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-center text-sm font-mono"
-                      />
-
                       {/* Total */}
                       <span className="text-sm font-bold font-mono text-[#1e293b] text-center">{formatCurrency(getLineTotal(item))}</span>
 
@@ -831,7 +807,7 @@ function DesktopInvoicePage() {
                       </div>
 
                       {/* Qty / Price / Discount / Total grid */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-3 gap-3">
                         <div>
                           <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الكمية</label>
                           <Input
@@ -855,15 +831,6 @@ function DesktopInvoicePage() {
                               ));
                             }}
                             placeholder="0.00"
-                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">خصم %</label>
-                          <Input
-                            type="number" min={0} max={100}
-                            value={item.discount || 0}
-                            onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
                             className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
                           />
                         </div>
@@ -908,19 +875,37 @@ function DesktopInvoicePage() {
               </div>
             </div>
 
-            {/* Totals right-aligned */}
+            {/* Totals + Discount */}
             <div className="border-t border-[#e2e8f0] p-6">
-              <div className="mr-auto w-full max-w-xs space-y-2">
+              <div className="mr-auto w-full max-w-sm space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#94a3b8]">المجموع الفرعي</span>
                   <span className="font-mono font-medium text-[#1e293b]">{formatCurrency(subtotal)}</span>
                 </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[#94a3b8]">الخصم {discountType === "percentage" ? `(${discountValue}%)` : ""}</span>
-                    <span className="font-mono font-medium text-red-500">-{formatCurrency(discountAmount)}</span>
+
+                {/* Discount controls */}
+                <div className="flex items-center justify-between gap-3 rounded-[10px] border-[1.5px] border-dashed border-[#e2e8f0] bg-[#f8fafc] px-3 py-2">
+                  <span className="text-sm font-medium text-[#94a3b8] shrink-0">الخصم</span>
+                  <div className="flex items-center gap-1.5">
+                    <Input
+                      type="number" min={0} max={discountType === "percentage" ? 100 : subtotal}
+                      value={discountValue}
+                      onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
+                      className="h-8 w-16 rounded-[8px] border-[1.5px] border-[#e2e8f0] text-center text-sm font-mono font-bold"
+                    />
+                    <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
+                      <SelectTrigger className="h-8 w-14 rounded-[8px] border-[1.5px] border-[#e2e8f0] text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="fixed">$</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                )}
+                  {discountAmount > 0 && (
+                    <span className="font-mono text-sm font-bold text-red-500">-{formatCurrency(discountAmount)}</span>
+                  )}
+                </div>
+
                 {settings.taxEnabled && taxAmount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-[#94a3b8]">الضريبة ({settings.taxRate}%)</span>
