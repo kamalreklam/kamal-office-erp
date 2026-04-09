@@ -680,14 +680,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         // Auto-deduct stock — await all for consistency
         if (data.status !== "مسودة" && data.status !== "ملغاة") {
-          const stockUpdates = data.items
-            .filter(item => item.productId)
-            .map(item => {
+          const stockUpdates: Promise<boolean>[] = [];
+          data.items.forEach(item => {
+            if (item.isTemporary) return; // skip temp items
+            if (item.isBundle && item.bundleComponents) {
+              item.bundleComponents.forEach(comp => {
+                const product = products.find(p => p.id === comp.productId);
+                if (!product) return;
+                const newStock = Math.max(0, product.stock - (comp.quantity * item.quantity));
+                stockUpdates.push(dbExec(supabase.from("products").update({ stock: newStock }).eq("id", comp.productId)));
+              });
+            } else if (item.productId) {
               const product = products.find(p => p.id === item.productId);
-              if (!product) return Promise.resolve(true);
+              if (!product) return;
               const newStock = Math.max(0, product.stock - item.quantity);
-              return dbExec(supabase.from("products").update({ stock: newStock }).eq("id", item.productId));
-            });
+              stockUpdates.push(dbExec(supabase.from("products").update({ stock: newStock }).eq("id", item.productId)));
+            }
+          });
           const results = await Promise.all(stockUpdates);
           if (results.some(r => !r)) {
             toast.error("تحذير: فشل تحديث بعض كميات المخزون");
@@ -705,15 +714,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
       // Optimistic local state updates
       if (data.status !== "مسودة" && data.status !== "ملغاة") {
-        setProducts((prev) =>
-          prev.map((product) => {
-            const invoiceItem = data.items.find((item) => item.productId === product.id);
-            if (invoiceItem) {
-              return { ...product, stock: Math.max(0, product.stock - invoiceItem.quantity) };
-            }
-            return product;
-          })
-        );
+        data.items.forEach(item => {
+          if (item.isTemporary) return; // skip temp items
+          if (item.isBundle && item.bundleComponents) {
+            // Deduct from each component
+            item.bundleComponents.forEach(comp => {
+              setProducts(prev => prev.map(p =>
+                p.id === comp.productId ? { ...p, stock: Math.max(0, p.stock - (comp.quantity * item.quantity)) } : p
+              ));
+            });
+          } else {
+            // Normal product deduction
+            setProducts(prev => prev.map(p =>
+              p.id === item.productId ? { ...p, stock: Math.max(0, p.stock - item.quantity) } : p
+            ));
+          }
+        });
       }
 
       if (data.status === "مدفوعة") {
@@ -749,19 +765,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const oldDeducts = statusDeductsStock(oldInvoice.status);
         const newDeducts = statusDeductsStock(data.status);
 
+        // Build a map of productId -> stock delta
+        const stockDeltas = new Map<string, number>();
+        const applyDelta = (pid: string, delta: number) => {
+          stockDeltas.set(pid, (stockDeltas.get(pid) || 0) + delta);
+        };
+
+        // Restore old deductions
+        if (oldDeducts) {
+          oldInvoice.items.forEach(item => {
+            if (item.isTemporary) return;
+            if (item.isBundle && item.bundleComponents) {
+              item.bundleComponents.forEach(comp => applyDelta(comp.productId, comp.quantity * item.quantity));
+            } else if (item.productId) {
+              applyDelta(item.productId, item.quantity);
+            }
+          });
+        }
+        // Apply new deductions
+        if (newDeducts) {
+          data.items.forEach(item => {
+            if (item.isTemporary) return;
+            if (item.isBundle && item.bundleComponents) {
+              item.bundleComponents.forEach(comp => applyDelta(comp.productId, -(comp.quantity * item.quantity)));
+            } else if (item.productId) {
+              applyDelta(item.productId, -item.quantity);
+            }
+          });
+        }
+
         setProducts(prev => prev.map(p => {
-          let stock = p.stock;
-          // Restore old deduction
-          if (oldDeducts) {
-            const oldItem = oldInvoice.items.find(i => i.productId === p.id);
-            if (oldItem) stock += oldItem.quantity;
-          }
-          // Apply new deduction
-          if (newDeducts) {
-            const newItem = data.items.find(i => i.productId === p.id);
-            if (newItem) stock = Math.max(0, stock - newItem.quantity);
-          }
-          return stock !== p.stock ? { ...p, stock } : p;
+          const delta = stockDeltas.get(p.id);
+          if (!delta) return p;
+          return { ...p, stock: Math.max(0, p.stock + delta) };
         }));
 
         // totalSpent adjustment — handle client change
@@ -804,18 +840,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         // Sync stock and client in DB
         if (oldInvoice) {
-          const allProductIds = new Set([
-            ...oldInvoice.items.map(i => i.productId),
-            ...data.items.map(i => i.productId),
-          ]);
-          for (const pid of allProductIds) {
+          // Build a map of productId -> stock delta for DB sync
+          const dbStockDeltas = new Map<string, number>();
+          const dbApplyDelta = (pid: string, delta: number) => {
+            dbStockDeltas.set(pid, (dbStockDeltas.get(pid) || 0) + delta);
+          };
+
+          if (statusDeductsStock(oldInvoice.status)) {
+            oldInvoice.items.forEach(item => {
+              if (item.isTemporary) return;
+              if (item.isBundle && item.bundleComponents) {
+                item.bundleComponents.forEach(comp => dbApplyDelta(comp.productId, comp.quantity * item.quantity));
+              } else if (item.productId) {
+                dbApplyDelta(item.productId, item.quantity);
+              }
+            });
+          }
+          if (statusDeductsStock(data.status)) {
+            data.items.forEach(item => {
+              if (item.isTemporary) return;
+              if (item.isBundle && item.bundleComponents) {
+                item.bundleComponents.forEach(comp => dbApplyDelta(comp.productId, -(comp.quantity * item.quantity)));
+              } else if (item.productId) {
+                dbApplyDelta(item.productId, -item.quantity);
+              }
+            });
+          }
+
+          for (const [pid, delta] of dbStockDeltas) {
             const p = products.find(pr => pr.id === pid);
             if (!p) continue;
-            let stock = p.stock;
-            const oldItem = oldInvoice.items.find(i => i.productId === pid);
-            const newItem = data.items.find(i => i.productId === pid);
-            if (statusDeductsStock(oldInvoice.status) && oldItem) stock += oldItem.quantity;
-            if (statusDeductsStock(data.status) && newItem) stock = Math.max(0, stock - newItem.quantity);
+            const stock = Math.max(0, p.stock + delta);
             if (stock !== p.stock) {
               await dbExec(supabase.from("products").update({ stock }).eq("id", pid));
             }
@@ -861,13 +916,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const oldDeducts = statusDeductsStock(oldStatus);
       const newDeducts = statusDeductsStock(status);
       if (oldDeducts !== newDeducts) {
+        const deltas = new Map<string, number>();
+        const addDelta = (pid: string, delta: number) => {
+          deltas.set(pid, (deltas.get(pid) || 0) + delta);
+        };
+        oldInvoice.items.forEach(item => {
+          if (item.isTemporary) return;
+          const sign = oldDeducts && !newDeducts ? 1 : -1; // restore or deduct
+          if (item.isBundle && item.bundleComponents) {
+            item.bundleComponents.forEach(comp => addDelta(comp.productId, sign * comp.quantity * item.quantity));
+          } else if (item.productId) {
+            addDelta(item.productId, sign * item.quantity);
+          }
+        });
         setProducts(prev => prev.map(p => {
-          const item = oldInvoice.items.find(i => i.productId === p.id);
-          if (!item) return p;
-          const stock = oldDeducts && !newDeducts
-            ? p.stock + item.quantity           // restore
-            : Math.max(0, p.stock - item.quantity); // deduct
-          return { ...p, stock };
+          const delta = deltas.get(p.id);
+          if (!delta) return p;
+          return { ...p, stock: Math.max(0, p.stock + delta) };
         }));
       }
 
@@ -886,13 +951,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         await dbExec(supabase.from("invoices").update({ status }).eq("id", id));
 
         if (oldDeducts !== newDeducts) {
-          for (const item of oldInvoice.items) {
-            const p = products.find(pr => pr.id === item.productId);
+          const dbDeltas = new Map<string, number>();
+          const dbAddDelta = (pid: string, delta: number) => {
+            dbDeltas.set(pid, (dbDeltas.get(pid) || 0) + delta);
+          };
+          oldInvoice.items.forEach(item => {
+            if (item.isTemporary) return;
+            const sign = oldDeducts && !newDeducts ? 1 : -1;
+            if (item.isBundle && item.bundleComponents) {
+              item.bundleComponents.forEach(comp => dbAddDelta(comp.productId, sign * comp.quantity * item.quantity));
+            } else if (item.productId) {
+              dbAddDelta(item.productId, sign * item.quantity);
+            }
+          });
+          for (const [pid, delta] of dbDeltas) {
+            const p = products.find(pr => pr.id === pid);
             if (!p) continue;
-            const stock = oldDeducts && !newDeducts
-              ? p.stock + item.quantity
-              : Math.max(0, p.stock - item.quantity);
-            await dbExec(supabase.from("products").update({ stock }).eq("id", item.productId));
+            const stock = Math.max(0, p.stock + delta);
+            await dbExec(supabase.from("products").update({ stock }).eq("id", pid));
           }
         }
 
@@ -916,9 +992,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (invoice) {
       // Restore stock if it was deducted
       if (statusDeductsStock(invoice.status)) {
+        const deltas = new Map<string, number>();
+        invoice.items.forEach(item => {
+          if (item.isTemporary) return;
+          if (item.isBundle && item.bundleComponents) {
+            item.bundleComponents.forEach(comp => {
+              deltas.set(comp.productId, (deltas.get(comp.productId) || 0) + comp.quantity * item.quantity);
+            });
+          } else if (item.productId) {
+            deltas.set(item.productId, (deltas.get(item.productId) || 0) + item.quantity);
+          }
+        });
         setProducts(prev => prev.map(p => {
-          const item = invoice.items.find(i => i.productId === p.id);
-          return item ? { ...p, stock: p.stock + item.quantity } : p;
+          const delta = deltas.get(p.id);
+          return delta ? { ...p, stock: p.stock + delta } : p;
         }));
       }
       // Reverse totalSpent if it was counted
@@ -932,10 +1019,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       (async () => {
         await dbExec(supabase.from("invoices").delete().eq("id", id));
         if (statusDeductsStock(invoice.status)) {
-          for (const item of invoice.items) {
-            const p = products.find(pr => pr.id === item.productId);
+          const dbDeltas = new Map<string, number>();
+          invoice.items.forEach(item => {
+            if (item.isTemporary) return;
+            if (item.isBundle && item.bundleComponents) {
+              item.bundleComponents.forEach(comp => {
+                dbDeltas.set(comp.productId, (dbDeltas.get(comp.productId) || 0) + comp.quantity * item.quantity);
+              });
+            } else if (item.productId) {
+              dbDeltas.set(item.productId, (dbDeltas.get(item.productId) || 0) + item.quantity);
+            }
+          });
+          for (const [pid, delta] of dbDeltas) {
+            const p = products.find(pr => pr.id === pid);
             if (p) {
-              await dbExec(supabase.from("products").update({ stock: p.stock + item.quantity }).eq("id", item.productId));
+              await dbExec(supabase.from("products").update({ stock: p.stock + delta }).eq("id", pid));
             }
           }
         }

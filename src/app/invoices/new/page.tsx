@@ -33,6 +33,9 @@ interface LineItem {
   unitPrice: number;
   total: number;
   _priceInput?: string;
+  isBundle?: boolean;
+  bundleComponents?: { productId: string; productName: string; quantity: number }[];
+  isTemporary?: boolean;
 }
 
 export default function NewInvoicePage() {
@@ -90,6 +93,8 @@ function DesktopInvoicePage() {
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.total,
+        ...(item.isBundle ? { isBundle: true, bundleComponents: item.bundleComponents } : {}),
+        ...(item.isTemporary ? { isTemporary: true } : {}),
       }));
       setLineItems(items.length > 0 ? items : [{ id: "li1", productId: "", productName: "", description: "", quantity: 1, unitPrice: 0, total: 0 }]);
       const searches: Record<string, string> = {};
@@ -163,6 +168,20 @@ function DesktopInvoicePage() {
     setLineItems((prev) =>
       prev.map((item) => {
         if (item.id !== rowId) return item;
+        if (item.isTemporary) {
+          return { ...item, quantity, total: quantity * item.unitPrice };
+        }
+        if (item.isBundle && item.bundleComponents) {
+          // Check stock for each component
+          for (const comp of item.bundleComponents) {
+            const product = products.find(p => p.id === comp.productId);
+            if (product && comp.quantity * quantity > product.stock) {
+              toast.error(`الكمية المطلوبة أكبر من مخزون "${product.name}" (${product.stock})`);
+              return item;
+            }
+          }
+          return { ...item, quantity, total: quantity * item.unitPrice };
+        }
         const product = products.find(p => p.id === item.productId);
         if (product && quantity > product.stock) {
           toast.error(`الكمية المطلوبة (${quantity}) أكبر من المخزون (${product.stock})`);
@@ -196,6 +215,47 @@ function DesktopInvoicePage() {
     setLineItems((prev) => prev.filter((item) => item.id !== rowId));
     setProductSearch((prev) => { const c = { ...prev }; delete c[rowId]; return c; });
   }
+
+  function addC5890Bundle() {
+    const componentProducts = [
+      { name: "Epson C5890 WorkForce Pro Printer", qty: 1 },
+      { name: "Topclass EP V58.3 Dye Ink 1LT - Cyan (03-26)", qty: 1 },
+      { name: "Topclass EP V58.3 Dye Ink 1LT - Magenta (03-26)", qty: 1 },
+      { name: "Topclass EP V58.3 Dye Ink 1LT - Yellow (03-26)", qty: 1 },
+      { name: "Topclass EP V58.3 Dye Ink 1LT - Black (03-26)", qty: 1 },
+      { name: "Epson C5790/C5890 Tank Set", qty: 1 },
+    ];
+
+    const components = componentProducts.map(cp => {
+      const p = products.find(pr => pr.name === cp.name);
+      if (!p) { toast.error(`المنتج "${cp.name}" غير موجود في المخزون`); return null; }
+      if (p.stock <= 0) { toast.error(`"${p.name}" نفذ من المخزون`); return null; }
+      return { productId: p.id, productName: p.name, quantity: cp.qty };
+    }).filter(Boolean);
+
+    if (components.length !== componentProducts.length) return;
+
+    const bundleItem: LineItem = {
+      id: `li${Date.now()}`,
+      productId: "bundle_c5890",
+      productName: "Epson C5890 Bundle (Printer + Ink Set + Tank)",
+      description: "طابعة + 4 أحبار + طقم تانك",
+      quantity: 1,
+      unitPrice: 450,
+      total: 450,
+      isBundle: true,
+      bundleComponents: components as { productId: string; productName: string; quantity: number }[],
+    };
+
+    setLineItems(prev => {
+      const hasRealItems = prev.some(li => li.productId !== "");
+      return hasRealItems ? [...prev.filter(li => li.productId !== ""), bundleItem] : [bundleItem];
+    });
+    setProductSearch(prev => ({ ...prev, [bundleItem.id]: bundleItem.productName }));
+    toast.success("تم إضافة باقة C5890");
+  }
+
+  // addTemporaryProduct will be added in next commit
 
   // ---- Bundle CMYK dialog ----
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
@@ -293,7 +353,7 @@ function DesktopInvoicePage() {
       toast.error("يرجى اختيار عميل");
       return;
     }
-    const validItems = lineItems.filter((li) => li.productId);
+    const validItems = lineItems.filter((li) => li.productId || li.isTemporary);
     if (validItems.length === 0) {
       toast.error("يرجى إضافة منتج واحد على الأقل");
       return;
@@ -302,9 +362,19 @@ function DesktopInvoicePage() {
     // Final stock check
     const stockErrors: string[] = [];
     validItems.forEach(li => {
-      const product = products.find(p => p.id === li.productId);
-      if (product && product.stock <= 0) stockErrors.push(`${product.name} (مخزون: 0)`);
-      else if (product && li.quantity > product.stock) stockErrors.push(`${product.name} (طلب: ${li.quantity}, متوفر: ${product.stock})`);
+      if (li.isTemporary) return; // skip temp items
+      if (li.isBundle && li.bundleComponents) {
+        // check each component
+        li.bundleComponents.forEach(comp => {
+          const product = products.find(p => p.id === comp.productId);
+          if (product && product.stock <= 0) stockErrors.push(product.name);
+          else if (product && comp.quantity * li.quantity > product.stock) stockErrors.push(`${product.name} (متوفر: ${product.stock})`);
+        });
+      } else {
+        const product = products.find(p => p.id === li.productId);
+        if (product && product.stock <= 0) stockErrors.push(`${product.name} (مخزون: 0)`);
+        else if (product && li.quantity > product.stock) stockErrors.push(`${product.name} (طلب: ${li.quantity}, متوفر: ${product.stock})`);
+      }
     });
     if (stockErrors.length > 0) {
       toast.error(`مشكلة في المخزون: ${stockErrors.join("، ")}`);
@@ -322,6 +392,8 @@ function DesktopInvoicePage() {
         quantity: li.quantity,
         unitPrice: li.unitPrice,
         total: Math.round(li.total * 100) / 100,
+        ...(li.isBundle ? { isBundle: true, bundleComponents: li.bundleComponents } : {}),
+        ...(li.isTemporary ? { isTemporary: true } : {}),
       })),
       subtotal: Math.round(subtotal * 100) / 100,
       discountType,
@@ -489,7 +561,14 @@ function DesktopInvoicePage() {
                   </div>
 
                   <div className="flex-1 space-y-3">
-                    {/* Product search */}
+                    {/* Product search / Bundle label */}
+                    {item.isBundle ? (
+                      <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 h-11">
+                        <Layers className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-sm font-medium text-foreground flex-1">{item.productName}</span>
+                        <Badge variant="default" className="text-xs shrink-0">باقة</Badge>
+                      </div>
+                    ) : (
                     <div className="relative">
                       <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
@@ -557,6 +636,7 @@ function DesktopInvoicePage() {
                         </div>
                       )}
                     </div>
+                    )}
 
                     {item.description && (
                       <p className="text-sm text-muted-foreground">{item.description}</p>
@@ -616,10 +696,17 @@ function DesktopInvoicePage() {
               </div>
             ))}
 
-            <Button variant="outline" size="lg" className="w-full gap-2 border-dashed text-muted-foreground" onClick={addRow}>
-              <Plus className="h-4 w-4" />
-              إضافة منتج آخر
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="lg" className="flex-1 gap-2 border-dashed text-muted-foreground" onClick={addRow}>
+                <Plus className="h-4 w-4" />
+                إضافة منتج آخر
+              </Button>
+              <Button variant="outline" size="lg" className="gap-2" onClick={addC5890Bundle}>
+                <Layers className="h-4 w-4" />
+                إضافة باقة C5890
+              </Button>
+              {/* Temporary product button — added in next commit */}
+            </div>
           </CardContent>
         </Card>
 
