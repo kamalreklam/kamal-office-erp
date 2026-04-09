@@ -58,7 +58,7 @@ function DesktopOrders() {
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
-      const matchSearch = debouncedSearch === "" || o.trackingId.toLowerCase().includes(debouncedSearch.toLowerCase()) || o.clientName.includes(debouncedSearch) || o.description.includes(debouncedSearch);
+      const q = debouncedSearch.toLowerCase(); const matchSearch = debouncedSearch === "" || o.trackingId.toLowerCase().includes(q) || o.clientName.toLowerCase().includes(q) || o.description.toLowerCase().includes(q);
       const matchStatus = statusFilter === "الكل" || o.status === statusFilter;
       const matchDateFrom = !dateFrom || o.createdAt >= dateFrom;
       const matchDateTo = !dateTo || o.createdAt <= dateTo;

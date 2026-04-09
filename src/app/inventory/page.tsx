@@ -76,11 +76,12 @@ function DesktopInventory() {
 
   const filtered = useMemo(() => {
     const list = products.filter((p) => {
+      const q = debouncedSearch.toLowerCase();
       const matchSearch =
         debouncedSearch === "" ||
-        p.name.includes(debouncedSearch) ||
-        p.sku.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-        p.description.includes(debouncedSearch);
+        p.name.toLowerCase().includes(q) ||
+        p.sku.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q);
       const matchCategory = activeCategory === "الكل" || p.category === activeCategory;
       return matchSearch && matchCategory;
     });

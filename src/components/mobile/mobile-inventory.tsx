@@ -29,7 +29,7 @@ export function MobileInventory() {
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      const matchSearch = !debouncedSearch || p.name.includes(debouncedSearch) || p.category.includes(debouncedSearch);
+      const q = debouncedSearch.toLowerCase(); const matchSearch = !debouncedSearch || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
       const matchCat = activeCategory === "الكل" || p.category === activeCategory;
       return matchSearch && matchCat;
     });

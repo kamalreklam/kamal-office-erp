@@ -34,7 +34,7 @@ export function MobileInvoices() {
   const filtered = useMemo(() => {
     return invoices
       .filter((i) => {
-        const matchSearch = !debouncedSearch || i.invoiceNumber.includes(debouncedSearch) || i.clientName.includes(debouncedSearch);
+        const q = debouncedSearch.toLowerCase(); const matchSearch = !debouncedSearch || i.invoiceNumber.toLowerCase().includes(q) || i.clientName.toLowerCase().includes(q);
         const matchStatus = statusFilter === "الكل" || i.status === statusFilter;
         return matchSearch && matchStatus;
       })

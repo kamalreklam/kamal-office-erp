@@ -23,7 +23,7 @@ export function MobileOrders() {
   const filtered = useMemo(() => {
     return orders
       .filter((o) => {
-        const matchSearch = !debouncedSearch || o.clientName.includes(debouncedSearch) || o.description.includes(debouncedSearch) || o.trackingId.includes(debouncedSearch);
+        const q = debouncedSearch.toLowerCase(); const matchSearch = !debouncedSearch || o.clientName.toLowerCase().includes(q) || o.description.toLowerCase().includes(q) || o.trackingId.toLowerCase().includes(q);
         const matchStatus = statusFilter === "الكل" || o.status === statusFilter;
         return matchSearch && matchStatus;
       })

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileInvoiceWizard } from "@/components/mobile/invoice-wizard/mobile-invoice-wizard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +16,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  ArrowRight, Plus, Trash2, Search, User, Package, Calculator,
-  Save, Printer, FileText, Layers, ChevronDown, Droplets,
+  ArrowRight, Plus, Trash2, Search, Package,
+  Save, Printer, FileText, Droplets,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { type InvoiceStatus, formatCurrency } from "@/lib/data";
@@ -32,6 +31,7 @@ interface LineItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  discount?: number;
   _priceInput?: string;
   isBundle?: boolean;
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
@@ -108,14 +108,19 @@ function DesktopInvoicePage() {
     }
   }, [editingInvoice, clients, prefilled]);
 
-  const subtotal = lineItems.reduce((sum, item) => sum + item.total, 0);
+  function getLineTotal(item: LineItem): number {
+    const d = item.discount || 0;
+    return item.quantity * item.unitPrice * (1 - d / 100);
+  }
+
+  const subtotal = lineItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100)), 0);
   const clampedDiscount = discountType === "percentage" ? Math.min(discountValue, 100) : Math.min(discountValue, subtotal);
   const discountAmount = discountType === "percentage" ? (subtotal * clampedDiscount) / 100 : clampedDiscount;
   const taxAmount = settings.taxEnabled ? ((subtotal - discountAmount) * settings.taxRate) / 100 : 0;
   const total = Math.max(0, subtotal - discountAmount + taxAmount);
 
   const filteredClients = clientSearch.trim()
-    ? clients.filter((c) => c.name.includes(clientSearch) || c.phone.includes(clientSearch))
+    ? clients.filter((c) => { const q = clientSearch.toLowerCase(); return c.name.toLowerCase().includes(q) || c.phone.includes(q); })
     : clients;
 
   useEffect(() => {
@@ -141,10 +146,10 @@ function DesktopInvoicePage() {
   }
 
   function getFilteredProducts(rowId: string) {
-    const query = productSearch[rowId] || "";
-    if (!query.trim()) return products.slice(0, 10);
+    const query = (productSearch[rowId] || "").toLowerCase().trim();
+    if (!query) return products.slice(0, 10);
     return products.filter(
-      (p) => p.name.includes(query) || p.sku.toLowerCase().includes(query.toLowerCase()) || p.category.includes(query)
+      (p) => p.name.toLowerCase().includes(query) || p.sku.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)
     );
   }
 
@@ -203,6 +208,16 @@ function DesktopInvoicePage() {
     );
   }
 
+  function updateDiscount(rowId: string, discount: number) {
+    setLineItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== rowId) return item;
+        const d = Math.min(Math.max(discount, 0), 100);
+        return { ...item, discount: d, total: item.quantity * item.unitPrice * (1 - d / 100) };
+      })
+    );
+  }
+
   function addRow() {
     setLineItems((prev) => [
       ...prev,
@@ -214,45 +229,6 @@ function DesktopInvoicePage() {
     if (lineItems.length <= 1) return;
     setLineItems((prev) => prev.filter((item) => item.id !== rowId));
     setProductSearch((prev) => { const c = { ...prev }; delete c[rowId]; return c; });
-  }
-
-  function addC5890Bundle() {
-    const componentProducts = [
-      { name: "Epson C5890 WorkForce Pro Printer", qty: 1 },
-      { name: "Topclass EP V58.3 Dye Ink 1LT - Cyan (03-26)", qty: 1 },
-      { name: "Topclass EP V58.3 Dye Ink 1LT - Magenta (03-26)", qty: 1 },
-      { name: "Topclass EP V58.3 Dye Ink 1LT - Yellow (03-26)", qty: 1 },
-      { name: "Topclass EP V58.3 Dye Ink 1LT - Black (03-26)", qty: 1 },
-      { name: "Epson C5790/C5890 Tank Set", qty: 1 },
-    ];
-
-    const components = componentProducts.map(cp => {
-      const p = products.find(pr => pr.name === cp.name);
-      if (!p) { toast.error(`المنتج "${cp.name}" غير موجود في المخزون`); return null; }
-      if (p.stock <= 0) { toast.error(`"${p.name}" نفذ من المخزون`); return null; }
-      return { productId: p.id, productName: p.name, quantity: cp.qty };
-    }).filter(Boolean);
-
-    if (components.length !== componentProducts.length) return;
-
-    const bundleItem: LineItem = {
-      id: `li${Date.now()}`,
-      productId: "bundle_c5890",
-      productName: "Epson C5890 Bundle (Printer + Ink Set + Tank)",
-      description: "طابعة + 4 أحبار + طقم تانك",
-      quantity: 1,
-      unitPrice: 450,
-      total: 450,
-      isBundle: true,
-      bundleComponents: components as { productId: string; productName: string; quantity: number }[],
-    };
-
-    setLineItems(prev => {
-      const hasRealItems = prev.some(li => li.productId !== "");
-      return hasRealItems ? [...prev.filter(li => li.productId !== ""), bundleItem] : [bundleItem];
-    });
-    setProductSearch(prev => ({ ...prev, [bundleItem.id]: bundleItem.productName }));
-    toast.success("تم إضافة باقة C5890");
   }
 
   function addTemporaryProduct() {
@@ -334,28 +310,39 @@ function DesktopInvoicePage() {
       return;
     }
 
-    const newItems: LineItem[] = bundle.items.map((bi, idx) => {
+    // Build bundle components and calculate total
+    const components = bundle.items.map(bi => {
       const product = products.find(p => p.id === bi.productId);
       const q = bundleQty[bi.productId] || 1;
-      const p = bundlePrice[bi.productId] || product?.price || 0;
-      return {
-        id: `li${Date.now()}-${idx}`,
-        productId: bi.productId,
-        productName: product?.name || bi.productName,
-        description: product?.description || "",
-        quantity: q,
-        unitPrice: p,
-        total: q * p,
-      };
+      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: q };
     });
+
+    const bundleTotal = bundle.items.reduce((s, bi) => {
+      const q = bundleQty[bi.productId] || 1;
+      const p = bundlePrice[bi.productId] || 0;
+      return s + q * p;
+    }, 0);
+
+    const bundleItem: LineItem = {
+      id: `li${Date.now()}`,
+      productId: `bundle_${bundle.id}`,
+      productName: bundle.name,
+      description: bundle.description || bundle.items.map(bi => {
+        const product = products.find(p => p.id === bi.productId);
+        return product?.name || bi.productName;
+      }).join(" + "),
+      quantity: 1,
+      unitPrice: bundleTotal,
+      total: bundleTotal,
+      isBundle: true,
+      bundleComponents: components,
+    };
+
     setLineItems(prev => {
       const hasRealItems = prev.some(li => li.productId !== "");
-      const kept = hasRealItems ? prev.filter(li => li.productId !== "") : [];
-      return [...kept, ...newItems];
+      return hasRealItems ? [...prev.filter(li => li.productId !== ""), bundleItem] : [bundleItem];
     });
-    newItems.forEach(item => {
-      setProductSearch(prev => ({ ...prev, [item.id]: item.productName }));
-    });
+    setProductSearch(prev => ({ ...prev, [bundleItem.id]: bundleItem.productName }));
     setBundleDialogOpen(false);
     toast.success(`تم إضافة مجموعة "${bundle.name}"`);
   }
@@ -411,6 +398,7 @@ function DesktopInvoicePage() {
         quantity: li.quantity,
         unitPrice: li.unitPrice,
         total: Math.round(li.total * 100) / 100,
+        ...(li.discount ? { discount: li.discount } : {}),
         ...(li.isBundle ? { isBundle: true, bundleComponents: li.bundleComponents } : {}),
         ...(li.isTemporary ? { isTemporary: true } : {}),
       })),
@@ -437,420 +425,549 @@ function DesktopInvoicePage() {
 
   return (
     <ResponsiveShell>
-      <div className="mx-auto max-w-4xl space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen" style={{ background: "#f8fafc" }}>
+        {/* Sticky top bar */}
+        <div className="sticky top-0 z-30 flex items-center justify-between border-b border-[#e2e8f0] bg-white/80 backdrop-blur-sm px-6 py-3">
           <div className="flex items-center gap-3">
-            <button onClick={() => router.push("/invoices")} className="rounded-xl p-2.5 text-muted-foreground hover:bg-[var(--surface-2)]">
+            <button onClick={() => router.push("/invoices")} className="rounded-[10px] p-2 text-[#94a3b8] hover:bg-[#f1f5f9] transition-colors">
               <ArrowRight className="h-5 w-5" />
             </button>
-            <div>
-              <h1 className="text-3xl font-extrabold text-foreground">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
-              <p className="mt-0.5 text-base text-muted-foreground">رقم الفاتورة: {isEdit ? editingInvoice?.invoiceNumber : nextInvoiceNumber()}</p>
-            </div>
+            <h1 className="text-lg font-bold text-[#1e293b]">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
+            <span className="font-mono text-sm text-[#94a3b8]">{isEdit ? editingInvoice?.invoiceNumber : nextInvoiceNumber()}</span>
+            <Badge className="bg-[#fef3c7] text-[#92400e] border-0 text-[11px] font-bold">مسودة</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5 rounded-[10px] border-[#e2e8f0]" onClick={() => window.print()}>
+              <Printer className="h-3.5 w-3.5" />
+              طباعة
+            </Button>
+            <Button size="sm" className="gap-1.5 rounded-[10px] bg-[#2563eb] hover:bg-[#1d4ed8]" onClick={() => handleSave("مدفوعة")}>
+              <Save className="h-3.5 w-3.5" />
+              حفظ
+            </Button>
           </div>
         </div>
 
-        {/* Client Selection */}
-        <Card className="border border-[var(--glass-border)] shadow-sm !overflow-visible" style={{ position: "relative", zIndex: 20 }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <User className="h-5 w-5 text-primary" />
-              بيانات العميل
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div ref={clientRef} className="relative">
-              <div className="relative">
-                <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="ابدأ بكتابة اسم العميل أو رقم الهاتف..."
-                  value={clientSearch}
-                  onChange={(e) => {
-                    setClientSearch(e.target.value);
-                    setShowClientDropdown(true);
-                    if (!e.target.value.trim()) setSelectedClient(null);
-                  }}
-                  onFocus={() => setShowClientDropdown(true)}
-                  className="pr-9 h-11"
-                />
-              </div>
-
-              {showClientDropdown && !selectedClient && (
-                <div
-                  className="absolute top-full mt-2 w-full rounded-xl overflow-hidden"
-                  style={{
-                    zIndex: 100,
-                    background: "var(--surface-1)",
-                    border: "1px solid var(--glass-border)",
-                    boxShadow: "var(--shadow-lg)",
-                  }}
-                >
-                  <div className="overflow-y-auto p-1.5" style={{ maxHeight: "240px" }}>
-                    {filteredClients.length === 0 ? (
-                      <p className="p-4 text-center text-sm text-muted-foreground">لا يوجد عملاء مطابقين</p>
-                    ) : (
-                      filteredClients.slice(0, 20).map((client) => (
-                        <button
-                          key={client.id}
-                          onClick={() => selectClient(client)}
-                          className="flex w-full items-center justify-between rounded-lg p-2.5 text-right transition-colors"
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--surface-2)")}
-                          onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold" style={{ background: "var(--info-soft)", color: "var(--blue-500)" }}>
-                              {client.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{client.name}</p>
-                              {client.phone && <p className="text-xs" style={{ color: "var(--text-muted)" }}><span dir="ltr">{client.phone}</span></p>}
-                            </div>
-                          </div>
-                          <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>{formatCurrency(client.totalSpent)}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {selectedClient && (
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-bold text-primary">
-                      {selectedClient.name.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-base font-bold text-foreground">{selectedClient.name}</p>
-                      <p className="text-sm text-muted-foreground">{selectedClient.phone} · {selectedClient.address}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                    className="rounded-xl p-2.5 text-muted-foreground hover:bg-[var(--surface-2)]"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bundles quick-add */}
-        {bundles.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <span className="flex shrink-0 items-center gap-1 text-sm font-medium text-muted-foreground">
-              <Droplets className="h-3.5 w-3.5" />
-              مجموعات:
-            </span>
-            {bundles.map((bundle) => (
-              <button
-                key={bundle.id}
-                onClick={() => openBundleDialog(bundle.id)}
-                className="flex shrink-0 items-center gap-1.5 rounded-lg border border-dashed border-primary/30 bg-primary/5 px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-              >
-                <Plus className="h-3 w-3" />
-                {bundle.name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Line Items */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Package className="h-5 w-5 text-primary" />
-              المنتجات
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {lineItems.map((item, index) => (
-              <div
-                key={item.id}
-                data-product-row
-                className="group rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-6 shadow-sm transition-all hover:border-primary/20 hover:shadow-md"
-              >
-                <div className="flex items-start gap-3">
-                  {/* Row number */}
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
-                    {index + 1}
-                  </div>
-
-                  <div className="flex-1 space-y-3">
-                    {/* Product search / Temporary input / Bundle label */}
-                    {item.isTemporary ? (
-                      <div className="relative">
-                        <Input
-                          placeholder="اسم المنتج المؤقت..."
-                          value={item.productName}
-                          onChange={(e) => {
-                            setLineItems(prev => prev.map(li =>
-                              li.id === item.id ? { ...li, productName: e.target.value } : li
-                            ));
-                          }}
-                          className="h-11"
-                        />
-                        <Badge variant="secondary" className="absolute left-2 top-1/2 -translate-y-1/2 text-xs">مؤقت</Badge>
+        {/* Main card */}
+        <div className="mx-auto max-w-5xl px-6 py-6">
+          <div className="rounded-[14px] border border-[#e2e8f0] bg-white shadow-sm">
+            {/* Header fields: 2x2 grid */}
+            <div className="grid grid-cols-1 gap-5 border-b border-[#e2e8f0] p-6 sm:grid-cols-2">
+              {/* Client picker */}
+              <div ref={clientRef} className="relative">
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">العميل</label>
+                {selectedClient ? (
+                  <div className="flex items-center justify-between rounded-[10px] border-[1.5px] border-[#2563eb]/30 bg-[#2563eb]/5 px-3 py-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb]/10 text-xs font-bold text-[#2563eb]">
+                        {selectedClient.name.charAt(0)}
                       </div>
-                    ) : item.isBundle ? (
-                      <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 h-11">
-                        <Layers className="h-4 w-4 text-primary shrink-0" />
-                        <span className="text-sm font-medium text-foreground flex-1">{item.productName}</span>
-                        <Badge variant="default" className="text-xs shrink-0">باقة</Badge>
+                      <div>
+                        <p className="text-sm font-bold text-[#1e293b]">{selectedClient.name}</p>
+                        <p className="text-xs text-[#94a3b8]">{selectedClient.phone}</p>
                       </div>
-                    ) : (
-                    <div className="relative">
-                      <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="ابحث عن منتج بالاسم أو الكود..."
-                        value={productSearch[item.id] ?? item.productName}
-                        onChange={(e) => {
-                          setProductSearch((prev) => ({ ...prev, [item.id]: e.target.value }));
-                          setActiveProductRow(item.id);
-                          if (item.productId) {
-                            setLineItems((prev) =>
-                              prev.map((li) =>
-                                li.id === item.id
-                                  ? { ...li, productId: "", productName: "", description: "", unitPrice: 0, total: 0 }
-                                  : li
-                              )
-                            );
-                          }
-                        }}
-                        onFocus={() => setActiveProductRow(item.id)}
-                        className="pr-9 h-11"
-                      />
+                    </div>
+                    <button onClick={() => { setSelectedClient(null); setClientSearch(""); }} className="rounded-[8px] p-1.5 text-[#94a3b8] hover:bg-[#f1f5f9] hover:text-red-500 transition-colors">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                    <Input
+                      placeholder="ابحث عن عميل..."
+                      value={clientSearch}
+                      onChange={(e) => {
+                        setClientSearch(e.target.value);
+                        setShowClientDropdown(true);
+                        if (!e.target.value.trim()) setSelectedClient(null);
+                      }}
+                      onFocus={() => setShowClientDropdown(true)}
+                      className="pr-9 h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] focus:border-[#2563eb]"
+                    />
+                  </div>
+                )}
 
-                      {activeProductRow === item.id && (
-                        <div
-                          className="absolute top-full mt-1 w-full rounded-xl overflow-hidden"
-                          style={{ zIndex: 90, background: "var(--surface-1)", border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-lg)" }}
-                        >
-                          <div className="overflow-y-auto p-1.5" style={{ maxHeight: "220px" }}>
-                            {getFilteredProducts(item.id).length === 0 ? (
-                              <p className="p-4 text-center text-sm text-muted-foreground">لا توجد منتجات</p>
-                            ) : (
-                              getFilteredProducts(item.id).map((product) => {
-                                const img = getProductImage(product.id);
-                                const outOfStock = product.stock <= 0;
-                                return (
-                                  <button
-                                    key={product.id}
-                                    onClick={() => selectProduct(item.id, product)}
-                                    disabled={outOfStock}
-                                    className={`flex w-full items-center gap-3 rounded-lg p-3 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[var(--surface-2)]"}`}
-                                  >
-                                    {img ? (
-                                      <img src={img} alt="" className="h-12 w-12 rounded-xl object-cover border border-[var(--glass-border)]" />
-                                    ) : (
-                                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                                        <Package className="h-5 w-5" />
-                                      </div>
-                                    )}
-                                    <div className="flex-1 text-right">
-                                      <p className="text-base font-medium">{product.name}</p>
-                                      <p className={`text-sm ${outOfStock ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
-                                        {outOfStock ? "نفذ المخزون" : `${product.category} · المخزون: ${product.stock} ${product.unit}`}
-                                      </p>
-                                    </div>
-                                    {outOfStock ? (
-                                      <Badge variant="destructive" className="text-xs shrink-0">0</Badge>
-                                    ) : (
-                                      <span className="text-base font-bold text-primary">{formatCurrency(product.price)}</span>
-                                    )}
-                                  </button>
-                                );
-                              })
-                            )}
-                          </div>
-                        </div>
+                {showClientDropdown && !selectedClient && (
+                  <div className="absolute top-full mt-1 w-full rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden" style={{ zIndex: 100 }}>
+                    <div className="overflow-y-auto p-1" style={{ maxHeight: "220px" }}>
+                      {filteredClients.length === 0 ? (
+                        <p className="p-3 text-center text-sm text-[#94a3b8]">لا يوجد عملاء مطابقين</p>
+                      ) : (
+                        filteredClients.slice(0, 20).map((client) => (
+                          <button
+                            key={client.id}
+                            onClick={() => selectClient(client)}
+                            className="flex w-full items-center justify-between rounded-[8px] p-2.5 text-right transition-colors hover:bg-[#f1f5f9]"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2563eb]/10 text-[10px] font-bold text-[#2563eb]">
+                                {client.name.charAt(0)}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-[#1e293b]">{client.name}</p>
+                                {client.phone && <p className="text-xs text-[#94a3b8]"><span dir="ltr">{client.phone}</span></p>}
+                              </div>
+                            </div>
+                            <span className="text-xs font-mono font-semibold text-[#94a3b8]">{formatCurrency(client.totalSpent)}</span>
+                          </button>
+                        ))
                       )}
                     </div>
-                    )}
-
-                    {item.description && (
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                    )}
-
-                    {/* Quantity, price, total */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">الكمية</label>
-                        <Input
-                          type="number" min={1} value={item.quantity}
-                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
-                          className="h-10"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">سعر الوحدة ($)</label>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          dir="ltr"
-                          value={item._priceInput !== undefined ? item._priceInput : (item.unitPrice || "")}
-                          onChange={(e) => {
-                            const v = e.target.value;
-                            if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                              updateUnitPrice(item.id, v);
-                            }
-                          }}
-                          onBlur={() => {
-                            // Clean up on blur — remove trailing dots
-                            setLineItems(prev => prev.map(li =>
-                              li.id === item.id ? { ...li, _priceInput: undefined } : li
-                            ));
-                          }}
-                          placeholder="0.00"
-                          className="h-10"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">الإجمالي</label>
-                        <div className="flex h-10 items-center rounded-lg bg-muted/60 px-3 text-base font-bold text-foreground">
-                          {formatCurrency(item.total)}
-                        </div>
-                      </div>
-                    </div>
                   </div>
+                )}
+              </div>
 
-                  {/* Delete button */}
-                  <button
-                    onClick={() => removeRow(item.id)}
-                    disabled={lineItems.length <= 1}
-                    className="shrink-0 rounded-xl p-2.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 disabled:opacity-20 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+              {/* Date */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">التاريخ</label>
+                <div className="flex h-10 items-center rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 text-sm text-[#64748b] font-mono">
+                  {new Date().toLocaleDateString("ar-SA")}
                 </div>
               </div>
-            ))}
 
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="lg" className="flex-1 gap-2 border-dashed text-muted-foreground" onClick={addRow}>
-                <Plus className="h-4 w-4" />
-                إضافة منتج آخر
-              </Button>
-              <Button variant="outline" size="lg" className="gap-2" onClick={addC5890Bundle}>
-                <Layers className="h-4 w-4" />
-                إضافة باقة C5890
-              </Button>
-              <Button variant="outline" size="lg" className="gap-2" onClick={addTemporaryProduct}>
-                <Plus className="h-4 w-4" />
-                منتج مؤقت
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Summary */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Calculator className="h-5 w-5 text-primary" />
-              ملخص الفاتورة
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Collapsible Discount & Notes */}
-            <button
-              type="button"
-              onClick={() => setShowExtras(!showExtras)}
-              className="flex w-full items-center justify-between rounded-xl border border-dashed border-[var(--glass-border)] px-5 py-3.5 text-base font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
-            >
-              <span>خصم وملاحظات (اختياري)</span>
-              <ChevronDown className={`h-5 w-5 transition-transform duration-200 ${showExtras ? "rotate-180" : ""}`} />
-            </button>
-
-            {showExtras && (
-              <div className="grid gap-5 sm:grid-cols-2 animate-fade-in-up" style={{ animationDuration: "0.3s" }}>
-                {/* Discount */}
-                <div className="rounded-xl border border-[var(--glass-border)] p-6 space-y-3">
-                  <p className="text-base font-medium">الخصم</p>
+              {/* Payment Terms (Discount) */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
+                <div className="flex gap-2">
                   <Select value={discountType} onValueChange={(v) => v && setDiscountType(v as "percentage" | "fixed")}>
-                    <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-10 w-[130px] rounded-[10px] border-[1.5px] border-[#e2e8f0]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
-                      <SelectItem value="fixed">مبلغ ثابت ($)</SelectItem>
+                      <SelectItem value="percentage">نسبة %</SelectItem>
+                      <SelectItem value="fixed">مبلغ ثابت</SelectItem>
                     </SelectContent>
                   </Select>
                   <Input
                     type="number" min={0} max={discountType === "percentage" ? 100 : subtotal}
                     value={discountValue}
                     onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
-                    className="h-10"
-                  />
-                </div>
-
-                {/* Notes */}
-                <div className="rounded-xl border border-[var(--glass-border)] p-6 space-y-3">
-                  <p className="text-base font-medium">ملاحظات</p>
-                  <Textarea
-                    placeholder="ملاحظات إضافية على الفاتورة..."
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={3}
-                    className="resize-none"
+                    className="h-10 flex-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono"
                   />
                 </div>
               </div>
-            )}
 
-            {/* Totals */}
-            <div className="rounded-xl bg-[var(--surface-2)] p-6 space-y-3">
-              <div className="flex justify-between text-base">
-                <span className="text-muted-foreground">المجموع الفرعي</span>
-                <span className="font-medium">{formatCurrency(subtotal)}</span>
-              </div>
-              {discountAmount > 0 && (
-                <div className="flex justify-between text-base">
-                  <span className="text-muted-foreground">
-                    الخصم {discountType === "percentage" ? `(${discountValue}%)` : ""}
-                  </span>
-                  <span className="font-medium text-red-600">-{formatCurrency(discountAmount)}</span>
-                </div>
-              )}
-              {settings.taxEnabled && taxAmount > 0 && (
-                <div className="flex justify-between text-base">
-                  <span className="text-muted-foreground">الضريبة ({settings.taxRate}%)</span>
-                  <span className="font-medium">+{formatCurrency(taxAmount)}</span>
-                </div>
-              )}
-              <div className="border-t border-[var(--glass-border)] pt-3">
-                <div className="flex justify-between text-xl">
-                  <span className="font-bold text-foreground">الإجمالي النهائي</span>
-                  <span className="font-extrabold text-primary">{formatCurrency(total)}</span>
+              {/* Discount amount preview */}
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">قيمة الخصم</label>
+                <div className="flex h-10 items-center rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 text-sm font-mono font-bold text-red-500">
+                  {discountAmount > 0 ? `-${formatCurrency(discountAmount)}` : formatCurrency(0)}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Actions */}
-        <div className="flex flex-wrap gap-3 pb-6">
-          <Button variant="outline" size="lg" className="gap-2" onClick={() => handleSave("مسودة")}>
-            <Save className="h-4 w-4" />
-            حفظ كمسودة
-          </Button>
-          <Button variant="outline" size="lg" className="gap-2" onClick={() => handleSave("غير مدفوعة")}>
-            <FileText className="h-4 w-4" />
-            غير مدفوعة
-          </Button>
-          <Button variant="outline" size="lg" className="gap-2" onClick={() => handleSave("مدفوعة جزئياً")}>
-            <FileText className="h-4 w-4" />
-            مدفوعة جزئياً
-          </Button>
-          <Button size="lg" className="gap-2" onClick={() => handleSave("مدفوعة")}>
-            <Save className="h-4 w-4" />
-            مدفوعة
-          </Button>
-          <Button variant="outline" size="lg" className="gap-2 mr-auto" onClick={() => window.print()}>
-            <Printer className="h-4 w-4" />
-            طباعة
-          </Button>
+            {/* Line items table */}
+            <div className="p-6">
+              {/* Table header — hidden on mobile */}
+              <div className="hidden sm:grid grid-cols-[36px_1fr_80px_100px_70px_90px_32px] gap-2 items-center px-2 py-2 rounded-[10px] bg-[#f8fafc] mb-2">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">#</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتج</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">الكمية</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">السعر</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">خصم %</span>
+                <span className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8] text-center">الإجمالي</span>
+                <span />
+              </div>
+
+              {/* Table rows */}
+              <div className="space-y-1">
+                {lineItems.map((item, index) => (
+                  <div key={item.id} data-product-row className="group relative">
+                    {/* Desktop row */}
+                    <div className={`hidden sm:grid grid-cols-[36px_1fr_80px_100px_70px_90px_32px] gap-2 items-center rounded-[10px] px-2 py-2 transition-colors hover:bg-[#f8fafc] ${item.isTemporary ? "bg-[#fefce8]" : ""}`}>
+                      {/* Row # */}
+                      <span className="text-xs font-bold text-[#94a3b8] text-center font-mono">{index + 1}</span>
+
+                      {/* Product cell */}
+                      <div className="relative min-w-0">
+                        {item.isTemporary ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">&#9999;&#65039;</span>
+                            <Input
+                              placeholder="اسم المنتج المؤقت..."
+                              value={item.productName}
+                              onChange={(e) => {
+                                setLineItems(prev => prev.map(li =>
+                                  li.id === item.id ? { ...li, productName: e.target.value } : li
+                                ));
+                              }}
+                              className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-sm"
+                            />
+                            <Badge className="bg-[#f59e0b] text-white border-0 text-[10px] shrink-0">مؤقت</Badge>
+                          </div>
+                        ) : item.isBundle ? (
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm">&#127912;</span>
+                              <span className="text-sm font-medium text-[#1e293b] truncate">{item.productName}</span>
+                              <Badge className="bg-[#7c3aed] text-white border-0 text-[10px] shrink-0">باقة</Badge>
+                            </div>
+                            {item.bundleComponents && (
+                              <p className="text-[11px] text-[#94a3b8] mt-0.5 pr-6 truncate">
+                                {item.bundleComponents.map(c => `${c.productName} x${c.quantity}`).join(" . ")}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <Search className="absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#94a3b8]" />
+                            <Input
+                              placeholder="ابحث عن منتج..."
+                              value={productSearch[item.id] ?? item.productName}
+                              onChange={(e) => {
+                                setProductSearch((prev) => ({ ...prev, [item.id]: e.target.value }));
+                                setActiveProductRow(item.id);
+                                if (item.productId) {
+                                  setLineItems((prev) =>
+                                    prev.map((li) =>
+                                      li.id === item.id
+                                        ? { ...li, productId: "", productName: "", description: "", unitPrice: 0, total: 0 }
+                                        : li
+                                    )
+                                  );
+                                }
+                              }}
+                              onFocus={() => setActiveProductRow(item.id)}
+                              className="pr-7 h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-sm"
+                            />
+
+                            {activeProductRow === item.id && (
+                              <div className="absolute top-full mt-1 w-full rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden" style={{ zIndex: 90 }}>
+                                <div className="overflow-y-auto p-1" style={{ maxHeight: "200px" }}>
+                                  {getFilteredProducts(item.id).length === 0 ? (
+                                    <p className="p-3 text-center text-sm text-[#94a3b8]">لا توجد منتجات</p>
+                                  ) : (
+                                    getFilteredProducts(item.id).map((product) => {
+                                      const img = getProductImage(product.id);
+                                      const outOfStock = product.stock <= 0;
+                                      return (
+                                        <button
+                                          key={product.id}
+                                          onClick={() => selectProduct(item.id, product)}
+                                          disabled={outOfStock}
+                                          className={`flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"}`}
+                                        >
+                                          {img ? (
+                                            <img src={img} alt="" className="h-10 w-10 rounded-[8px] object-cover border border-[#e2e8f0]" />
+                                          ) : (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#94a3b8]">
+                                              <Package className="h-4 w-4" />
+                                            </div>
+                                          )}
+                                          <div className="flex-1 text-right min-w-0">
+                                            <p className="text-sm font-medium text-[#1e293b] truncate">{product.name}</p>
+                                            <p className={`text-xs ${outOfStock ? "text-red-500 font-semibold" : "text-[#94a3b8]"}`}>
+                                              {outOfStock ? "نفذ المخزون" : `${product.category} . ${product.stock} ${product.unit}`}
+                                            </p>
+                                          </div>
+                                          {outOfStock ? (
+                                            <Badge variant="destructive" className="text-[10px] shrink-0">0</Badge>
+                                          ) : (
+                                            <span className="text-sm font-bold font-mono text-[#2563eb]">{formatCurrency(product.price)}</span>
+                                          )}
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Quantity */}
+                      <Input
+                        type="number" min={1} value={item.quantity}
+                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                        className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-center text-sm font-mono"
+                      />
+
+                      {/* Price */}
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={item._priceInput !== undefined ? item._priceInput : (item.unitPrice || "")}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                            updateUnitPrice(item.id, v);
+                          }
+                        }}
+                        onBlur={() => {
+                          setLineItems(prev => prev.map(li =>
+                            li.id === item.id ? { ...li, _priceInput: undefined } : li
+                          ));
+                        }}
+                        placeholder="0.00"
+                        className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-center text-sm font-mono"
+                      />
+
+                      {/* Discount % */}
+                      <Input
+                        type="number" min={0} max={100}
+                        value={item.discount || 0}
+                        onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
+                        className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-center text-sm font-mono"
+                      />
+
+                      {/* Total */}
+                      <span className="text-sm font-bold font-mono text-[#1e293b] text-center">{formatCurrency(getLineTotal(item))}</span>
+
+                      {/* Delete */}
+                      <button
+                        onClick={() => removeRow(item.id)}
+                        disabled={lineItems.length <= 1}
+                        className="opacity-0 group-hover:opacity-100 rounded-[8px] p-1.5 text-[#94a3b8] hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Mobile card row */}
+                    <div className={`sm:hidden rounded-[10px] border border-[#e2e8f0] p-4 space-y-3 ${item.isTemporary ? "bg-[#fefce8]" : "bg-white"}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#94a3b8] font-mono">#{index + 1}</span>
+                        <div className="flex items-center gap-1.5">
+                          {item.isBundle && <Badge className="bg-[#7c3aed] text-white border-0 text-[10px]">باقة</Badge>}
+                          {item.isTemporary && <Badge className="bg-[#f59e0b] text-white border-0 text-[10px]">مؤقت</Badge>}
+                          <button
+                            onClick={() => removeRow(item.id)}
+                            disabled={lineItems.length <= 1}
+                            className="rounded-[8px] p-1.5 text-[#94a3b8] hover:text-red-500 disabled:opacity-20"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Product field */}
+                      <div>
+                        <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتج</label>
+                        {item.isTemporary ? (
+                          <Input
+                            placeholder="اسم المنتج المؤقت..."
+                            value={item.productName}
+                            onChange={(e) => {
+                              setLineItems(prev => prev.map(li =>
+                                li.id === item.id ? { ...li, productName: e.target.value } : li
+                              ));
+                            }}
+                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"
+                          />
+                        ) : item.isBundle ? (
+                          <div>
+                            <div className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#7c3aed]/30 bg-[#7c3aed]/5 px-3 py-2">
+                              <span>&#127912;</span>
+                              <span className="text-sm font-medium">{item.productName}</span>
+                            </div>
+                            {item.bundleComponents && (
+                              <p className="text-[11px] text-[#94a3b8] mt-1">
+                                {item.bundleComponents.map(c => `${c.productName} x${c.quantity}`).join(" . ")}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="relative" data-product-row>
+                            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+                            <Input
+                              placeholder="ابحث عن منتج..."
+                              value={productSearch[item.id] ?? item.productName}
+                              onChange={(e) => {
+                                setProductSearch((prev) => ({ ...prev, [item.id]: e.target.value }));
+                                setActiveProductRow(item.id);
+                                if (item.productId) {
+                                  setLineItems((prev) =>
+                                    prev.map((li) =>
+                                      li.id === item.id
+                                        ? { ...li, productId: "", productName: "", description: "", unitPrice: 0, total: 0 }
+                                        : li
+                                    )
+                                  );
+                                }
+                              }}
+                              onFocus={() => setActiveProductRow(item.id)}
+                              className="pr-9 h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"
+                            />
+                            {activeProductRow === item.id && (
+                              <div className="absolute top-full mt-1 w-full rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden" style={{ zIndex: 90 }}>
+                                <div className="overflow-y-auto p-1" style={{ maxHeight: "200px" }}>
+                                  {getFilteredProducts(item.id).length === 0 ? (
+                                    <p className="p-3 text-center text-sm text-[#94a3b8]">لا توجد منتجات</p>
+                                  ) : (
+                                    getFilteredProducts(item.id).map((product) => {
+                                      const img = getProductImage(product.id);
+                                      const outOfStock = product.stock <= 0;
+                                      return (
+                                        <button
+                                          key={product.id}
+                                          onClick={() => selectProduct(item.id, product)}
+                                          disabled={outOfStock}
+                                          className={`flex w-full items-center gap-2 rounded-[8px] p-2.5 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"}`}
+                                        >
+                                          {img ? (
+                                            <img src={img} alt="" className="h-10 w-10 rounded-[8px] object-cover border border-[#e2e8f0]" />
+                                          ) : (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#94a3b8]">
+                                              <Package className="h-4 w-4" />
+                                            </div>
+                                          )}
+                                          <div className="flex-1 text-right min-w-0">
+                                            <p className="text-sm font-medium truncate">{product.name}</p>
+                                            <p className={`text-xs ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
+                                              {outOfStock ? "نفذ المخزون" : `${product.stock} ${product.unit}`}
+                                            </p>
+                                          </div>
+                                          {!outOfStock && <span className="text-sm font-bold font-mono text-[#2563eb]">{formatCurrency(product.price)}</span>}
+                                        </button>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Qty / Price / Discount / Total grid */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الكمية</label>
+                          <Input
+                            type="number" min={1} value={item.quantity}
+                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">السعر</label>
+                          <Input
+                            type="text" inputMode="decimal" dir="ltr"
+                            value={item._priceInput !== undefined ? item._priceInput : (item.unitPrice || "")}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === "" || /^\d*\.?\d*$/.test(v)) updateUnitPrice(item.id, v);
+                            }}
+                            onBlur={() => {
+                              setLineItems(prev => prev.map(li =>
+                                li.id === item.id ? { ...li, _priceInput: undefined } : li
+                              ));
+                            }}
+                            placeholder="0.00"
+                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">خصم %</label>
+                          <Input
+                            type="number" min={0} max={100}
+                            value={item.discount || 0}
+                            onChange={(e) => updateDiscount(item.id, parseFloat(e.target.value) || 0)}
+                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الإجمالي</label>
+                          <div className="flex h-10 items-center justify-center rounded-[10px] bg-[#f8fafc] border-[1.5px] border-[#e2e8f0] text-sm font-bold font-mono text-[#1e293b]">
+                            {formatCurrency(getLineTotal(item))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add buttons row */}
+              <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-dashed border-[#e2e8f0]">
+                <button
+                  onClick={addRow}
+                  className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#2563eb]/40 px-4 py-2 text-sm font-medium text-[#2563eb] hover:bg-[#2563eb]/5 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  إضافة منتج
+                </button>
+                {bundles.map((bundle) => (
+                  <button
+                    key={bundle.id}
+                    onClick={() => openBundleDialog(bundle.id)}
+                    className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#7c3aed]/40 px-4 py-2 text-sm font-medium text-[#7c3aed] hover:bg-[#7c3aed]/5 transition-colors"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {bundle.name}
+                  </button>
+                ))}
+                <button
+                  onClick={addTemporaryProduct}
+                  className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#f59e0b]/40 px-4 py-2 text-sm font-medium text-[#f59e0b] hover:bg-[#f59e0b]/5 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  منتج مؤقت
+                </button>
+              </div>
+            </div>
+
+            {/* Totals right-aligned */}
+            <div className="border-t border-[#e2e8f0] p-6">
+              <div className="mr-auto w-full max-w-xs space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#94a3b8]">المجموع الفرعي</span>
+                  <span className="font-mono font-medium text-[#1e293b]">{formatCurrency(subtotal)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#94a3b8]">الخصم {discountType === "percentage" ? `(${discountValue}%)` : ""}</span>
+                    <span className="font-mono font-medium text-red-500">-{formatCurrency(discountAmount)}</span>
+                  </div>
+                )}
+                {settings.taxEnabled && taxAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#94a3b8]">الضريبة ({settings.taxRate}%)</span>
+                    <span className="font-mono font-medium text-[#1e293b]">+{formatCurrency(taxAmount)}</span>
+                  </div>
+                )}
+                <div className="border-t border-[#e2e8f0] pt-2">
+                  <div className="flex justify-between">
+                    <span className="text-base font-bold text-[#1e293b]">الإجمالي النهائي</span>
+                    <span className="text-lg font-extrabold font-mono text-[#2563eb]">{formatCurrency(total)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="border-t border-[#e2e8f0] p-6">
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">ملاحظات</label>
+              <Textarea
+                placeholder="ملاحظات إضافية على الفاتورة..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                className="resize-none rounded-[10px] border-[1.5px] border-[#e2e8f0]"
+              />
+            </div>
+
+            {/* Save buttons row */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-[#e2e8f0] p-6">
+              <Button variant="outline" className="gap-1.5 rounded-[10px] border-[#e2e8f0]" onClick={() => handleSave("مسودة")}>
+                <Save className="h-3.5 w-3.5" />
+                حفظ كمسودة
+              </Button>
+              <Button variant="outline" className="gap-1.5 rounded-[10px] border-[#e2e8f0]" onClick={() => handleSave("غير مدفوعة")}>
+                <FileText className="h-3.5 w-3.5" />
+                غير مدفوعة
+              </Button>
+              <Button variant="outline" className="gap-1.5 rounded-[10px] border-[#e2e8f0]" onClick={() => handleSave("مدفوعة جزئياً")}>
+                <FileText className="h-3.5 w-3.5" />
+                مدفوعة جزئياً
+              </Button>
+              <Button className="gap-1.5 rounded-[10px] bg-[#2563eb] hover:bg-[#1d4ed8]" onClick={() => handleSave("مدفوعة")}>
+                <Save className="h-3.5 w-3.5" />
+                مدفوعة
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

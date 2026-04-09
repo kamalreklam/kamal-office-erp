@@ -60,7 +60,7 @@ function DesktopInvoices() {
 
   const filtered = useMemo(() => {
     const list = invoices.filter((inv) => {
-      const matchSearch = debouncedSearch === "" || inv.invoiceNumber.toLowerCase().includes(debouncedSearch.toLowerCase()) || inv.clientName.includes(debouncedSearch);
+      const q = debouncedSearch.toLowerCase(); const matchSearch = debouncedSearch === "" || inv.invoiceNumber.toLowerCase().includes(q) || inv.clientName.toLowerCase().includes(q);
       const matchStatus = statusFilter === "الكل" || inv.status === statusFilter;
       const matchDateFrom = !dateFrom || inv.createdAt >= dateFrom;
       const matchDateTo = !dateTo || inv.createdAt <= dateTo;

@@ -78,7 +78,7 @@ function DesktopClients() {
 
   const filtered = useMemo(() => {
     const list = debouncedSearch.trim()
-      ? clients.filter((c) => c.name.includes(debouncedSearch) || c.phone.includes(debouncedSearch) || c.address.includes(debouncedSearch))
+      ? (() => { const q = debouncedSearch.toLowerCase(); return clients.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q) || c.address.toLowerCase().includes(q)); })()
       : [...clients];
     switch (sortBy) {
       case "name": return list.sort((a, b) => a.name.localeCompare(b.name, "ar"));

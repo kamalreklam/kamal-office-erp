@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight, Search, Plus, Minus, X, Package, Check,
-  ChevronDown, Trash2, Save, FileText, CheckCircle2, AlertTriangle,
-  Droplets,
+  Trash2, Save, FileText, CheckCircle2, Droplets, AlertTriangle,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { type InvoiceStatus, type Client, type Product, formatCurrency } from "@/lib/data";
@@ -19,6 +18,11 @@ interface CartItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  discount?: number;
+  _priceInput?: string;
+  isBundle?: boolean;
+  bundleComponents?: { productId: string; productName: string; quantity: number }[];
+  isTemporary?: boolean;
 }
 
 export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
@@ -37,9 +41,12 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     return null;
   });
   const [showClients, setShowClients] = useState(false);
+  const clientRef = useRef<HTMLDivElement>(null);
 
   // Products
   const [productSearch, setProductSearch] = useState("");
+  const [showProductSearch, setShowProductSearch] = useState(false);
+  const productSearchRef = useRef<HTMLDivElement>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
     if (editingInvoice) {
       const rawItems = editingInvoice.items;
@@ -50,16 +57,17 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         description: item.description || "",
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        total: item.quantity * item.unitPrice,
+        total: item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100),
+        discount: item.discount || 0,
+        isBundle: item.isBundle,
+        bundleComponents: item.bundleComponents,
+        isTemporary: item.isTemporary,
       }));
     }
     return [];
   });
-  const [qtySheet, setQtySheet] = useState<{ product: Product; qty: number; price: string } | null>(null);
-  const [showProducts, setShowProducts] = useState(false);
 
   // Extras
-  const [showExtras, setShowExtras] = useState(() => !!(editingInvoice && (editingInvoice.discountValue > 0 || editingInvoice.notes)));
   const [discountType, setDiscountType] = useState<"percentage" | "fixed">(() => editingInvoice?.discountType || "percentage");
   const [discountValue, setDiscountValue] = useState(() => editingInvoice?.discountValue || 0);
   const [notes, setNotes] = useState(() => editingInvoice?.notes || "");
@@ -73,20 +81,34 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
   // Save
   const [saving, setSaving] = useState(false);
 
-  // Calculations
-  const subtotal = cart.reduce((s, i) => s + i.total, 0);
+  // Calculations — per-line discount aware
+  const subtotal = cart.reduce((s, i) => s + i.quantity * i.unitPrice * (1 - (i.discount || 0) / 100), 0);
   const clampedDiscount = discountType === "percentage" ? Math.min(discountValue, 100) : Math.min(discountValue, subtotal);
   const discountAmount = discountType === "percentage" ? (subtotal * clampedDiscount) / 100 : clampedDiscount;
   const taxAmount = settings.taxEnabled ? ((subtotal - discountAmount) * settings.taxRate) / 100 : 0;
   const total = Math.max(0, subtotal - discountAmount + taxAmount);
 
   const filteredClients = clientSearch.trim()
-    ? clients.filter((c) => c.name.includes(clientSearch) || c.phone.includes(clientSearch))
+    ? clients.filter((c) => { const q = clientSearch.toLowerCase(); return c.name.toLowerCase().includes(q) || c.phone.includes(q); })
     : clients;
 
   const filteredProducts = productSearch.trim()
-    ? products.filter((p) => p.name.includes(productSearch) || p.category.includes(productSearch))
+    ? products.filter((p) => { const q = productSearch.toLowerCase(); return p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q); })
     : products.slice(0, 15);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (clientRef.current && !clientRef.current.contains(e.target as Node)) {
+        setShowClients(false);
+      }
+      if (productSearchRef.current && !productSearchRef.current.contains(e.target as Node)) {
+        setShowProductSearch(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   function selectClient(client: Client) {
     setSelectedClient(client);
@@ -94,43 +116,100 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     setShowClients(false);
   }
 
-  function openQtySheet(product: Product) {
+  function addProductToCart(product: Product) {
     if (product.stock <= 0) {
       toast.error(`"${product.name}" — نفذ المخزون`);
       return;
     }
     const existing = cart.find((c) => c.productId === product.id);
-    setQtySheet({
-      product,
-      qty: existing?.quantity || 1,
-      price: String(existing?.unitPrice ?? product.price),
-    });
+    if (existing) {
+      if (existing.quantity + 1 > product.stock) {
+        toast.error(`الكمية أكبر من المخزون (${product.stock})`);
+        return;
+      }
+      setCart((prev) =>
+        prev.map((c) =>
+          c.productId === product.id
+            ? { ...c, quantity: c.quantity + 1, total: (c.quantity + 1) * c.unitPrice * (1 - (c.discount || 0) / 100) }
+            : c
+        )
+      );
+    } else {
+      setCart((prev) => [
+        ...prev,
+        {
+          productId: product.id,
+          productName: product.name,
+          description: product.description,
+          quantity: 1,
+          unitPrice: product.price,
+          total: product.price,
+        },
+      ]);
+    }
+    setShowProductSearch(false);
+    setProductSearch("");
+    toast.success(`تم إضافة "${product.name}"`);
   }
 
-  function confirmAdd() {
-    if (!qtySheet) return;
-    const { product, qty, price: priceStr } = qtySheet;
-    const price = parseFloat(priceStr) || 0;
-    if (qty > product.stock) {
-      toast.error(`الكمية (${qty}) أكبر من المخزون (${product.stock})`);
-      return;
+  function addTemporaryProduct() {
+    setCart((prev) => [
+      ...prev,
+      {
+        productId: `temp_${Date.now()}`,
+        productName: "",
+        description: "",
+        quantity: 1,
+        unitPrice: 0,
+        total: 0,
+        isTemporary: true,
+      },
+    ]);
+  }
+
+  function updateCartItem(productId: string, updates: Partial<CartItem>) {
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.productId !== productId) return item;
+        const merged = { ...item, ...updates };
+        merged.total = merged.quantity * merged.unitPrice * (1 - (merged.discount || 0) / 100);
+        return merged;
+      })
+    );
+  }
+
+  function updateCartQuantity(productId: string, quantity: number) {
+    const item = cart.find((c) => c.productId === productId);
+    if (!item) return;
+    if (!item.isTemporary && !item.isBundle) {
+      const product = products.find((p) => p.id === item.productId);
+      if (product && quantity > product.stock) {
+        toast.error(`الكمية (${quantity}) أكبر من المخزون (${product.stock})`);
+        return;
+      }
     }
-    const item: CartItem = {
-      productId: product.id,
-      productName: product.name,
-      description: product.description,
-      quantity: qty,
-      unitPrice: price,
-      total: qty * price,
-    };
-    setCart((prev) => {
-      const idx = prev.findIndex((c) => c.productId === product.id);
-      if (idx >= 0) { const n = [...prev]; n[idx] = item; return n; }
-      return [...prev, item];
-    });
-    setQtySheet(null);
-    setShowProducts(false);
-    setProductSearch("");
+    if (item.isBundle && item.bundleComponents) {
+      for (const comp of item.bundleComponents) {
+        const product = products.find((p) => p.id === comp.productId);
+        if (product && comp.quantity * quantity > product.stock) {
+          toast.error(`الكمية المطلوبة أكبر من مخزون "${product.name}" (${product.stock})`);
+          return;
+        }
+      }
+    }
+    updateCartItem(productId, { quantity: Math.max(1, quantity) });
+  }
+
+  function updateCartPrice(productId: string, value: string) {
+    if (value === "" || /^\d*\.?\d*$/.test(value)) {
+      const unitPrice = parseFloat(value) || 0;
+      updateCartItem(productId, { unitPrice, _priceInput: value });
+    }
+  }
+
+  function updateCartDiscount(productId: string, discount: number) {
+    const d = Math.min(Math.max(discount, 0), 100);
+    updateCartItem(productId, { discount: d });
   }
 
   function removeFromCart(productId: string) {
@@ -188,23 +267,35 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     if (blocked.length > 0) { toast.error(`نفذ المخزون: ${blocked.join("، ")}`); return; }
     if (overStock.length > 0) { toast.error(`تجاوز المخزون: ${overStock.join("، ")}`); return; }
 
-    const newItems: CartItem[] = bundle.items.map((bi) => {
+    const components = bundle.items.map((bi) => {
       const product = products.find((p) => p.id === bi.productId);
       const q = bundleQty[bi.productId] || 1;
-      const p = parseFloat(bundlePrice[bi.productId]) || product?.price || 0;
-      return {
-        productId: bi.productId,
-        productName: product?.name || bi.productName,
-        description: product?.description || "",
-        quantity: q,
-        unitPrice: p,
-        total: q * p,
-      };
+      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: q };
     });
 
+    const bundleTotal = bundle.items.reduce((s, bi) => {
+      const q = bundleQty[bi.productId] || 1;
+      const p = parseFloat(bundlePrice[bi.productId]) || 0;
+      return s + q * p;
+    }, 0);
+
+    const bundleItem: CartItem = {
+      productId: `bundle_${bundle.id}`,
+      productName: bundle.name,
+      description: bundle.description || bundle.items.map((bi) => {
+        const product = products.find((p) => p.id === bi.productId);
+        return product?.name || bi.productName;
+      }).join(" + "),
+      quantity: 1,
+      unitPrice: bundleTotal,
+      total: bundleTotal,
+      isBundle: true,
+      bundleComponents: components,
+    };
+
     setCart((prev) => {
-      const kept = prev.filter((c) => !newItems.some((n) => n.productId === c.productId));
-      return [...kept, ...newItems];
+      const kept = prev.filter((c) => c.productId !== bundleItem.productId);
+      return [...kept, bundleItem];
     });
     setShowBundleSheet(false);
     toast.success(`تم إضافة "${bundle.name}"`);
@@ -214,11 +305,24 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     if (!selectedClient) { toast.error("اختر عميل أولاً"); return; }
     if (cart.length === 0) { toast.error("أضف منتج واحد على الأقل"); return; }
 
+    // Temporary items need a name
+    const missingNames = cart.filter((li) => li.isTemporary && !li.productName.trim());
+    if (missingNames.length > 0) { toast.error("يرجى إدخال اسم المنتج المؤقت"); return; }
+
     const stockErrors: string[] = [];
     cart.forEach((item) => {
-      const p = products.find((pr) => pr.id === item.productId);
-      if (p && p.stock <= 0) stockErrors.push(p.name);
-      else if (p && item.quantity > p.stock) stockErrors.push(`${p.name} (${item.quantity}>${p.stock})`);
+      if (item.isTemporary) return;
+      if (item.isBundle && item.bundleComponents) {
+        item.bundleComponents.forEach((comp) => {
+          const p = products.find((pr) => pr.id === comp.productId);
+          if (p && p.stock <= 0) stockErrors.push(p.name);
+          else if (p && comp.quantity * item.quantity > p.stock) stockErrors.push(`${p.name} (متوفر: ${p.stock})`);
+        });
+      } else {
+        const p = products.find((pr) => pr.id === item.productId);
+        if (p && p.stock <= 0) stockErrors.push(p.name);
+        else if (p && item.quantity > p.stock) stockErrors.push(`${p.name} (${item.quantity}>${p.stock})`);
+      }
     });
     if (stockErrors.length > 0) { toast.error(`مشكلة مخزون: ${stockErrors.join("، ")}`); return; }
 
@@ -230,7 +334,11 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         items: cart.map((li) => ({
           id: `li${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           productId: li.productId, productName: li.productName, description: li.description,
-          quantity: li.quantity, unitPrice: li.unitPrice, total: Math.round(li.total * 100) / 100,
+          quantity: li.quantity, unitPrice: li.unitPrice,
+          total: Math.round(li.quantity * li.unitPrice * (1 - (li.discount || 0) / 100) * 100) / 100,
+          ...(li.discount ? { discount: li.discount } : {}),
+          ...(li.isBundle ? { isBundle: true, bundleComponents: li.bundleComponents } : {}),
+          ...(li.isTemporary ? { isTemporary: true } : {}),
         })),
         subtotal: Math.round(subtotal * 100) / 100,
         discountType, discountValue,
@@ -252,465 +360,409 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     } finally { setSaving(false); }
   }
 
-  return (
-    <div className="min-h-screen" style={{ background: "var(--ground)" }} dir="rtl">
+  function getLineTotal(item: CartItem): number {
+    return item.quantity * item.unitPrice * (1 - (item.discount || 0) / 100);
+  }
 
-      {/* ─── Header ─── */}
-      <div className="sticky top-0 z-30 px-4 pt-4 pb-3" style={{ background: "var(--ground)" }}>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/invoices")}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl"
-            style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
-          >
-            <ArrowRight className="h-5 w-5" />
-          </button>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }}>{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
-        </div>
+  return (
+    <div className="min-h-screen bg-[#f8fafc]" dir="rtl">
+
+      {/* ─── Sticky Header ─── */}
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#e2e8f0] bg-white/80 backdrop-blur-sm px-4 py-3">
+        <button
+          onClick={() => router.push("/invoices")}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[#94a3b8] hover:bg-[#f1f5f9] transition-colors"
+        >
+          <ArrowRight className="h-5 w-5" />
+        </button>
+        <h1 className="text-lg font-bold text-[#1e293b]">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
+        <span className="mr-auto rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-bold text-[#92400e]">مسودة</span>
       </div>
 
-      <div className="px-4 pb-32 space-y-4">
+      <div className="px-4 pb-48 space-y-4 pt-4">
 
         {/* ─── 1. CLIENT SECTION ─── */}
-        <section
-          className="rounded-3xl p-5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}
-        >
-          <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", marginBottom: 10 }}>العميل</p>
+        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">العميل</label>
 
           {selectedClient ? (
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
-                style={{ fontSize: 24, fontWeight: 700, background: "var(--primary)", color: "white" }}
-              >
+            <div className="flex items-center gap-3 rounded-[10px] border-[1.5px] border-[#2563eb]/30 bg-[#2563eb]/5 px-3 py-2.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-sm font-bold text-[#2563eb]">
                 {selectedClient.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }}>{selectedClient.name}</p>
-                {selectedClient.phone && <p dir="ltr" style={{ fontSize: 14, color: "var(--text-muted)", textAlign: "left" }}>{selectedClient.phone}</p>}
+                <p className="text-sm font-bold text-[#1e293b] truncate">{selectedClient.name}</p>
+                {selectedClient.phone && <p dir="ltr" className="text-xs text-[#94a3b8] text-left">{selectedClient.phone}</p>}
               </div>
               <button
                 onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                className="flex h-10 w-10 items-center justify-center rounded-xl"
-                style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+                className="rounded-[8px] p-1.5 text-[#94a3b8] hover:text-red-500 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           ) : (
-            <div className="relative">
-              <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
+            <div ref={clientRef} className="relative">
+              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
               <input
                 type="text"
                 placeholder="ابحث عن عميل..."
                 value={clientSearch}
                 onChange={(e) => { setClientSearch(e.target.value); setShowClients(true); }}
                 onFocus={() => setShowClients(true)}
-                className="w-full rounded-2xl border-2 pr-12 pl-4"
-                style={{ height: 52, fontSize: 18, background: "var(--surface-2)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
+                className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-white pr-9 pl-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-[#2563eb] transition-colors"
               />
               {showClients && (
-                <div
-                  className="absolute top-full mt-2 left-0 right-0 rounded-2xl overflow-hidden max-h-64 overflow-y-auto z-20"
-                  style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)", boxShadow: "var(--shadow-lg)" }}
-                >
-                  {filteredClients.slice(0, 10).map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => selectClient(c)}
-                      className="flex w-full items-center gap-3 p-4 text-right"
-                      style={{ borderBottom: "1px solid var(--border-subtle)" }}
-                    >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full" style={{ fontSize: 18, fontWeight: 700, background: "var(--surface-3)", color: "var(--text-secondary)" }}>
-                        {c.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{c.name}</p>
-                        {c.phone && <p dir="ltr" style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "left" }}>{c.phone}</p>}
-                      </div>
-                    </button>
-                  ))}
-                  {filteredClients.length === 0 && (
-                    <p className="p-6 text-center" style={{ fontSize: 16, color: "var(--text-muted)" }}>لا نتائج</p>
-                  )}
+                <div className="absolute top-full mt-1 left-0 right-0 z-20 rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden">
+                  <div className="max-h-56 overflow-y-auto p-1">
+                    {filteredClients.length === 0 ? (
+                      <p className="p-3 text-center text-sm text-[#94a3b8]">لا نتائج</p>
+                    ) : (
+                      filteredClients.slice(0, 10).map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => selectClient(c)}
+                          className="flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors hover:bg-[#f1f5f9]"
+                        >
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[10px] font-bold text-[#2563eb]">
+                            {c.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-[#1e293b] truncate">{c.name}</p>
+                            {c.phone && <p dir="ltr" className="text-xs text-[#94a3b8] text-left">{c.phone}</p>}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>
           )}
-        </section>
+        </div>
 
         {/* ─── 2. PRODUCTS SECTION ─── */}
-        <section
-          className="rounded-3xl p-5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}
-        >
+        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
           <div className="flex items-center justify-between mb-3">
-            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>المنتجات</p>
+            <label className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتجات</label>
             {cart.length > 0 && (
-              <span style={{ fontSize: 14, fontWeight: 800, color: "var(--primary)" }}>{cart.length} منتج</span>
+              <span className="text-xs font-bold text-[#2563eb]">{cart.length} منتج</span>
             )}
           </div>
 
-          {/* Cart items */}
-          {cart.length > 0 && (
-            <div className="space-y-2 mb-4">
-              {cart.map((item) => {
-                const product = products.find((p) => p.id === item.productId);
-                return (
-                  <div
-                    key={item.productId}
-                    className="flex items-center gap-3 rounded-2xl p-4"
-                    style={{ background: "var(--surface-2)", border: "1px solid var(--border-subtle)", cursor: "pointer" }}
-                  >
-                    <div
-                      className="flex-1 min-w-0"
-                      onClick={() => {
-                        if (product) {
-                          setQtySheet({ product, qty: item.quantity, price: String(item.unitPrice) });
-                        }
-                      }}
-                    >
-                      <p style={{ fontSize: 17, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4 }}>{item.productName}</p>
-                      <p style={{ fontSize: 16, color: "var(--text-muted)", marginTop: 4 }}>
-                        {item.quantity} × {formatCurrency(item.unitPrice)}
-                      </p>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--primary)", marginTop: 4, display: "inline-block" }}>✎ اضغط للتعديل</span>
-                    </div>
-                    <span style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)", flexShrink: 0 }}>{formatCurrency(item.total)}</span>
-                    <button onClick={() => removeFromCart(item.productId)} style={{ padding: 10, color: "var(--red-500)" }}>
-                      <Trash2 style={{ width: 20, height: 20 }} />
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Add product button */}
-          <button
-            onClick={() => setShowProducts(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl"
-            style={{
-              height: 56, fontSize: 18, fontWeight: 700,
-              background: "var(--accent-soft)", color: "var(--primary)",
-              border: "2px dashed var(--primary)", cursor: "pointer",
-            }}
-          >
-            <Plus className="h-5 w-5" />
-            إضافة منتج
-          </button>
-
-          {/* Bundle quick-add */}
+          {/* Bundle quick-add — horizontal scroll */}
           {bundles.length > 0 && (
-            <div className="mt-3">
-              <p style={{ fontSize: 12, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>مجموعات سريعة</p>
-              <div className="flex flex-wrap gap-2">
+            <div className="mb-3">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                 {bundles.map((bundle) => (
                   <button
                     key={bundle.id}
                     onClick={() => openBundleSheet(bundle.id)}
-                    className="flex items-center gap-2 rounded-xl px-4 py-2.5"
-                    style={{
-                      background: "var(--surface-2)",
-                      border: "1px dashed var(--border-default)",
-                      color: "var(--text-secondary)",
-                      fontSize: 14, fontWeight: 700, cursor: "pointer",
-                    }}
+                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#7c3aed]/40 bg-[#7c3aed]/5 px-3 py-2 text-xs font-bold text-[#7c3aed] transition-colors active:bg-[#7c3aed]/10"
                   >
-                    <Droplets className="h-4 w-4" style={{ color: "var(--primary)" }} />
+                    <Droplets className="h-3.5 w-3.5" />
                     {bundle.name}
                   </button>
                 ))}
               </div>
             </div>
           )}
-        </section>
 
-        {/* ─── 3. EXTRAS (Discount + Notes) ─── */}
-        <button
-          onClick={() => setShowExtras(!showExtras)}
-          className="flex w-full items-center justify-between rounded-3xl p-5"
-          style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}
-        >
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-secondary)" }}>خصم وملاحظات</span>
-          <ChevronDown className={`h-5 w-5 transition-transform ${showExtras ? "rotate-180" : ""}`} style={{ color: "var(--text-muted)" }} />
-        </button>
+          {/* Cart items — stacked cards */}
+          {cart.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {cart.map((item) => (
+                <div
+                  key={item.productId}
+                  className={`rounded-[10px] border-[1.5px] p-3 ${item.isTemporary ? "border-[#f59e0b]/30 bg-[#fefce8]" : item.isBundle ? "border-[#7c3aed]/30 bg-[#7c3aed]/5" : "border-[#e2e8f0] bg-white"}`}
+                >
+                  {/* Row 1: name + badges + delete */}
+                  <div className="flex items-start gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      {item.isTemporary ? (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="اسم المنتج المؤقت..."
+                            value={item.productName}
+                            onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
+                            className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
+                          />
+                          <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[10px] font-bold text-white">مؤقت</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-[#1e293b] truncate">{item.productName}</p>
+                          {item.isBundle && (
+                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[10px] font-bold text-white">باقة</span>
+                          )}
+                        </div>
+                      )}
+                      {item.isBundle && item.bundleComponents && (
+                        <p className="text-[11px] text-[#94a3b8] mt-0.5 truncate">
+                          {item.bundleComponents.map((c) => `${c.productName} x${c.quantity}`).join(" . ")}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => removeFromCart(item.productId)}
+                      className="shrink-0 rounded-[8px] p-1.5 text-[#94a3b8] hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
 
-        {showExtras && (
-          <section className="rounded-3xl p-5 space-y-4" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-            {/* Discount type */}
-            <div className="flex gap-2">
+                  {/* Row 2: qty, price, discount%, line total */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {/* Quantity */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
+                      <div className="flex items-center rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc]">
+                        <button
+                          onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
+                          className="px-1.5 py-1 text-[#94a3b8] active:text-[#1e293b]"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          value={item.quantity}
+                          onChange={(e) => updateCartQuantity(item.productId, parseInt(e.target.value) || 1)}
+                          className="w-full min-w-0 bg-transparent text-center text-sm font-bold text-[#1e293b] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          dir="ltr"
+                        />
+                        <button
+                          onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
+                          className="px-1.5 py-1 text-[#94a3b8] active:text-[#1e293b]"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">السعر</label>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        dir="ltr"
+                        value={item._priceInput ?? String(item.unitPrice)}
+                        onChange={(e) => updateCartPrice(item.productId, e.target.value)}
+                        className="w-full rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                    </div>
+
+                    {/* Discount % */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">خصم %</label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={item.discount || 0}
+                        onChange={(e) => updateCartDiscount(item.productId, parseFloat(e.target.value) || 0)}
+                        className="w-full rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    {/* Line total */}
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
+                      <div className="flex h-[30px] items-center justify-center rounded-[8px] bg-[#2563eb]/5 text-sm font-bold font-mono text-[#2563eb]">
+                        {formatCurrency(getLineTotal(item))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add product — inline search */}
+          <div ref={productSearchRef} className="relative mb-2">
+            {showProductSearch ? (
+              <>
+                <Search className="absolute right-3 top-[11px] h-4 w-4 text-[#94a3b8]" />
+                <input
+                  type="text"
+                  placeholder="ابحث عن منتج..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  autoFocus
+                  className="w-full rounded-[10px] border-[1.5px] border-[#2563eb] bg-white pr-9 pl-3 py-2.5 text-sm text-[#1e293b] outline-none"
+                />
+                {/* Dropdown */}
+                <div className="absolute top-full mt-1 left-0 right-0 z-20 rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden">
+                  <div className="max-h-64 overflow-y-auto p-1">
+                    {filteredProducts.length === 0 ? (
+                      <p className="p-3 text-center text-sm text-[#94a3b8]">لا توجد منتجات</p>
+                    ) : (
+                      filteredProducts.map((p) => {
+                        const outOfStock = p.stock <= 0;
+                        const inCart = cart.some((c) => c.productId === p.id);
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => addProductToCart(p)}
+                            disabled={outOfStock}
+                            className={`flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
+                          >
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#94a3b8]">
+                              <Package className="h-4 w-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#1e293b] truncate">{p.name}</p>
+                              <p className={`text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
+                                {outOfStock ? "نفذ المخزون" : `${p.category} · المخزون: ${p.stock}`}
+                              </p>
+                            </div>
+                            {inCart && <Check className="h-4 w-4 shrink-0 text-[#2563eb]" />}
+                            <span className={`shrink-0 text-sm font-bold font-mono ${outOfStock ? "text-[#94a3b8]" : "text-[#2563eb]"}`}>
+                              {formatCurrency(p.price)}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <button
+                onClick={() => setShowProductSearch(true)}
+                className="flex w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#2563eb]/40 bg-[#2563eb]/5 py-2.5 text-sm font-bold text-[#2563eb] transition-colors active:bg-[#2563eb]/10"
+              >
+                <Plus className="h-4 w-4" />
+                إضافة منتج
+              </button>
+            )}
+          </div>
+
+          {/* Temporary product button */}
+          <button
+            onClick={addTemporaryProduct}
+            className="flex w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#f59e0b]/40 bg-[#f59e0b]/5 py-2.5 text-sm font-bold text-[#f59e0b] transition-colors active:bg-[#f59e0b]/10"
+          >
+            <FileText className="h-4 w-4" />
+            منتج مؤقت
+          </button>
+        </div>
+
+        {/* ─── 3. DISCOUNT SECTION ─── */}
+        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
+          <div className="flex gap-2 mb-2">
+            <div className="flex gap-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] p-0.5">
               {(["percentage", "fixed"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setDiscountType(t)}
-                  className="flex-1 rounded-xl py-3"
-                  style={{
-                    fontSize: 16, fontWeight: 700,
-                    background: discountType === t ? "var(--primary)" : "var(--surface-2)",
-                    color: discountType === t ? "white" : "var(--text-secondary)",
-                    border: "none", cursor: "pointer",
-                  }}
+                  className={`rounded-[8px] px-3 py-1.5 text-xs font-bold transition-colors ${discountType === t ? "bg-[#2563eb] text-white" : "text-[#94a3b8]"}`}
                 >
-                  {t === "percentage" ? "نسبة %" : "مبلغ $"}
+                  {t === "percentage" ? "%" : "$"}
                 </button>
               ))}
             </div>
             <input
-              type="text" inputMode="decimal" dir="ltr"
-              value={discountValue || ""} placeholder="0"
+              type="text"
+              inputMode="decimal"
+              dir="ltr"
+              value={discountValue || ""}
+              placeholder="0"
               onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setDiscountValue(parseFloat(v) || 0); }}
-              className="w-full rounded-xl border-2 text-center"
-              style={{ height: 52, fontSize: 22, fontWeight: 700, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
+              className="flex-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-center text-sm font-bold font-mono text-[#1e293b] outline-none focus:border-[#2563eb]"
             />
-            <textarea
-              value={notes} onChange={(e) => setNotes(e.target.value)}
-              placeholder="ملاحظات..."
-              rows={2}
-              className="w-full rounded-xl border-2 p-4 resize-none"
-              style={{ fontSize: 16, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
-            />
-          </section>
-        )}
+          </div>
+          {discountAmount > 0 && (
+            <p className="text-xs font-mono font-bold text-red-500 text-left">-{formatCurrency(discountAmount)}</p>
+          )}
+        </div>
 
-        {/* ─── 4. TOTALS ─── */}
+        {/* ─── 4. TOTALS CARD ─── */}
         {cart.length > 0 && (
-          <section className="rounded-3xl p-5 space-y-3" style={{ background: "var(--surface-2)" }}>
+          <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4 space-y-2">
             <div className="flex justify-between">
-              <span style={{ fontSize: 16, color: "var(--text-muted)" }}>المجموع</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{formatCurrency(subtotal)}</span>
+              <span className="text-sm text-[#94a3b8]">المجموع</span>
+              <span className="text-sm font-bold font-mono text-[#1e293b]">{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
               <div className="flex justify-between">
-                <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الخصم</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--red-500)" }}>-{formatCurrency(discountAmount)}</span>
+                <span className="text-sm text-[#94a3b8]">الخصم</span>
+                <span className="text-sm font-bold font-mono text-red-500">-{formatCurrency(discountAmount)}</span>
               </div>
             )}
             {taxAmount > 0 && (
               <div className="flex justify-between">
-                <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الضريبة</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>+{formatCurrency(taxAmount)}</span>
+                <span className="text-sm text-[#94a3b8]">الضريبة ({settings.taxRate}%)</span>
+                <span className="text-sm font-bold font-mono text-[#1e293b]">+{formatCurrency(taxAmount)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-3" style={{ borderTop: "2px solid var(--border-default)" }}>
-              <span style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>الإجمالي</span>
-              <span style={{ fontSize: 30, fontWeight: 800, color: "var(--primary)" }}>{formatCurrency(total)}</span>
+            <div className="flex justify-between border-t border-[#e2e8f0] pt-2">
+              <span className="text-base font-bold text-[#1e293b]">الإجمالي</span>
+              <span className="text-xl font-bold font-mono text-[#2563eb]">{formatCurrency(total)}</span>
             </div>
-          </section>
+          </div>
         )}
+
+        {/* ─── 5. NOTES ─── */}
+        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
+          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">ملاحظات</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="ملاحظات اختيارية..."
+            rows={2}
+            className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] p-3 text-sm text-[#1e293b] outline-none resize-none focus:border-[#2563eb]"
+          />
+        </div>
       </div>
 
       {/* ─── FIXED BOTTOM: Save Buttons ─── */}
-      {selectedClient && cart.length > 0 && (
-        <div
-          className="fixed bottom-0 left-0 right-0 z-30 px-4 pt-3 space-y-2"
-          style={{
-            background: "var(--ground)",
-            borderTop: "1px solid var(--glass-border)",
-            paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 12px)",
-          }}
-        >
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleSave("مدفوعة")}
-              disabled={saving}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
-              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--green-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
-            >
-              <CheckCircle2 className="h-5 w-5" /> مدفوعة
-            </button>
-            <button
-              onClick={() => handleSave("مدفوعة جزئياً")}
-              disabled={saving}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
-              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--blue-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
-            >
-              جزئياً
-            </button>
-            <button
-              onClick={() => handleSave("غير مدفوعة")}
-              disabled={saving}
-              className="flex flex-1 items-center justify-center gap-2 rounded-2xl"
-              style={{ height: 52, fontSize: 16, fontWeight: 800, background: "var(--amber-500)", color: "white", border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
-            >
-              آجل
-            </button>
-          </div>
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#e2e8f0] bg-white/95 backdrop-blur-sm px-4 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 12px)" }}
+        dir="rtl"
+      >
+        <div className="flex gap-2 mb-2">
           <button
-            onClick={() => handleSave("مسودة")}
+            onClick={() => handleSave("مدفوعة")}
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl"
-            style={{ height: 44, fontSize: 14, fontWeight: 700, background: "var(--surface-2)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", cursor: "pointer", opacity: saving ? 0.6 : 1 }}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-500 py-2.5 text-sm font-bold text-white transition-colors active:bg-emerald-600 disabled:opacity-50"
           >
-            <Save className="h-4 w-4" /> مسودة
+            <CheckCircle2 className="h-4 w-4" />
+            مدفوعة
+          </button>
+          <button
+            onClick={() => handleSave("غير مدفوعة")}
+            disabled={saving}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-amber-500 py-2.5 text-sm font-bold text-white transition-colors active:bg-amber-600 disabled:opacity-50"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            غير مدفوعة
+          </button>
+          <button
+            onClick={() => handleSave("مدفوعة جزئياً")}
+            disabled={saving}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#2563eb] py-2.5 text-sm font-bold text-white transition-colors active:bg-[#1d4ed8] disabled:opacity-50"
+          >
+            <Save className="h-4 w-4" />
+            حفظ
           </button>
         </div>
-      )}
+        <button
+          onClick={() => handleSave("مسودة")}
+          disabled={saving}
+          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-white py-2 text-sm font-bold text-[#94a3b8] transition-colors active:bg-[#f1f5f9] disabled:opacity-50"
+        >
+          <FileText className="h-4 w-4" />
+          مسودة
+        </button>
+      </div>
 
-      {/* ─── PRODUCT PICKER BOTTOM SHEET ─── */}
-      <AnimatePresence>
-        {showProducts && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50"
-            style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)" }}
-            onClick={() => { setShowProducts(false); setProductSearch(""); }}
-          >
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
-              style={{ background: "var(--surface-1)", maxHeight: "85vh", display: "flex", flexDirection: "column", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}
-              onClick={(e) => e.stopPropagation()}
-              dir="rtl"
-            >
-              <div className="flex justify-center pt-3 pb-2">
-                <div className="h-1 w-10 rounded-full" style={{ background: "var(--border-strong)" }} />
-              </div>
-              <div className="px-5 pb-3">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)" }}>اختر منتج</h3>
-                  <button onClick={() => { setShowProducts(false); setProductSearch(""); }} className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2" style={{ color: "var(--text-muted)" }} />
-                  <input
-                    type="text" placeholder="ابحث..." value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    autoFocus
-                    className="w-full rounded-2xl border-2 pr-12 pl-4"
-                    style={{ height: 48, fontSize: 16, background: "var(--surface-2)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
-                  />
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-2">
-                {filteredProducts.map((p) => {
-                  const out = p.stock <= 0;
-                  const inCart = cart.some((c) => c.productId === p.id);
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => openQtySheet(p)}
-                      disabled={out}
-                      className="flex w-full items-center gap-3 rounded-2xl p-4 text-right"
-                      style={{
-                        background: inCart ? "var(--accent-soft)" : "var(--surface-2)",
-                        border: inCart ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
-                        opacity: out ? 0.35 : 1, cursor: out ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--surface-3)", color: "var(--text-muted)" }}>
-                        <Package className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="truncate" style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>{p.name}</p>
-                        <p style={{ fontSize: 13, color: out ? "var(--red-500)" : "var(--text-muted)" }}>
-                          {out ? "نفذ المخزون" : `المخزون: ${p.stock} · ${p.category}`}
-                        </p>
-                      </div>
-                      {inCart && <Check className="h-5 w-5 shrink-0" style={{ color: "var(--primary)" }} />}
-                      <span className="shrink-0" style={{ fontSize: 16, fontWeight: 800, color: out ? "var(--text-muted)" : "var(--primary)" }}>
-                        {formatCurrency(p.price)}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ─── QUANTITY SHEET ─── */}
-      <AnimatePresence>
-        {qtySheet && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60]"
-            style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
-            onClick={() => setQtySheet(null)}
-          >
-            <motion.div
-              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute bottom-0 left-0 right-0 rounded-t-3xl p-6"
-              style={{ background: "var(--surface-1)", paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)" }}
-              onClick={(e) => e.stopPropagation()}
-              dir="rtl"
-            >
-              <div className="flex justify-center mb-4">
-                <div className="h-1 w-10 rounded-full" style={{ background: "var(--border-strong)" }} />
-              </div>
-              <h3 className="truncate" style={{ fontSize: 22, fontWeight: 800, color: "var(--text-primary)", marginBottom: 4 }}>
-                {qtySheet.product.name}
-              </h3>
-              <p style={{ fontSize: 15, color: "var(--text-muted)", marginBottom: 20 }}>
-                المخزون: {qtySheet.product.stock} {qtySheet.product.unit}
-              </p>
-
-              {/* Qty */}
-              <label style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>الكمية</label>
-              <div className="flex items-center gap-3 mb-5">
-                <button
-                  onClick={() => setQtySheet({ ...qtySheet, qty: Math.max(1, qtySheet.qty - 1) })}
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ background: "var(--surface-2)", color: "var(--text-primary)" }}
-                >
-                  <Minus className="h-6 w-6" />
-                </button>
-                <input
-                  type="number" min={1} max={qtySheet.product.stock} value={qtySheet.qty}
-                  onChange={(e) => setQtySheet({ ...qtySheet, qty: Math.min(parseInt(e.target.value) || 1, qtySheet.product.stock) })}
-                  className="flex-1 rounded-2xl border-2 text-center"
-                  style={{ height: 56, fontSize: 28, fontWeight: 800, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
-                  dir="ltr"
-                />
-                <button
-                  onClick={() => setQtySheet({ ...qtySheet, qty: Math.min(qtySheet.product.stock, qtySheet.qty + 1) })}
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ background: "var(--surface-2)", color: "var(--text-primary)" }}
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              </div>
-
-              {/* Price */}
-              <label style={{ fontSize: 14, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 8 }}>سعر الوحدة ($)</label>
-              <input
-                type="text" inputMode="decimal" dir="ltr"
-                value={qtySheet.price}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  if (v === "" || /^\d*\.?\d*$/.test(v)) setQtySheet({ ...qtySheet, price: v });
-                }}
-                className="w-full rounded-2xl border-2 text-center mb-5"
-                style={{ height: 52, fontSize: 22, fontWeight: 700, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
-              />
-
-              {/* Total */}
-              <div className="flex items-center justify-between mb-5">
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-muted)" }}>الإجمالي</span>
-                <span style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)" }}>
-                  {formatCurrency(qtySheet.qty * (parseFloat(qtySheet.price) || 0))}
-                </span>
-              </div>
-
-              <button
-                onClick={confirmAdd}
-                className="w-full rounded-2xl"
-                style={{ height: 56, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer" }}
-              >
-                {cart.some((c) => c.productId === qtySheet.product.id) ? "تحديث" : "إضافة"}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ─── BUNDLE SHEET ─── */}
+      {/* ─── BUNDLE SHEET (kept as-is) ─── */}
       <AnimatePresence>
         {showBundleSheet && (() => {
           const bundle = bundles.find((b) => b.id === activeBundleId);
@@ -740,29 +792,29 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
               <motion.div
                 initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                className="absolute bottom-0 left-0 right-0 rounded-t-3xl"
-                style={{ background: "var(--surface-1)", maxHeight: "85vh", overflow: "auto", paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)" }}
+                className="absolute bottom-0 left-0 right-0 rounded-t-[20px] bg-white"
+                style={{ maxHeight: "85vh", overflow: "auto", paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)" }}
                 onClick={(e) => e.stopPropagation()}
                 dir="rtl"
               >
                 <div className="flex justify-center pt-3 pb-2">
-                  <div className="h-1 w-10 rounded-full" style={{ background: "var(--border-strong)" }} />
+                  <div className="h-1 w-10 rounded-full bg-[#e2e8f0]" />
                 </div>
 
-                <div className="px-5 pb-5">
+                <div className="px-4 pb-5">
                   {/* Header */}
                   <div className="flex items-center gap-3 mb-4">
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-xl"
-                      style={{ background: "linear-gradient(135deg, #06b6d4, #ec4899, #eab308)", color: "white" }}
+                      className="flex h-10 w-10 items-center justify-center rounded-[10px] text-white"
+                      style={{ background: "linear-gradient(135deg, #06b6d4, #ec4899, #eab308)" }}
                     >
                       <Droplets className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <h3 style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }}>{bundle.name}</h3>
-                      {bundle.description && <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{bundle.description}</p>}
+                      <h3 className="text-base font-bold text-[#1e293b]">{bundle.name}</h3>
+                      {bundle.description && <p className="text-xs text-[#94a3b8]">{bundle.description}</p>}
                     </div>
-                    <button onClick={() => setShowBundleSheet(false)} className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}>
+                    <button onClick={() => setShowBundleSheet(false)} className="rounded-[8px] p-2 text-[#94a3b8] hover:bg-[#f1f5f9]">
                       <X className="h-5 w-5" />
                     </button>
                   </div>
@@ -775,18 +827,13 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                       return (
                         <div
                           key={bi.productId}
-                          className="flex items-center gap-3 rounded-2xl p-3"
-                          style={{
-                            background: "var(--surface-2)",
-                            border: "1px solid var(--border-subtle)",
-                            opacity: outOfStock ? 0.4 : 1,
-                          }}
+                          className={`flex items-center gap-3 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] p-3 ${outOfStock ? "opacity-40" : ""}`}
                         >
                           <div className="h-5 w-5 rounded-full shrink-0" style={{ backgroundColor: cfg.dot }} />
                           <div className="flex-1 min-w-0">
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{cfg.label}</span>
+                            <span className="text-sm font-bold text-[#1e293b]">{cfg.label}</span>
                             {bi.product && (
-                              <span className="block" style={{ fontSize: 11, color: outOfStock ? "var(--red-500)" : "var(--text-muted)" }}>
+                              <span className={`block text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
                                 {outOfStock ? "نفذ!" : `المخزون: ${bi.product.stock}`}
                               </span>
                             )}
@@ -797,8 +844,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                             value={bundleQty[bi.productId] || 1}
                             onChange={(e) => setBundleQty((prev) => ({ ...prev, [bi.productId]: parseInt(e.target.value) || 0 }))}
                             disabled={!!outOfStock}
-                            className="rounded-xl border text-center"
-                            style={{ width: 64, height: 40, fontSize: 16, fontWeight: 700, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
+                            className="w-16 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                            style={{ height: 36 }}
                             dir="ltr"
                           />
                           <input
@@ -809,8 +856,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                               if (v === "" || /^\d*\.?\d*$/.test(v)) setBundlePrice((prev) => ({ ...prev, [bi.productId]: v }));
                             }}
                             disabled={!!outOfStock}
-                            className="rounded-xl border text-center"
-                            style={{ width: 72, height: 40, fontSize: 14, fontWeight: 700, background: "var(--surface-1)", borderColor: "var(--border-default)", color: "var(--text-primary)", outline: "none" }}
+                            className="w-[72px] rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb]"
+                            style={{ height: 36 }}
                           />
                         </div>
                       );
@@ -818,16 +865,15 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   </div>
 
                   {/* Total */}
-                  <div className="flex items-center justify-between rounded-2xl p-4 mb-4" style={{ background: "var(--accent-soft)" }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "var(--primary)" }}>الإجمالي</span>
-                    <span style={{ fontSize: 24, fontWeight: 800, color: "var(--primary)" }}>{formatCurrency(bundleTotal)}</span>
+                  <div className="flex items-center justify-between rounded-[10px] bg-[#2563eb]/5 p-3 mb-4">
+                    <span className="text-sm font-bold text-[#2563eb]">الإجمالي</span>
+                    <span className="text-xl font-bold font-mono text-[#2563eb]">{formatCurrency(bundleTotal)}</span>
                   </div>
 
                   {/* Confirm */}
                   <button
                     onClick={confirmBundleAdd}
-                    className="w-full rounded-2xl"
-                    style={{ height: 56, fontSize: 18, fontWeight: 800, background: "var(--primary)", color: "white", border: "none", cursor: "pointer" }}
+                    className="w-full rounded-[10px] bg-[#7c3aed] py-3 text-base font-bold text-white transition-colors active:bg-[#6d28d9]"
                   >
                     إضافة المجموعة
                   </button>

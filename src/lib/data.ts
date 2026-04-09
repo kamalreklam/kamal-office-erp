@@ -36,6 +36,7 @@ export interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  discount?: number;
   isBundle?: boolean;
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
   isTemporary?: boolean;
