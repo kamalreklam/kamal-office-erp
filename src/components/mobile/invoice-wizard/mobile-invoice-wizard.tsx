@@ -248,8 +248,11 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     products.forEach(p => {
       let base = p.name.toLowerCase();
       for (const cw of colorWords) base = base.replace(cw, "").trim();
-      base = base.replace(/\s+/g, " ").trim();
-      if (base !== p.name.toLowerCase()) {
+      // Strip volume/size patterns so different sizes group together
+      base = base.replace(/\d+\s*ml/gi, "").trim();
+      base = base.replace(/[-–—]+/g, " ").replace(/\s+/g, " ").trim();
+      const cleaned = p.name.toLowerCase().replace(/\d+\s*ml/gi, "").replace(/[-–—]+/g, " ").replace(/\s+/g, " ").trim();
+      if (base !== cleaned) {
         if (!groups[base]) groups[base] = [];
         groups[base].push(p);
       }

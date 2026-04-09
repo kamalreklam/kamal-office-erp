@@ -282,9 +282,13 @@ function DesktopInvoicePage() {
     for (const cw of colorWords) {
       base = base.replace(cw, "").trim();
     }
-    base = base.replace(/\s+/g, " ").trim();
+    // Strip volume/size patterns (e.g. "70ml", "135ml") so different sizes group together
+    base = base.replace(/\d+\s*ml/gi, "").trim();
+    // Clean up separators and extra spaces
+    base = base.replace(/[-–—]+/g, " ").replace(/\s+/g, " ").trim();
     // Only return if this product had a color word removed (it's a CMYK ink)
-    return base !== n ? base : null;
+    const cleaned = n.replace(/\d+\s*ml/gi, "").replace(/[-–—]+/g, " ").replace(/\s+/g, " ").trim();
+    return base !== cleaned ? base : null;
   }
 
   const inkSets = (() => {
