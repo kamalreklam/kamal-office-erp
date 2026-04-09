@@ -108,7 +108,7 @@ export function MobileInventory() {
                   <p style={{ fontSize: 12, color: "var(--text-muted)" }}>منتج</p>
                 </div>
                 <div className="rounded-2xl p-3 text-center" style={{ background: "var(--surface-2)" }}>
-                  <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }}>{totalUnits.toLocaleString()}</p>
+                  <p style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }}>{totalUnits.toLocaleString("en-US")}</p>
                   <p style={{ fontSize: 12, color: "var(--text-muted)" }}>وحدة</p>
                 </div>
                 <div className="rounded-2xl p-3 text-center" style={{ background: "var(--surface-2)" }}>

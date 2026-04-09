@@ -193,7 +193,7 @@ function DesktopOrders() {
     const completed = orders.filter(o => o.status === "مكتمل").length;
     const lines = [
       `📋 *تقرير الطلبات - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       "",
       `📊 *الملخص:*`,
       `  • إجمالي الطلبات: ${orders.length}`,

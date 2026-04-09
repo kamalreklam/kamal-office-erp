@@ -122,7 +122,7 @@ function DesktopInvoices() {
     const draft = filtered.filter(inv => inv.status === "مسودة");
     const lines = [
       `🧾 *تقرير الفواتير - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       "",
       `📊 *الملخص:*`,
       `  • عدد الفواتير: ${filtered.length}`,

@@ -332,7 +332,7 @@ tr:nth-child(even){background:#fafbfc}
 <div class="hdr"><div><h1>${title}</h1><div class="sub">${subtitle}</div></div><div style="text-align:left"><div class="dr">من ${dateRange.from} إلى ${dateRange.to}</div><div class="co">${companyName} | ${companyNameEn}</div></div></div>
 <div class="stats">${statsHtml}</div>
 <table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}${totHtml}</tbody></table>
-<div class="ftr"><span>${companyName} — ${companyNameEn}</span><span>${new Date().toLocaleDateString("ar-SY")}</span></div>
+<div class="ftr"><span>${companyName} — ${companyNameEn}</span><span>${new Date().toLocaleDateString("en-GB")}</span></div>
 </body></html>`;
 }
 
@@ -342,7 +342,7 @@ export async function exportInventoryReportPDF(products: any[], dateRange: Repor
   const ts = products.reduce((s: number, p: any) => s + p.stock, 0);
   const ls = products.filter((p: any) => p.stock <= p.minStock);
   const html = buildReportHtml("تقرير المخزون", `${products.length} منتج`, dateRange, settings.businessName, settings.businessNameEn,
-    [{ label: "المنتجات", value: String(products.length) }, { label: "المخزون", value: ts.toLocaleString() }, { label: "القيمة", value: fmt(tv, c) }, { label: "منخفض", value: String(ls.length) }],
+    [{ label: "المنتجات", value: String(products.length) }, { label: "المخزون", value: ts.toLocaleString("en-US") }, { label: "القيمة", value: fmt(tv, c) }, { label: "منخفض", value: String(ls.length) }],
     ["#", "المنتج", "الفئة", "السعر", "المخزون", "الوحدة", "القيمة"],
     products.map((p: any, i: number) => [String(i + 1), p.name, p.category, fmt(p.price, c), String(p.stock), p.unit, fmt(p.price * p.stock, c)]),
     ["", `${products.length}`, "", "", String(ts), "", fmt(tv, c)]);

@@ -154,7 +154,7 @@ function DesktopClients() {
     const totalSpent = filtered.reduce((s, c) => s + c.totalSpent, 0);
     const lines = [
       `👥 *تقرير العملاء - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       "",
       `📊 *الملخص:*`,
       `  • عدد العملاء: ${filtered.length}`,

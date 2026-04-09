@@ -26,7 +26,7 @@ export function AnimatedCounter({
     bounce: 0,
   });
   const display = useTransform(spring, (v) =>
-    format ? format(Math.round(v)) : Math.round(v).toLocaleString()
+    format ? format(Math.round(v)) : Math.round(v).toLocaleString("en-US")
   );
 
   useEffect(() => {

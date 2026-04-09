@@ -172,7 +172,7 @@ function DesktopReports() {
   function shareWhatsApp() {
     const lines = [
       `📊 *التقرير المالي - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       `📆 السنة: ${selectedYear}`,
       "",
       `💰 *المؤشرات الرئيسية:*`,

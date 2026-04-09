@@ -217,7 +217,7 @@ function DesktopAccounting() {
   function shareWhatsApp() {
     const lines = [
       `💰 *التقرير المحاسبي - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       `📆 السنة: ${selectedYear}`,
       "",
       `📊 *قائمة الأرباح والخسائر:*`,

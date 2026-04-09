@@ -154,7 +154,7 @@ function DesktopInventory() {
     const totalStock = filtered.reduce((s, p) => s + p.stock, 0);
     const lines = [
       `📦 *تقرير المخزون - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
       "",
       `📊 *الملخص:*`,
       `  • عدد المنتجات: ${filtered.length}`,
@@ -183,7 +183,7 @@ function DesktopInventory() {
     if (lowStock.length === 0) return;
     const lines = [
       `🔴 *تنبيه مخزون منخفض - ${settings.businessName}*`,
-      `📅 ${new Date().toLocaleDateString("ar-SY")}`,
+      `📅 ${new Date().toLocaleDateString("en-GB")}`,
       "",
       "*المنتجات التالية بحاجة لإعادة طلب:*",
     ];
@@ -441,7 +441,7 @@ function DesktopInventory() {
                       {formatCurrency(filtered.reduce((s, p) => s + p.price, 0))}
                     </td>
                     <td className="px-4 py-3 text-sm font-bold">
-                      {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString()}
+                      {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString("en-US")}
                     </td>
                     <td className="px-4 py-3 text-sm font-bold text-primary">
                       {formatCurrency(filtered.reduce((s, p) => s + p.price * p.stock, 0))}

@@ -592,22 +592,10 @@ function DesktopInvoicePage() {
               <div>
                 <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">التاريخ</label>
                 <div className="flex h-10 items-center rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 text-sm text-[#64748b] font-mono">
-                  {new Date().toLocaleDateString("ar-SA")}
+                  {new Date().toLocaleDateString("en-GB")}
                 </div>
               </div>
 
-              {/* Payment Terms */}
-              <div>
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">شروط الدفع</label>
-                <Select defaultValue="immediate">
-                  <SelectTrigger className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="immediate">فوري</SelectItem>
-                    <SelectItem value="30">30 يوم</SelectItem>
-                    <SelectItem value="60">60 يوم</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             {/* Line items table */}
