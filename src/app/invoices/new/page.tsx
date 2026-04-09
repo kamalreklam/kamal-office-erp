@@ -255,7 +255,19 @@ function DesktopInvoicePage() {
     toast.success("تم إضافة باقة C5890");
   }
 
-  // addTemporaryProduct will be added in next commit
+  function addTemporaryProduct() {
+    const tempItem: LineItem = {
+      id: `li${Date.now()}`,
+      productId: "",
+      productName: "",
+      description: "",
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+      isTemporary: true,
+    };
+    setLineItems(prev => [...prev, tempItem]);
+  }
 
   // ---- Bundle CMYK dialog ----
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
@@ -356,6 +368,13 @@ function DesktopInvoicePage() {
     const validItems = lineItems.filter((li) => li.productId || li.isTemporary);
     if (validItems.length === 0) {
       toast.error("يرجى إضافة منتج واحد على الأقل");
+      return;
+    }
+
+    // Temporary items need a name
+    const missingNames = validItems.filter(li => li.isTemporary && !li.productName.trim());
+    if (missingNames.length > 0) {
+      toast.error("يرجى إدخال اسم المنتج المؤقت");
       return;
     }
 
@@ -561,8 +580,22 @@ function DesktopInvoicePage() {
                   </div>
 
                   <div className="flex-1 space-y-3">
-                    {/* Product search / Bundle label */}
-                    {item.isBundle ? (
+                    {/* Product search / Temporary input / Bundle label */}
+                    {item.isTemporary ? (
+                      <div className="relative">
+                        <Input
+                          placeholder="اسم المنتج المؤقت..."
+                          value={item.productName}
+                          onChange={(e) => {
+                            setLineItems(prev => prev.map(li =>
+                              li.id === item.id ? { ...li, productName: e.target.value } : li
+                            ));
+                          }}
+                          className="h-11"
+                        />
+                        <Badge variant="secondary" className="absolute left-2 top-1/2 -translate-y-1/2 text-xs">مؤقت</Badge>
+                      </div>
+                    ) : item.isBundle ? (
                       <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 h-11">
                         <Layers className="h-4 w-4 text-primary shrink-0" />
                         <span className="text-sm font-medium text-foreground flex-1">{item.productName}</span>
@@ -705,7 +738,10 @@ function DesktopInvoicePage() {
                 <Layers className="h-4 w-4" />
                 إضافة باقة C5890
               </Button>
-              {/* Temporary product button — added in next commit */}
+              <Button variant="outline" size="lg" className="gap-2" onClick={addTemporaryProduct}>
+                <Plus className="h-4 w-4" />
+                منتج مؤقت
+              </Button>
             </div>
           </CardContent>
         </Card>
