@@ -250,8 +250,7 @@ function DesktopInvoicePage() {
   // ---- Bundle CMYK dialog ----
   const [bundleDialogOpen, setBundleDialogOpen] = useState(false);
   const [activeBundleId, setActiveBundleId] = useState<string | null>(null);
-  const [bundleQty, setBundleQty] = useState<Record<string, number>>({});
-  const [bundlePrice, setBundlePrice] = useState<Record<string, number>>({});
+  const [bundleSetPrice, setBundleSetPrice] = useState("");
 
   const colorConfig: Record<string, { label: string; bg: string; dot: string }> = {
     C: { label: "Cyan", bg: "bg-cyan-500/15 dark:bg-cyan-900/30", dot: "#06b6d4" },
@@ -365,15 +364,12 @@ function DesktopInvoicePage() {
   function openBundleDialog(bundleId: string) {
     const bundle = bundles.find(b => b.id === bundleId);
     if (!bundle) return;
-    const qty: Record<string, number> = {};
-    const price: Record<string, number> = {};
-    bundle.items.forEach(bi => {
+    // Default price = sum of component prices
+    const defaultPrice = bundle.items.reduce((s, bi) => {
       const product = products.find(p => p.id === bi.productId);
-      qty[bi.productId] = 1;
-      price[bi.productId] = product?.price || 0;
-    });
-    setBundleQty(qty);
-    setBundlePrice(price);
+      return s + (product?.price || 0);
+    }, 0);
+    setBundleSetPrice(String(defaultPrice));
     setActiveBundleId(bundleId);
     setBundleDialogOpen(true);
   }
@@ -382,36 +378,20 @@ function DesktopInvoicePage() {
     const bundle = bundles.find(b => b.id === activeBundleId);
     if (!bundle) return;
 
-    // Check for 0-stock or over-stock items
-    const blocked: string[] = [];
-    const overStock: string[] = [];
-    bundle.items.forEach(bi => {
-      const product = products.find(p => p.id === bi.productId);
-      const q = bundleQty[bi.productId] || 1;
-      if (product && product.stock <= 0) blocked.push(product.name);
-      else if (product && q > product.stock) overStock.push(`${product.name} (متوفر: ${product.stock})`);
-    });
+    // Check stock
+    const blocked = bundle.items
+      .map(bi => products.find(p => p.id === bi.productId))
+      .filter(p => p && p.stock <= 0)
+      .map(p => p!.name);
     if (blocked.length > 0) {
-      toast.error(`منتجات نفذ مخزونها: ${blocked.join("، ")}`);
-      return;
-    }
-    if (overStock.length > 0) {
-      toast.error(`الكمية أكبر من المخزون: ${overStock.join("، ")}`);
+      toast.error(`نفذ المخزون: ${blocked.join("، ")}`);
       return;
     }
 
-    // Build bundle components and calculate total
     const components = bundle.items.map(bi => {
       const product = products.find(p => p.id === bi.productId);
-      const q = bundleQty[bi.productId] || 1;
-      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: q };
+      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: 1 };
     });
-
-    const bundleTotal = bundle.items.reduce((s, bi) => {
-      const q = bundleQty[bi.productId] || 1;
-      const p = bundlePrice[bi.productId] || 0;
-      return s + q * p;
-    }, 0);
 
     const bundleItem: LineItem = {
       id: `li${Date.now()}`,
@@ -422,8 +402,8 @@ function DesktopInvoicePage() {
         return product?.name || bi.productName;
       }).join(" + "),
       quantity: 1,
-      unitPrice: bundleTotal,
-      total: bundleTotal,
+      unitPrice: parseFloat(bundleSetPrice) || 0,
+      total: parseFloat(bundleSetPrice) || 0,
       isBundle: true,
       bundleComponents: components,
     };
@@ -434,7 +414,7 @@ function DesktopInvoicePage() {
     });
     setProductSearch(prev => ({ ...prev, [bundleItem.id]: bundleItem.productName }));
     setBundleDialogOpen(false);
-    toast.success(`تم إضافة مجموعة "${bundle.name}"`);
+    toast.success(`تم إضافة "${bundle.name}"`);
   }
 
   function handleSave(status: InvoiceStatus) {
@@ -1099,9 +1079,9 @@ function DesktopInvoicePage() {
         </div>
       </div>
 
-      {/* Bundle CMYK Dialog */}
+      {/* Bundle Dialog — same style as ink set */}
       <Dialog open={bundleDialogOpen} onOpenChange={setBundleDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
+        <DialogContent className="max-w-sm" dir="rtl">
           {(() => {
             const bundle = bundles.find(b => b.id === activeBundleId);
             if (!bundle) return null;
@@ -1113,10 +1093,9 @@ function DesktopInvoicePage() {
               })
               .sort((a, b) => colorOrder.indexOf(a.colorKey) - colorOrder.indexOf(b.colorKey));
 
-            const bundleTotal = sortedItems.reduce((s, bi) => {
-              const q = bundleQty[bi.productId] || 1;
-              const p = bundlePrice[bi.productId] || 0;
-              return s + q * p;
+            const defaultTotal = bundle.items.reduce((s, bi) => {
+              const product = products.find(p => p.id === bi.productId);
+              return s + (product?.price || 0);
             }, 0);
 
             return (
@@ -1128,59 +1107,40 @@ function DesktopInvoicePage() {
                     </div>
                     {bundle.name}
                   </DialogTitle>
-                  {bundle.description && <p className="text-sm text-muted-foreground">{bundle.description}</p>}
+                  <p className="text-sm text-muted-foreground">
+                    {bundle.description || `مجموعة (${bundle.items.length} منتجات) — تباع كمنتج واحد`}
+                  </p>
                 </DialogHeader>
 
-                <div className="space-y-1">
-                  {/* Header */}
-                  <div className="grid grid-cols-[auto_1fr_80px_80px] gap-3 items-center px-2 py-1.5">
-                    <div className="w-4" />
-                    <span className="text-xs font-bold text-muted-foreground">اللون</span>
-                    <span className="text-xs font-bold text-muted-foreground text-center">الكمية</span>
-                    <span className="text-xs font-bold text-muted-foreground text-center">السعر ($)</span>
-                  </div>
-
+                <div className="space-y-1.5">
                   {sortedItems.map((bi) => {
                     const cfg = colorConfig[bi.colorKey] || colorConfig.BK;
                     return (
-                      <div key={bi.productId} className={`grid grid-cols-[auto_1fr_80px_80px] gap-3 items-center rounded-xl px-3 py-3 ${cfg.bg}`}>
-                        <div className="h-4 w-4 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
-                        <div>
-                          <span className="text-sm font-bold">{bi.colorKey}</span>
-                          <span className="text-xs text-muted-foreground mr-2">{cfg.label}</span>
-                          {bi.product && (
-                            <span className={`text-[10px] block ${bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
-                              {bi.product.stock <= 0 ? "نفذ المخزون!" : `المخزون: ${bi.product.stock}`}
-                            </span>
-                          )}
-                        </div>
-                        <Input
-                          type="number" min={0} value={bundleQty[bi.productId] || 1}
-                          onChange={e => setBundleQty(prev => ({ ...prev, [bi.productId]: parseInt(e.target.value) || 0 }))}
-                          className="h-9 text-center text-sm font-bold"
-                        />
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          dir="ltr"
-                          value={bundlePrice[bi.productId] ?? 0}
-                          onChange={e => {
-                            const v = e.target.value;
-                            if (v === "" || /^\d*\.?\d*$/.test(v)) {
-                              setBundlePrice(prev => ({ ...prev, [bi.productId]: parseFloat(v) || 0 }));
-                            }
-                          }}
-                          placeholder="0.00"
-                          className="h-9 text-center text-sm"
-                        />
+                      <div key={bi.productId} className={`flex items-center gap-2.5 rounded-xl px-3 py-2 ${cfg.bg}`}>
+                        <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                        <span className="text-sm font-medium flex-1">{bi.product?.name || bi.productName}</span>
+                        <span className={`text-[10px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
+                          {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `مخزون: ${bi.product.stock}`) : "—"}
+                        </span>
                       </div>
                     );
                   })}
 
-                  {/* Total */}
-                  <div className="flex justify-between items-center rounded-xl bg-primary/10 px-4 py-3 mt-2">
-                    <span className="text-sm font-bold">الإجمالي</span>
-                    <span className="text-lg font-extrabold text-primary">{formatCurrency(bundleTotal)}</span>
+                  <div className="mt-3 pt-3 border-t border-[#e2e8f0]">
+                    <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر المجموعة ($)</label>
+                    <Input
+                      type="text" inputMode="decimal" dir="ltr"
+                      value={bundleSetPrice}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "" || /^\d*\.?\d*$/.test(v)) setBundleSetPrice(v);
+                      }}
+                      placeholder="0.00"
+                      className="h-10 text-center text-lg font-bold font-mono"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1 text-center">
+                      الافتراضي = مجموع أسعار المنتجات ({formatCurrency(defaultTotal)})
+                    </p>
                   </div>
                 </div>
 

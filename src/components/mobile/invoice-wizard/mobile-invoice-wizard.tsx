@@ -78,8 +78,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
   // Bundles
   const [showBundleSheet, setShowBundleSheet] = useState(false);
   const [activeBundleId, setActiveBundleId] = useState<string | null>(null);
-  const [bundleQty, setBundleQty] = useState<Record<string, number>>({});
-  const [bundlePrice, setBundlePrice] = useState<Record<string, string>>({});
+  const [bundleSetPrice, setBundleSetPrice] = useState("");
 
   // Save
   const [saving, setSaving] = useState(false);
@@ -304,15 +303,11 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
   function openBundleSheet(bundleId: string) {
     const bundle = bundles.find((b) => b.id === bundleId);
     if (!bundle) return;
-    const qty: Record<string, number> = {};
-    const price: Record<string, string> = {};
-    bundle.items.forEach((bi) => {
+    const defaultPrice = bundle.items.reduce((s, bi) => {
       const product = products.find((p) => p.id === bi.productId);
-      qty[bi.productId] = 1;
-      price[bi.productId] = String(product?.price || 0);
-    });
-    setBundleQty(qty);
-    setBundlePrice(price);
+      return s + (product?.price || 0);
+    }, 0);
+    setBundleSetPrice(String(defaultPrice));
     setActiveBundleId(bundleId);
     setShowBundleSheet(true);
   }
@@ -321,28 +316,16 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     const bundle = bundles.find((b) => b.id === activeBundleId);
     if (!bundle) return;
 
-    const blocked: string[] = [];
-    const overStock: string[] = [];
-    bundle.items.forEach((bi) => {
-      const product = products.find((p) => p.id === bi.productId);
-      const q = bundleQty[bi.productId] || 1;
-      if (product && product.stock <= 0) blocked.push(product.name);
-      else if (product && q > product.stock) overStock.push(`${product.name} (${q}>${product.stock})`);
-    });
+    const blocked = bundle.items
+      .map(bi => products.find(p => p.id === bi.productId))
+      .filter(p => p && p.stock <= 0)
+      .map(p => p!.name);
     if (blocked.length > 0) { toast.error(`نفذ المخزون: ${blocked.join("، ")}`); return; }
-    if (overStock.length > 0) { toast.error(`تجاوز المخزون: ${overStock.join("، ")}`); return; }
 
     const components = bundle.items.map((bi) => {
       const product = products.find((p) => p.id === bi.productId);
-      const q = bundleQty[bi.productId] || 1;
-      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: q };
+      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: 1 };
     });
-
-    const bundleTotal = bundle.items.reduce((s, bi) => {
-      const q = bundleQty[bi.productId] || 1;
-      const p = parseFloat(bundlePrice[bi.productId]) || 0;
-      return s + q * p;
-    }, 0);
 
     const bundleItem: CartItem = {
       productId: `bundle_${bundle.id}`,
@@ -352,8 +335,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         return product?.name || bi.productName;
       }).join(" + "),
       quantity: 1,
-      unitPrice: bundleTotal,
-      total: bundleTotal,
+      unitPrice: parseFloat(bundleSetPrice) || 0,
+      total: parseFloat(bundleSetPrice) || 0,
       isBundle: true,
       bundleComponents: components,
     };
@@ -847,12 +830,11 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         </button>
       </div>
 
-      {/* ─── BUNDLE SHEET (kept as-is) ─── */}
+      {/* ─── BUNDLE SHEET — same style as ink set ─── */}
       <AnimatePresence>
         {showBundleSheet && (() => {
           const bundle = bundles.find((b) => b.id === activeBundleId);
           if (!bundle) return null;
-          const colorOrder = ["C", "M", "Y", "BK", "LC", "LM"];
           const sortedItems = [...bundle.items]
             .map((bi) => {
               const product = products.find((p) => p.id === bi.productId);
@@ -861,108 +843,66 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
             })
             .sort((a, b) => colorOrder.indexOf(a.colorKey) - colorOrder.indexOf(b.colorKey));
 
-          const bundleTotal = sortedItems.reduce((s, bi) => {
-            const q = bundleQty[bi.productId] || 1;
-            const p = parseFloat(bundlePrice[bi.productId]) || 0;
-            return s + q * p;
+          const defaultTotal = bundle.items.reduce((s, bi) => {
+            const product = products.find((p) => p.id === bi.productId);
+            return s + (product?.price || 0);
           }, 0);
 
           return (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[60]"
-              style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+              className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
               onClick={() => setShowBundleSheet(false)}
             >
               <motion.div
                 initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                className="absolute bottom-0 left-0 right-0 rounded-t-[20px] bg-white"
-                style={{ maxHeight: "85vh", overflow: "auto", paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 24px)" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                dir="rtl"
+                className="w-full max-w-lg rounded-t-[20px] bg-white p-5 pb-8" dir="rtl"
               >
-                <div className="flex justify-center pt-3 pb-2">
-                  <div className="h-1 w-10 rounded-full bg-[#e2e8f0]" />
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e2e8f0]" />
+                <h3 className="text-base font-bold text-[#1e293b] mb-1 flex items-center gap-2">
+                  <Droplets className="h-5 w-5 text-[#7c3aed]" />
+                  {bundle.name}
+                </h3>
+                <p className="text-xs text-[#94a3b8] mb-3">
+                  {bundle.description || `مجموعة (${bundle.items.length} منتجات)`}
+                </p>
+
+                <div className="space-y-1.5 mb-4">
+                  {sortedItems.map((bi) => {
+                    const cfg = colorConfig[bi.colorKey] || colorConfig.BK;
+                    return (
+                      <div key={bi.productId} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
+                        <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                        <span className="text-sm font-medium flex-1 truncate">{bi.product?.name || bi.productName}</span>
+                        <span className={`text-[10px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                          {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `${bi.product.stock}`) : "—"}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
-                <div className="px-4 pb-5">
-                  {/* Header */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className="flex h-10 w-10 items-center justify-center rounded-[10px] text-white"
-                      style={{ background: "linear-gradient(135deg, #06b6d4, #ec4899, #eab308)" }}
-                    >
-                      <Droplets className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-bold text-[#1e293b]">{bundle.name}</h3>
-                      {bundle.description && <p className="text-xs text-[#94a3b8]">{bundle.description}</p>}
-                    </div>
-                    <button onClick={() => setShowBundleSheet(false)} className="rounded-[8px] p-2 text-[#94a3b8] hover:bg-[#f1f5f9]">
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر المجموعة ($)</label>
+                <input
+                  type="text" inputMode="decimal" dir="ltr"
+                  value={bundleSetPrice}
+                  onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setBundleSetPrice(v); }}
+                  placeholder="0.00"
+                  className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#7c3aed] mb-1"
+                />
+                <p className="text-[11px] text-[#94a3b8] text-center mb-4">
+                  الافتراضي = {formatCurrency(defaultTotal)}
+                </p>
 
-                  {/* Color rows */}
-                  <div className="space-y-2 mb-4">
-                    {sortedItems.map((bi) => {
-                      const cfg = colorConfig[bi.colorKey] || colorConfig.BK;
-                      const outOfStock = bi.product && bi.product.stock <= 0;
-                      return (
-                        <div
-                          key={bi.productId}
-                          className={`flex items-center gap-3 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] p-3 ${outOfStock ? "opacity-40" : ""}`}
-                        >
-                          <div className="h-5 w-5 rounded-full shrink-0" style={{ backgroundColor: cfg.dot }} />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-bold text-[#1e293b]">{cfg.label}</span>
-                            {bi.product && (
-                              <span className={`block text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
-                                {outOfStock ? "نفذ!" : `المخزون: ${bi.product.stock}`}
-                              </span>
-                            )}
-                          </div>
-                          <input
-                            type="number" min={0}
-                            max={bi.product?.stock || 999}
-                            value={bundleQty[bi.productId] || 1}
-                            onChange={(e) => setBundleQty((prev) => ({ ...prev, [bi.productId]: parseInt(e.target.value) || 0 }))}
-                            disabled={!!outOfStock}
-                            className="w-16 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                            style={{ height: 36 }}
-                            dir="ltr"
-                          />
-                          <input
-                            type="text" inputMode="decimal" dir="ltr"
-                            value={bundlePrice[bi.productId] ?? "0"}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              if (v === "" || /^\d*\.?\d*$/.test(v)) setBundlePrice((prev) => ({ ...prev, [bi.productId]: v }));
-                            }}
-                            disabled={!!outOfStock}
-                            className="w-[72px] rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb]"
-                            style={{ height: 36 }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Total */}
-                  <div className="flex items-center justify-between rounded-[10px] bg-[#2563eb]/5 p-3 mb-4">
-                    <span className="text-sm font-bold text-[#2563eb]">الإجمالي</span>
-                    <span className="text-xl font-bold font-mono text-[#2563eb]">{formatCurrency(bundleTotal)}</span>
-                  </div>
-
-                  {/* Confirm */}
-                  <button
-                    onClick={confirmBundleAdd}
-                    className="w-full rounded-[10px] bg-[#7c3aed] py-3 text-base font-bold text-white transition-colors active:bg-[#6d28d9]"
-                  >
-                    إضافة المجموعة
-                  </button>
-                </div>
+                <button
+                  onClick={confirmBundleAdd}
+                  className="w-full rounded-[12px] bg-[#7c3aed] py-3 text-sm font-bold text-white active:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2"
+                >
+                  <Droplets className="h-4 w-4" />
+                  إضافة المجموعة
+                </button>
               </motion.div>
             </motion.div>
           );
