@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  ArrowUpDown, ChevronLeft, ChevronRight, Download,
+  ArrowUpDown, Download,
   LayoutGrid, List,
 } from "lucide-react";
 import { ImageUpload } from "@/components/image-upload";
@@ -71,8 +71,7 @@ function DesktopInventory() {
   const [formData, setFormData] = useState(emptyForm);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [page, setPage] = useState(1);
-  const perPage = viewMode === "grid" ? 12 : 20;
+
 
   const filtered = useMemo(() => {
     const list = products.filter((p) => {
@@ -95,10 +94,7 @@ function DesktopInventory() {
     }
   }, [products, debouncedSearch, activeCategory, sortBy]);
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paged = filtered.slice((page - 1) * perPage, page * perPage);
-  const filterKey = `${search}|${activeCategory}|${sortBy}|${viewMode}`;
-  useEffect(() => { setPage(1); }, [filterKey]);
+  const paged = filtered; // Show all items without pagination
 
   const lowStock = getLowStockProducts(products);
 
@@ -373,7 +369,7 @@ function DesktopInventory() {
                     const isLow = product.stock <= product.minStock;
                     return (
                       <tr key={product.id} className={`border-b border-border/40 transition-colors hover:bg-[var(--surface-2)] ${isLow ? "bg-red-50/50" : ""}`}>
-                        <td className="px-4 py-3 text-muted-foreground text-xs">{(page - 1) * perPage + idx + 1}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                         <td className="px-4 py-3">
                           <div>
                             <p className="font-semibold text-foreground">{product.name}</p>
@@ -545,28 +541,10 @@ function DesktopInventory() {
           </div>
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <span className="text-sm text-muted-foreground">
-              صفحة {page} من {totalPages} ({filtered.length} منتج)
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+        {/* Item count */}
+        <div className="text-center pt-2">
+          <span className="text-sm text-muted-foreground">{filtered.length} منتج</span>
+        </div>
       </div>
 
       {/* Add/Edit Dialog */}

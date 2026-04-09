@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, ChevronLeft, ChevronRight, Download, MessageCircle, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Search, Plus, FileText, Eye, Trash2, DollarSign, CalendarDays, X, ArrowUpDown, Download, MessageCircle, RotateCcw, CheckCircle2 } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -54,8 +54,7 @@ function DesktopInvoices() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
-  const [page, setPage] = useState(1);
-  const perPage = 10;
+
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
 
   const filtered = useMemo(() => {
@@ -76,12 +75,7 @@ function DesktopInvoices() {
     }
   }, [invoices, debouncedSearch, statusFilter, dateFrom, dateTo, sortBy]);
 
-  const totalPages = Math.ceil(filtered.length / perPage);
-  const paged = filtered.slice((page - 1) * perPage, page * perPage);
-
-  // Reset page when filters change
-  const filterKey = `${search}|${statusFilter}|${dateFrom}|${dateTo}|${sortBy}`;
-  useEffect(() => { setPage(1); }, [filterKey]);
+  const paged = filtered; // Show all items without pagination
 
   const statuses = ["الكل", "مدفوعة", "مدفوعة جزئياً", "غير مدفوعة", "مسودة", "ملغاة"];
 
@@ -341,28 +335,10 @@ function DesktopInvoices() {
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-            <span className="text-sm text-muted-foreground">
-              صفحة {page} من {totalPages} ({filtered.length} نتيجة)
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--glass-border)] text-muted-foreground transition-colors hover:bg-[var(--surface-2)] disabled:opacity-30"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+        {/* Item count */}
+        <div className="text-center pt-2">
+          <span className="text-sm text-muted-foreground">{filtered.length} فاتورة</span>
+        </div>
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

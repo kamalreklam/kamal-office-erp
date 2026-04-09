@@ -40,6 +40,7 @@ export interface InvoiceItem {
   isBundle?: boolean;
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
   isTemporary?: boolean;
+  costPrice?: number;
 }
 
 export interface Invoice {
@@ -1544,10 +1545,13 @@ export function getTotalRevenue(invoicesList: Invoice[]): number {
 }
 
 export function formatCurrency(amount: number, symbol = "$"): string {
-  const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  // Remove .00 but keep meaningful decimals like .50 .35
-  const clean = formatted.endsWith(".00") ? formatted.slice(0, -3) : formatted;
-  return `${symbol}${clean}`;
+  // Preserve exact decimals as entered (e.g. 0.975 stays 0.975, not 0.98)
+  // Use up to 6 fraction digits, then strip trailing zeros
+  const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+  // Strip trailing zeros after decimal, but keep at least 2 digits if non-zero
+  const clean = formatted.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+  // Remove .00 but keep meaningful decimals
+  return `${symbol}${clean.endsWith(".00") ? clean.slice(0, -3) : clean}`;
 }
 
 export function getCategoryLabel(category: Product["category"]): string {

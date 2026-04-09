@@ -20,9 +20,11 @@ interface CartItem {
   total: number;
   discount?: number;
   _priceInput?: string;
+  _costInput?: string;
   isBundle?: boolean;
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
   isTemporary?: boolean;
+  costPrice?: number;
 }
 
 export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
@@ -62,6 +64,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         isBundle: item.isBundle,
         bundleComponents: item.bundleComponents,
         isTemporary: item.isTemporary,
+        costPrice: item.costPrice,
       }));
     }
     return [];
@@ -236,6 +239,65 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     return "BK";
   }
 
+  // ---- Ink Sets (auto-detected CMYK groups) ----
+  const colorWords = ["cyan", "magenta", "yellow", "black", "light cyan", "light magenta"];
+  const colorOrder = ["C", "M", "Y", "BK", "LC", "LM"];
+
+  const inkSets = (() => {
+    const groups: Record<string, typeof products> = {};
+    products.forEach(p => {
+      let base = p.name.toLowerCase();
+      for (const cw of colorWords) base = base.replace(cw, "").trim();
+      base = base.replace(/\s+/g, " ").trim();
+      if (base !== p.name.toLowerCase()) {
+        if (!groups[base]) groups[base] = [];
+        groups[base].push(p);
+      }
+    });
+    return Object.entries(groups)
+      .filter(([, items]) => items.length >= 4)
+      .map(([baseName, items]) => ({
+        baseName,
+        displayName: items[0].name.replace(/\s*(Cyan|Magenta|Yellow|Black|Light Cyan|Light Magenta)\s*/i, " ").trim() + " Set",
+        items: items.sort((a, b) => colorOrder.indexOf(getColorKey(a.name)) - colorOrder.indexOf(getColorKey(b.name))),
+      }));
+  })();
+
+  const [inkSetSheetOpen, setInkSetSheetOpen] = useState(false);
+  const [activeInkSet, setActiveInkSet] = useState<(typeof inkSets)[0] | null>(null);
+  const [inkSetPrice, setInkSetPrice] = useState("");
+
+  function openInkSetSheet(set: (typeof inkSets)[0]) {
+    setActiveInkSet(set);
+    setInkSetPrice(String(set.items.reduce((s, p) => s + p.price, 0)));
+    setInkSetSheetOpen(true);
+  }
+
+  function confirmInkSetAdd() {
+    if (!activeInkSet) return;
+    const blocked = activeInkSet.items.filter(p => p.stock <= 0).map(p => p.name);
+    if (blocked.length > 0) { toast.error(`نفذ المخزون: ${blocked.join("، ")}`); return; }
+
+    const components = activeInkSet.items.map(p => ({ productId: p.id, productName: p.name, quantity: 1 }));
+    const bundleItem: CartItem = {
+      productId: `inkset_${activeInkSet.baseName}`,
+      productName: activeInkSet.displayName,
+      description: activeInkSet.items.map(p => p.name).join(" + "),
+      quantity: 1,
+      unitPrice: parseFloat(inkSetPrice) || 0,
+      total: parseFloat(inkSetPrice) || 0,
+      isBundle: true,
+      bundleComponents: components,
+    };
+
+    setCart(prev => {
+      const kept = prev.filter(c => c.productId !== bundleItem.productId);
+      return [...kept, bundleItem];
+    });
+    setInkSetSheetOpen(false);
+    toast.success(`تم إضافة طقم "${activeInkSet.displayName}"`);
+  }
+
   function openBundleSheet(bundleId: string) {
     const bundle = bundles.find((b) => b.id === bundleId);
     if (!bundle) return;
@@ -335,16 +397,16 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           id: `li${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           productId: li.productId, productName: li.productName, description: li.description,
           quantity: li.quantity, unitPrice: li.unitPrice,
-          total: Math.round(li.quantity * li.unitPrice * (1 - (li.discount || 0) / 100) * 100) / 100,
+          total: li.quantity * li.unitPrice * (1 - (li.discount || 0) / 100),
           ...(li.discount ? { discount: li.discount } : {}),
           ...(li.isBundle ? { isBundle: true, bundleComponents: li.bundleComponents } : {}),
-          ...(li.isTemporary ? { isTemporary: true } : {}),
+          ...(li.isTemporary ? { isTemporary: true, ...(li.costPrice ? { costPrice: li.costPrice } : {}) } : {}),
         })),
-        subtotal: Math.round(subtotal * 100) / 100,
+        subtotal,
         discountType, discountValue,
-        discountAmount: Math.round(discountAmount * 100) / 100,
-        taxAmount: Math.round(taxAmount * 100) / 100,
-        total: Math.round(total * 100) / 100,
+        discountAmount,
+        taxAmount,
+        total,
         status, notes,
       };
 
@@ -480,15 +542,33 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   <div className="flex items-start gap-2 mb-2">
                     <div className="flex-1 min-w-0">
                       {item.isTemporary ? (
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            placeholder="اسم المنتج المؤقت..."
-                            value={item.productName}
-                            onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
-                            className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
-                          />
-                          <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[10px] font-bold text-white">مؤقت</span>
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="text"
+                              placeholder="اسم المنتج المؤقت..."
+                              value={item.productName}
+                              onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
+                              className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
+                            />
+                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[10px] font-bold text-white">مؤقت</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
+                            <input
+                              type="text" inputMode="decimal" dir="ltr"
+                              placeholder="0.00"
+                              value={item._costInput !== undefined ? item._costInput : (item.costPrice || "")}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                                  updateCartItem(item.productId, { costPrice: parseFloat(v) || 0, _costInput: v });
+                                }
+                              }}
+                              onBlur={() => updateCartItem(item.productId, { _costInput: undefined })}
+                              className="w-20 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-center text-sm font-mono text-[#1e293b] outline-none focus:border-[#2563eb]"
+                            />
+                          </div>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5">
@@ -626,6 +706,22 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
               </button>
             )}
           </div>
+
+          {/* Ink set buttons */}
+          {inkSets.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+              {inkSets.map((set) => (
+                <button
+                  key={set.baseName}
+                  onClick={() => openInkSetSheet(set)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#06b6d4]/40 bg-[#06b6d4]/5 px-3 py-2 text-xs font-bold text-[#06b6d4] transition-colors active:bg-[#06b6d4]/10"
+                >
+                  <Droplets className="h-3.5 w-3.5" />
+                  {set.displayName}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Temporary product button */}
           <button
@@ -868,6 +964,67 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
             </motion.div>
           );
         })()}
+      </AnimatePresence>
+
+      {/* Ink Set Sheet */}
+      <AnimatePresence>
+        {inkSetSheetOpen && activeInkSet && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+            onClick={() => setInkSetSheetOpen(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg rounded-t-[20px] bg-white p-5 pb-8" dir="rtl"
+            >
+              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e2e8f0]" />
+              <h3 className="text-base font-bold text-[#1e293b] mb-1 flex items-center gap-2">
+                <Droplets className="h-5 w-5 text-[#06b6d4]" />
+                {activeInkSet.displayName}
+              </h3>
+              <p className="text-xs text-[#94a3b8] mb-3">طقم أحبار ({activeInkSet.items.length} ألوان)</p>
+
+              <div className="space-y-1.5 mb-4">
+                {activeInkSet.items.map(p => {
+                  const ck = getColorKey(p.name);
+                  const cfg = colorConfig[ck] || colorConfig.BK;
+                  return (
+                    <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
+                      <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                      <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
+                      <span className={`text-[10px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                        {p.stock <= 0 ? "نفذ!" : `${p.stock}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر الطقم ($)</label>
+              <input
+                type="text" inputMode="decimal" dir="ltr"
+                value={inkSetPrice}
+                onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setInkSetPrice(v); }}
+                placeholder="0.00"
+                className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#06b6d4] mb-1"
+              />
+              <p className="text-[11px] text-[#94a3b8] text-center mb-4">
+                الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
+              </p>
+
+              <button
+                onClick={confirmInkSetAdd}
+                className="w-full rounded-[12px] bg-[#06b6d4] py-3 text-sm font-bold text-white active:bg-[#0891b2] transition-colors flex items-center justify-center gap-2"
+              >
+                <Droplets className="h-4 w-4" />
+                إضافة الطقم
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

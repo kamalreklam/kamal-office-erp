@@ -76,8 +76,8 @@ function DesktopAccounting() {
     const cogs = paid.reduce((s, inv) => {
       const items = Array.isArray(inv.items) ? inv.items : [];
       return s + items.reduce((itemSum, item) => {
-        const product = products.find(p => p.id === item.productId);
-        const costPrice = product?.price ?? 0;
+        // Temporary products store their own costPrice; regular products use DB price
+        const costPrice = item.isTemporary ? (item.costPrice ?? 0) : (products.find(p => p.id === item.productId)?.price ?? 0);
         return itemSum + (costPrice * item.quantity);
       }, 0);
     }, 0);

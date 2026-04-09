@@ -33,9 +33,11 @@ interface LineItem {
   total: number;
   discount?: number;
   _priceInput?: string;
+  _costInput?: string;
   isBundle?: boolean;
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
   isTemporary?: boolean;
+  costPrice?: number;
 }
 
 export default function NewInvoicePage() {
@@ -94,7 +96,7 @@ function DesktopInvoicePage() {
         unitPrice: item.unitPrice,
         total: item.total,
         ...(item.isBundle ? { isBundle: true, bundleComponents: item.bundleComponents } : {}),
-        ...(item.isTemporary ? { isTemporary: true } : {}),
+        ...(item.isTemporary ? { isTemporary: true, costPrice: item.costPrice } : {}),
       }));
       setLineItems(items.length > 0 ? items : [{ id: "li1", productId: "", productName: "", description: "", quantity: 1, unitPrice: 0, total: 0 }]);
       const searches: Record<string, string> = {};
@@ -272,6 +274,90 @@ function DesktopInvoicePage() {
     return productName;
   }
 
+  // ---- Auto-detect ink sets (group CMYK products by base name) ----
+  const colorWords = ["cyan", "magenta", "yellow", "black", "light cyan", "light magenta"];
+  function getInkBaseName(name: string): string | null {
+    const n = name.toLowerCase();
+    let base = n;
+    for (const cw of colorWords) {
+      base = base.replace(cw, "").trim();
+    }
+    base = base.replace(/\s+/g, " ").trim();
+    // Only return if this product had a color word removed (it's a CMYK ink)
+    return base !== n ? base : null;
+  }
+
+  const inkSets = (() => {
+    const groups: Record<string, typeof products> = {};
+    products.forEach(p => {
+      const base = getInkBaseName(p.name);
+      if (base) {
+        if (!groups[base]) groups[base] = [];
+        groups[base].push(p);
+      }
+    });
+    // Only keep groups with 4+ colors (CMYK minimum)
+    return Object.entries(groups)
+      .filter(([, items]) => items.length >= 4)
+      .map(([baseName, items]) => ({
+        baseName,
+        displayName: items[0].name.replace(/\s*(Cyan|Magenta|Yellow|Black|Light Cyan|Light Magenta)\s*/i, " ").trim() + " Set",
+        items: items.sort((a, b) => colorOrder.indexOf(getColorKey(a.name)) - colorOrder.indexOf(getColorKey(b.name))),
+      }));
+  })();
+
+  // Ink set dialog state
+  const [inkSetDialogOpen, setInkSetDialogOpen] = useState(false);
+  const [activeInkSet, setActiveInkSet] = useState<(typeof inkSets)[0] | null>(null);
+  const [inkSetPrice, setInkSetPrice] = useState("");
+
+  function openInkSetDialog(set: (typeof inkSets)[0]) {
+    setActiveInkSet(set);
+    // Default price = sum of individual prices
+    const defaultPrice = set.items.reduce((s, p) => s + p.price, 0);
+    setInkSetPrice(String(defaultPrice));
+    setInkSetDialogOpen(true);
+  }
+
+  function confirmInkSetAdd() {
+    if (!activeInkSet) return;
+    // Check stock for each color
+    const blocked: string[] = [];
+    activeInkSet.items.forEach(p => {
+      if (p.stock <= 0) blocked.push(p.name);
+    });
+    if (blocked.length > 0) {
+      toast.error(`نفذ المخزون: ${blocked.join("، ")}`);
+      return;
+    }
+
+    const components = activeInkSet.items.map(p => ({
+      productId: p.id,
+      productName: p.name,
+      quantity: 1,
+    }));
+
+    const setItem: LineItem = {
+      id: `li${Date.now()}`,
+      productId: `inkset_${activeInkSet.baseName}`,
+      productName: activeInkSet.displayName,
+      description: activeInkSet.items.map(p => p.name).join(" + "),
+      quantity: 1,
+      unitPrice: parseFloat(inkSetPrice) || 0,
+      total: parseFloat(inkSetPrice) || 0,
+      isBundle: true,
+      bundleComponents: components,
+    };
+
+    setLineItems(prev => {
+      const hasRealItems = prev.some(li => li.productId !== "");
+      return hasRealItems ? [...prev.filter(li => li.productId !== ""), setItem] : [setItem];
+    });
+    setProductSearch(prev => ({ ...prev, [setItem.id]: setItem.productName }));
+    setInkSetDialogOpen(false);
+    toast.success(`تم إضافة طقم "${activeInkSet.displayName}"`);
+  }
+
   function openBundleDialog(bundleId: string) {
     const bundle = bundles.find(b => b.id === bundleId);
     if (!bundle) return;
@@ -397,17 +483,17 @@ function DesktopInvoicePage() {
         description: li.description,
         quantity: li.quantity,
         unitPrice: li.unitPrice,
-        total: Math.round(li.total * 100) / 100,
+        total: li.total,
         ...(li.discount ? { discount: li.discount } : {}),
         ...(li.isBundle ? { isBundle: true, bundleComponents: li.bundleComponents } : {}),
-        ...(li.isTemporary ? { isTemporary: true } : {}),
+        ...(li.isTemporary ? { isTemporary: true, ...(li.costPrice ? { costPrice: li.costPrice } : {}) } : {}),
       })),
-      subtotal: Math.round(subtotal * 100) / 100,
+      subtotal,
       discountType,
       discountValue,
-      discountAmount: Math.round(discountAmount * 100) / 100,
-      taxAmount: Math.round(taxAmount * 100) / 100,
-      total: Math.round(total * 100) / 100,
+      discountAmount,
+      taxAmount,
+      total,
       status,
       notes,
     };
@@ -576,6 +662,25 @@ function DesktopInvoicePage() {
                               }}
                               className="h-8 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-sm"
                             />
+                            <Input
+                              type="text" inputMode="decimal" dir="ltr"
+                              placeholder="التكلفة"
+                              value={item._costInput !== undefined ? item._costInput : (item.costPrice || "")}
+                              onChange={(e) => {
+                                const v = e.target.value;
+                                if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                                  setLineItems(prev => prev.map(li =>
+                                    li.id === item.id ? { ...li, costPrice: parseFloat(v) || 0, _costInput: v } : li
+                                  ));
+                                }
+                              }}
+                              onBlur={() => {
+                                setLineItems(prev => prev.map(li =>
+                                  li.id === item.id ? { ...li, _costInput: undefined } : li
+                                ));
+                              }}
+                              className="h-8 w-20 rounded-[8px] border-transparent hover:border-[#e2e8f0] focus:border-[#2563eb] border-[1.5px] text-sm text-center font-mono shrink-0"
+                            />
                             <Badge className="bg-[#f59e0b] text-white border-0 text-[10px] shrink-0">مؤقت</Badge>
                           </div>
                         ) : item.isBundle ? (
@@ -721,16 +826,40 @@ function DesktopInvoicePage() {
                       <div>
                         <label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتج</label>
                         {item.isTemporary ? (
-                          <Input
-                            placeholder="اسم المنتج المؤقت..."
-                            value={item.productName}
-                            onChange={(e) => {
-                              setLineItems(prev => prev.map(li =>
-                                li.id === item.id ? { ...li, productName: e.target.value } : li
-                              ));
-                            }}
-                            className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"
-                          />
+                          <div className="space-y-2">
+                            <Input
+                              placeholder="اسم المنتج المؤقت..."
+                              value={item.productName}
+                              onChange={(e) => {
+                                setLineItems(prev => prev.map(li =>
+                                  li.id === item.id ? { ...li, productName: e.target.value } : li
+                                ));
+                              }}
+                              className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0]"
+                            />
+                            <div>
+                              <label className="mb-1 block text-[10px] font-bold text-[#94a3b8]">سعر التكلفة</label>
+                              <Input
+                                type="text" inputMode="decimal" dir="ltr"
+                                placeholder="0.00"
+                                value={item._costInput !== undefined ? item._costInput : (item.costPrice || "")}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === "" || /^\d*\.?\d*$/.test(v)) {
+                                    setLineItems(prev => prev.map(li =>
+                                      li.id === item.id ? { ...li, costPrice: parseFloat(v) || 0, _costInput: v } : li
+                                    ));
+                                  }
+                                }}
+                                onBlur={() => {
+                                  setLineItems(prev => prev.map(li =>
+                                    li.id === item.id ? { ...li, _costInput: undefined } : li
+                                  ));
+                                }}
+                                className="h-10 rounded-[10px] border-[1.5px] border-[#e2e8f0] font-mono text-center"
+                              />
+                            </div>
+                          </div>
                         ) : item.isBundle ? (
                           <div>
                             <div className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-[#7c3aed]/30 bg-[#7c3aed]/5 px-3 py-2">
@@ -863,6 +992,16 @@ function DesktopInvoicePage() {
                   >
                     <Plus className="h-3.5 w-3.5" />
                     {bundle.name}
+                  </button>
+                ))}
+                {inkSets.map((set) => (
+                  <button
+                    key={set.baseName}
+                    onClick={() => openInkSetDialog(set)}
+                    className="flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#06b6d4]/40 px-4 py-2 text-sm font-medium text-[#06b6d4] hover:bg-[#06b6d4]/5 transition-colors"
+                  >
+                    <Droplets className="h-3.5 w-3.5" />
+                    {set.displayName}
                   </button>
                 ))}
                 <button
@@ -1051,6 +1190,65 @@ function DesktopInvoicePage() {
               </>
             );
           })()}
+        </DialogContent>
+      </Dialog>
+      {/* Ink Set Dialog */}
+      <Dialog open={inkSetDialogOpen} onOpenChange={setInkSetDialogOpen}>
+        <DialogContent className="max-w-sm" dir="rtl">
+          {activeInkSet && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 via-pink-500 to-yellow-500 text-white">
+                    <Droplets className="h-4 w-4" />
+                  </div>
+                  {activeInkSet.displayName}
+                </DialogTitle>
+                <p className="text-sm text-muted-foreground">طقم أحبار ({activeInkSet.items.length} ألوان) — يباع كمنتج واحد</p>
+              </DialogHeader>
+
+              <div className="space-y-1.5">
+                {activeInkSet.items.map(p => {
+                  const ck = getColorKey(p.name);
+                  const cfg = colorConfig[ck] || colorConfig.BK;
+                  return (
+                    <div key={p.id} className={`flex items-center gap-2.5 rounded-xl px-3 py-2 ${cfg.bg}`}>
+                      <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                      <span className="text-sm font-medium flex-1">{p.name}</span>
+                      <span className={`text-[10px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-muted-foreground"}`}>
+                        {p.stock <= 0 ? "نفذ!" : `مخزون: ${p.stock}`}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                <div className="mt-3 pt-3 border-t border-[#e2e8f0]">
+                  <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر الطقم ($)</label>
+                  <Input
+                    type="text" inputMode="decimal" dir="ltr"
+                    value={inkSetPrice}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "" || /^\d*\.?\d*$/.test(v)) setInkSetPrice(v);
+                    }}
+                    placeholder="0.00"
+                    className="h-10 text-center text-lg font-bold font-mono"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1 text-center">
+                    السعر الافتراضي = مجموع أسعار الأحبار ({formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))})
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => setInkSetDialogOpen(false)}>إلغاء</Button>
+                <Button onClick={confirmInkSetAdd} className="gap-1.5">
+                  <Plus className="h-4 w-4" />
+                  إضافة للفاتورة
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </ResponsiveShell>
