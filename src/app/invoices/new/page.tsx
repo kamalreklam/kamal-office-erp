@@ -435,6 +435,27 @@ function DesktopInvoicePage() {
       return;
     }
 
+    // In edit mode, compute effective stock by adding back what the old invoice already deducted
+    // (those deductions will be restored by updateInvoice before re-applying new deductions)
+    const effectiveStockMap = new Map<string, number>();
+    if (isEdit && editingInvoice) {
+      const oldItems = Array.isArray(editingInvoice.items) ? editingInvoice.items : [];
+      oldItems.forEach((item) => {
+        if (item.isTemporary) return;
+        if (item.isBundle && item.bundleComponents) {
+          item.bundleComponents.forEach((comp) => {
+            const p = products.find(pr => pr.id === comp.productId);
+            if (!p) return;
+            effectiveStockMap.set(comp.productId, (effectiveStockMap.get(comp.productId) ?? p.stock) + comp.quantity * item.quantity);
+          });
+        } else if (item.productId) {
+          const p = products.find(pr => pr.id === item.productId);
+          if (!p) return;
+          effectiveStockMap.set(item.productId, (effectiveStockMap.get(item.productId) ?? p.stock) + item.quantity);
+        }
+      });
+    }
+
     // Final stock check
     const stockErrors: string[] = [];
     validItems.forEach(li => {
@@ -443,13 +464,17 @@ function DesktopInvoicePage() {
         // check each component
         li.bundleComponents.forEach(comp => {
           const product = products.find(p => p.id === comp.productId);
-          if (product && product.stock <= 0) stockErrors.push(product.name);
-          else if (product && comp.quantity * li.quantity > product.stock) stockErrors.push(`${product.name} (متوفر: ${product.stock})`);
+          if (!product) return;
+          const avail = effectiveStockMap.get(comp.productId) ?? product.stock;
+          if (avail <= 0) stockErrors.push(product.name);
+          else if (comp.quantity * li.quantity > avail) stockErrors.push(`${product.name} (متوفر: ${avail})`);
         });
       } else {
         const product = products.find(p => p.id === li.productId);
-        if (product && product.stock <= 0) stockErrors.push(`${product.name} (مخزون: 0)`);
-        else if (product && li.quantity > product.stock) stockErrors.push(`${product.name} (طلب: ${li.quantity}, متوفر: ${product.stock})`);
+        if (!product) return;
+        const avail = effectiveStockMap.get(li.productId) ?? product.stock;
+        if (avail <= 0) stockErrors.push(`${product.name} (مخزون: 0)`);
+        else if (li.quantity > avail) stockErrors.push(`${product.name} (طلب: ${li.quantity}, متوفر: ${avail})`);
       }
     });
     if (stockErrors.length > 0) {

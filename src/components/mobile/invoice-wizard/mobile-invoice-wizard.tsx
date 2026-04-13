@@ -357,19 +357,43 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     const missingNames = cart.filter((li) => li.isTemporary && !li.productName.trim());
     if (missingNames.length > 0) { toast.error("يرجى إدخال اسم المنتج المؤقت"); return; }
 
+    // In edit mode, add back old invoice's deductions to get effective available stock
+    const effectiveStockMap = new Map<string, number>();
+    if (isEdit && editingInvoice) {
+      const oldItems = Array.isArray(editingInvoice.items) ? editingInvoice.items : [];
+      (oldItems as any[]).forEach((item) => {
+        if (item.isTemporary) return;
+        if (item.isBundle && item.bundleComponents) {
+          (item.bundleComponents as any[]).forEach((comp) => {
+            const p = products.find((pr) => pr.id === comp.productId);
+            if (!p) return;
+            effectiveStockMap.set(comp.productId, (effectiveStockMap.get(comp.productId) ?? p.stock) + comp.quantity * item.quantity);
+          });
+        } else if (item.productId) {
+          const p = products.find((pr) => pr.id === item.productId);
+          if (!p) return;
+          effectiveStockMap.set(item.productId, (effectiveStockMap.get(item.productId) ?? p.stock) + item.quantity);
+        }
+      });
+    }
+
     const stockErrors: string[] = [];
     cart.forEach((item) => {
       if (item.isTemporary) return;
       if (item.isBundle && item.bundleComponents) {
         item.bundleComponents.forEach((comp) => {
           const p = products.find((pr) => pr.id === comp.productId);
-          if (p && p.stock <= 0) stockErrors.push(p.name);
-          else if (p && comp.quantity * item.quantity > p.stock) stockErrors.push(`${p.name} (متوفر: ${p.stock})`);
+          if (!p) return;
+          const avail = effectiveStockMap.get(comp.productId) ?? p.stock;
+          if (avail <= 0) stockErrors.push(p.name);
+          else if (comp.quantity * item.quantity > avail) stockErrors.push(`${p.name} (متوفر: ${avail})`);
         });
       } else {
         const p = products.find((pr) => pr.id === item.productId);
-        if (p && p.stock <= 0) stockErrors.push(p.name);
-        else if (p && item.quantity > p.stock) stockErrors.push(`${p.name} (${item.quantity}>${p.stock})`);
+        if (!p) return;
+        const avail = effectiveStockMap.get(item.productId) ?? p.stock;
+        if (avail <= 0) stockErrors.push(p.name);
+        else if (item.quantity > avail) stockErrors.push(`${p.name} (${item.quantity}>${avail})`);
       }
     });
     if (stockErrors.length > 0) { toast.error(`مشكلة مخزون: ${stockErrors.join("، ")}`); return; }
