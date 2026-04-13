@@ -15,12 +15,13 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  ArrowUpDown, Download,
+  ArrowUpDown, Download, History, ExternalLink, TrendingDown, CheckCircle2,
   LayoutGrid, List,
 } from "lucide-react";
+import Link from "next/link";
 import { ImageUpload } from "@/components/image-upload";
 import { useStore } from "@/lib/store";
-import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
+import { type Product, type Invoice, getLowStockProducts, formatCurrency, getStatusColor } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -59,7 +60,7 @@ export default function InventoryPage() {
 }
 
 function DesktopInventory() {
-  const { products, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
+  const { products, invoices, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -71,6 +72,7 @@ function DesktopInventory() {
   const [formData, setFormData] = useState(emptyForm);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
 
 
   const filtered = useMemo(() => {
@@ -415,6 +417,13 @@ function DesktopInventory() {
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1">
                             <button
+                              onClick={() => setHistoryProduct(product)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600"
+                              title="سجل المبيعات"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                            </button>
+                            <button
                               onClick={() => openEditDialog(product)}
                               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
                             >
@@ -519,6 +528,13 @@ function DesktopInventory() {
 
                     {/* Actions */}
                     <div className="mt-2 flex gap-1 border-t border-[var(--glass-border)] pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
+                      <button
+                        onClick={() => setHistoryProduct(product)}
+                        className="flex items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                        title="سجل المبيعات"
+                      >
+                        <History className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      </button>
                       <button
                         onClick={() => openEditDialog(product)}
                         className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
@@ -671,6 +687,214 @@ function DesktopInventory() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Stock History Dialog */}
+      {historyProduct && (
+        <StockHistoryDialog
+          product={historyProduct}
+          invoices={invoices}
+          currencySymbol={settings.currencySymbol}
+          onClose={() => setHistoryProduct(null)}
+        />
+      )}
     </ResponsiveShell>
+  );
+}
+
+// ============================================================
+// Stock History / Audit Dialog
+// ============================================================
+function StockHistoryDialog({
+  product,
+  invoices,
+  currencySymbol,
+  onClose,
+}: {
+  product: Product;
+  invoices: Invoice[];
+  currencySymbol: string;
+  onClose: () => void;
+}) {
+  const deductsStock = (s: string) => s !== "مسودة" && s !== "ملغاة";
+
+  // Build sale records for this product across all invoices
+  type SaleRecord = {
+    invoiceId: string;
+    invoiceNumber: string;
+    date: string;
+    clientName: string;
+    qty: number;
+    status: string;
+    viaBundle: boolean;
+    bundleName?: string;
+    revenue: number;
+  };
+
+  const sales: SaleRecord[] = [];
+
+  invoices.forEach((inv) => {
+    const items = Array.isArray(inv.items) ? inv.items : (inv.items as any)?._items || [];
+    items.forEach((item: any) => {
+      // Direct sale
+      if (!item.isBundle && item.productId === product.id) {
+        sales.push({
+          invoiceId: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          date: inv.createdAt,
+          clientName: inv.clientName,
+          qty: item.quantity,
+          status: inv.status,
+          viaBundle: false,
+          revenue: item.total ?? item.quantity * item.unitPrice,
+        });
+      }
+      // As bundle/ink-set component
+      if (item.isBundle && item.bundleComponents) {
+        const comp = (item.bundleComponents as any[]).find((c: any) => c.productId === product.id);
+        if (comp) {
+          const qty = comp.quantity * item.quantity;
+          sales.push({
+            invoiceId: inv.id,
+            invoiceNumber: inv.invoiceNumber,
+            date: inv.createdAt,
+            clientName: inv.clientName,
+            qty,
+            status: inv.status,
+            viaBundle: true,
+            bundleName: item.productName,
+            revenue: 0, // bundled price, no individual revenue
+          });
+        }
+      }
+    });
+  });
+
+  // Sort newest first
+  sales.sort((a, b) => b.date.localeCompare(a.date));
+
+  // Audit totals (only deducting statuses)
+  const activeSales = sales.filter((s) => deductsStock(s.status));
+  const totalSold = activeSales.reduce((sum, s) => sum + s.qty, 0);
+  const impliedInitial = product.stock + totalSold;
+  const totalRevenue = activeSales.filter((s) => !s.viaBundle).reduce((sum, s) => sum + s.revenue, 0);
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" dir="rtl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-blue-600" />
+            سجل مبيعات: {product.name}
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Audit Summary */}
+        <div className="grid grid-cols-3 gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] p-4 text-center">
+          <div>
+            <p className="text-xs text-muted-foreground">المخزون الحالي</p>
+            <p className={`mt-1 text-2xl font-extrabold ${product.stock <= 0 ? "text-red-600" : "text-foreground"}`}>
+              {product.stock}
+            </p>
+            <p className="text-xs text-muted-foreground">{product.unit}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">إجمالي المباع</p>
+            <p className="mt-1 text-2xl font-extrabold text-amber-600">{totalSold}</p>
+            <p className="text-xs text-muted-foreground">{product.unit}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">المخزون الأولي المتوقع</p>
+            <p className="mt-1 text-2xl font-extrabold text-blue-600">{impliedInitial}</p>
+            <p className="text-xs text-muted-foreground">= حالي + مباع</p>
+          </div>
+        </div>
+
+        {/* Revenue summary */}
+        <div className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] px-4 py-3">
+          <span className="text-sm text-muted-foreground">إجمالي الإيرادات المباشرة</span>
+          <span className="text-base font-bold text-green-600">{currencySymbol}{totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
+        </div>
+
+        {/* Invoice table */}
+        {sales.length === 0 ? (
+          <div className="flex flex-col items-center py-10 text-muted-foreground">
+            <CheckCircle2 className="h-10 w-10 mb-3 opacity-30" />
+            <p>لا توجد فواتير تحتوي على هذا المنتج</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-xl border border-[var(--glass-border)]">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[var(--glass-border)] bg-[var(--surface-2)]">
+                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">التاريخ</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">الفاتورة</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">العميل</th>
+                  <th className="px-3 py-2.5 text-center font-semibold text-muted-foreground">الكمية</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">النوع</th>
+                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">الحالة</th>
+                  <th className="px-3 py-2.5 text-center font-semibold text-muted-foreground"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {sales.map((s, i) => {
+                  const deducts = deductsStock(s.status);
+                  return (
+                    <tr
+                      key={`${s.invoiceId}-${i}`}
+                      className={`border-b border-border/30 transition-colors hover:bg-[var(--surface-2)] ${!deducts ? "opacity-50" : ""}`}
+                    >
+                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{s.date}</td>
+                      <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{s.invoiceNumber}</td>
+                      <td className="px-3 py-2.5 text-foreground">{s.clientName}</td>
+                      <td className="px-3 py-2.5 text-center">
+                        <span className={`font-bold ${deducts ? "text-amber-600" : "text-muted-foreground"}`}>
+                          {deducts ? "-" : ""}{s.qty}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {s.viaBundle ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-700">
+                            طقم — {s.bundleName}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+                            مباشر
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${getStatusColor(s.status as any)}`}>
+                          {s.status}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5 text-center">
+                        <Link href={`/invoices/${s.invoiceId}`} target="_blank" className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground mx-auto">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-[var(--glass-border)] bg-[var(--surface-2)] font-semibold">
+                  <td colSpan={3} className="px-3 py-2.5 text-sm text-muted-foreground">
+                    المجموع ({activeSales.length} فاتورة نشطة)
+                  </td>
+                  <td className="px-3 py-2.5 text-center text-amber-600 font-bold text-sm">
+                    -{totalSold}
+                  </td>
+                  <td colSpan={3} />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
