@@ -223,7 +223,7 @@ export default function NewBundlePage() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <Button variant="outline" asChild><Link href="/bundles">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/bundles")}>إلغاء</Button>
             <Button onClick={handleSave}>إنشاء المجموعة</Button>
           </div>
         </div>

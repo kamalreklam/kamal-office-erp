@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -62,6 +63,7 @@ export default function ClientsPage() {
 }
 
 function DesktopClients() {
+  const router = useRouter();
   const { clients, invoices, orders, settings, deleteClient: removeClient } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -163,11 +165,9 @@ function DesktopClients() {
               <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
             </Button>
-            <Button size="sm" className="gap-1.5" asChild>
-              <Link href="/clients/new">
-                <Plus className="h-5 w-5" />
-                إضافة عميل
-              </Link>
+            <Button size="sm" className="gap-1.5" onClick={() => router.push("/clients/new")}>
+              <Plus className="h-5 w-5" />
+              إضافة عميل
             </Button>
           </div>
         </div>
@@ -235,7 +235,7 @@ function DesktopClients() {
           <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
               <Users className="mb-3 h-10 w-10 opacity-30" /><p className="text-base">لا يوجد عملاء مطابقين</p>
-              <Button size="sm" className="mt-4 gap-1.5" asChild><Link href="/clients/new"><Plus className="h-4 w-4" />إضافة عميل</Link></Button>
+              <Button size="sm" className="mt-4 gap-1.5" onClick={() => router.push("/clients/new")}><Plus className="h-4 w-4" />إضافة عميل</Button>
             </CardContent>
           </Card>
         ) : viewMode === "list" ? (

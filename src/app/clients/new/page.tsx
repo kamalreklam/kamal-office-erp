@@ -55,7 +55,7 @@ export default function NewClientPage() {
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild><Link href="/clients">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/clients")}>إلغاء</Button>
             <Button onClick={handleSave}>إضافة العميل</Button>
           </div>
         </div>

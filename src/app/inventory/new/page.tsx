@@ -152,9 +152,7 @@ export default function NewProductPage() {
 
           {/* Actions */}
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild>
-              <Link href="/inventory">إلغاء</Link>
-            </Button>
+            <Button variant="outline" onClick={() => router.push("/inventory")}>إلغاء</Button>
             <Button onClick={handleSave} disabled={saving}>
               إضافة المنتج
             </Button>

@@ -56,9 +56,7 @@ export default function EditProductPage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">المنتج غير موجود</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/inventory">العودة للمخزون</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/inventory")}>العودة للمخزون</Button>
         </div>
       </div>
     );
@@ -184,9 +182,7 @@ export default function EditProductPage() {
 
           {/* Actions */}
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild>
-              <Link href="/inventory">إلغاء</Link>
-            </Button>
+            <Button variant="outline" onClick={() => router.push("/inventory")}>إلغاء</Button>
             <Button onClick={handleSave}>حفظ التعديلات</Button>
           </div>
         </div>

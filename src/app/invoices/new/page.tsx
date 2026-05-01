@@ -96,12 +96,12 @@ function DraggableLineItem({
       <SortableRowShell
         id={item.id}
         dragListeners={listeners as Record<string, unknown>}
-        dragAttributes={attributes as Record<string, unknown>}
+        dragAttributes={attributes as unknown as Record<string, unknown>}
         isDragging={isDragging}
       >
         {children(
           listeners as Record<string, unknown>,
-          attributes as Record<string, unknown>,
+          attributes as unknown as Record<string, unknown>,
           isDragging,
         )}
       </SortableRowShell>

@@ -65,9 +65,7 @@ export default function EditBundlePage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">المجموعة غير موجودة</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/bundles">العودة للمجموعات</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/bundles")}>العودة للمجموعات</Button>
         </div>
       </div>
     );
@@ -218,7 +216,7 @@ export default function EditBundlePage() {
           </div>
 
           <div className="flex items-center justify-end gap-3">
-            <Button variant="outline" asChild><Link href="/bundles">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/bundles")}>إلغاء</Button>
             <Button onClick={handleSave}>حفظ التعديلات</Button>
           </div>
         </div>

@@ -37,9 +37,7 @@ export default function EditOrderPage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">الطلب غير موجود</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/orders">العودة للطلبات</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/orders")}>العودة للطلبات</Button>
         </div>
       </div>
     );
@@ -91,7 +89,7 @@ export default function EditOrderPage() {
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild><Link href="/orders">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/orders")}>إلغاء</Button>
             <Button onClick={handleSave}>حفظ التعديلات</Button>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Users, Phone, MapPin, DollarSign, FileText,
@@ -41,6 +41,7 @@ function getOrderIcon(status: string) {
 }
 
 export default function ClientDetailPage() {
+  const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { clients, invoices, orders, settings } = useStore();
 
@@ -51,9 +52,7 @@ export default function ClientDetailPage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">العميل غير موجود</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/clients">العودة للعملاء</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/clients")}>العودة للعملاء</Button>
         </div>
       </div>
     );
@@ -86,6 +85,7 @@ export default function ClientDetailPage() {
   ].sort((a, b) => b.date.localeCompare(a.date));
 
   async function exportSheet() {
+    if (!client) return;
     try {
       toast.success(`جاري تصدير بيانات ${client.name}...`);
       const { exportClientSheetPDF } = await import("@/lib/pdf");
@@ -144,11 +144,9 @@ export default function ClientDetailPage() {
                         <Download className="h-4 w-4" />
                         تصدير
                       </Button>
-                      <Button size="sm" className="gap-1.5" asChild>
-                        <Link href={`/clients/${client.id}/edit`}>
-                          <Pencil className="h-4 w-4" />
-                          تعديل
-                        </Link>
+                      <Button size="sm" className="gap-1.5" onClick={() => router.push(`/clients/${client.id}/edit`)}>
+                        <Pencil className="h-4 w-4" />
+                        تعديل
                       </Button>
                     </div>
                   </div>

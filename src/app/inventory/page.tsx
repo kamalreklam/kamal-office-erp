@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -45,6 +47,7 @@ export default function InventoryPage() {
 }
 
 function DesktopInventory() {
+  const router = useRouter();
   const { products, invoices, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
@@ -176,11 +179,9 @@ function DesktopInventory() {
               <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
             </Button>
-            <Button size="sm" className="gap-1.5" asChild>
-              <Link href="/inventory/new">
-                <Plus className="h-5 w-5" />
-                إضافة منتج
-              </Link>
+            <Button size="sm" className="gap-1.5" onClick={() => router.push("/inventory/new")}>
+              <Plus className="h-5 w-5" />
+              إضافة منتج
             </Button>
           </div>
         </div>

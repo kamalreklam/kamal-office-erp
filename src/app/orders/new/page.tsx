@@ -65,7 +65,7 @@ export default function NewOrderPage() {
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild><Link href="/orders">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/orders")}>إلغاء</Button>
             <Button onClick={handleSave}>إنشاء الطلب</Button>
           </div>
         </div>

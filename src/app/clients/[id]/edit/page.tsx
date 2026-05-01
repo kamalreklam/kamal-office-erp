@@ -31,9 +31,7 @@ export default function EditClientPage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">العميل غير موجود</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/clients">العودة للعملاء</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/clients")}>العودة للعملاء</Button>
         </div>
       </div>
     );
@@ -81,7 +79,7 @@ export default function EditClientPage() {
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3 border-t border-[var(--glass-border)] pt-6">
-            <Button variant="outline" asChild><Link href="/clients">إلغاء</Link></Button>
+            <Button variant="outline" onClick={() => router.push("/clients")}>إلغاء</Button>
             <Button onClick={handleSave}>حفظ التعديلات</Button>
           </div>
         </div>

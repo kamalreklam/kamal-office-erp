@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, History, CheckCircle2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { type Invoice, formatCurrency, getStatusColor } from "@/lib/data";
 
 export default function ProductHistoryPage() {
+  const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { products, invoices, settings } = useStore();
 
@@ -18,9 +19,7 @@ export default function ProductHistoryPage() {
       <div className="flex min-h-screen items-center justify-center" dir="rtl">
         <div className="text-center">
           <p className="text-muted-foreground">المنتج غير موجود</p>
-          <Button variant="outline" className="mt-4" asChild>
-            <Link href="/inventory">العودة للمخزون</Link>
-          </Button>
+          <Button variant="outline" className="mt-4" onClick={() => router.push("/inventory")}>العودة للمخزون</Button>
         </div>
       </div>
     );
