@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -42,16 +43,14 @@ export default function OrdersPage() {
 }
 
 function DesktopOrders() {
-  const { orders, clients, addOrder, updateOrder, deleteOrder, settings } = useStore();
+  const router = useRouter();
+  const { orders, updateOrder, deleteOrder, settings } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [viewMode, setViewMode] = useState<"kanban" | "list">("kanban");
   const [statusFilter, setStatusFilter] = useState("الكل");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<(typeof orders)[0] | null>(null);
   const [deletingOrder, setDeletingOrder] = useState<(typeof orders)[0] | null>(null);
-  const [formData, setFormData] = useState({ clientId: "", description: "", status: "قيد الانتظار" as OrderStatus });
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -65,32 +64,6 @@ function DesktopOrders() {
       return matchSearch && matchStatus && matchDateFrom && matchDateTo;
     });
   }, [orders, debouncedSearch, statusFilter, dateFrom, dateTo]);
-
-  function openAddDialog() {
-    setEditingOrder(null);
-    setFormData({ clientId: "", description: "", status: "قيد الانتظار" });
-    setDialogOpen(true);
-  }
-
-  function openEditDialog(order: (typeof orders)[0]) {
-    setEditingOrder(order);
-    setFormData({ clientId: order.clientId, description: order.description, status: order.status });
-    setDialogOpen(true);
-  }
-
-  function handleSave() {
-    if (!formData.clientId || !formData.description.trim()) { toast.error("يرجى ملء جميع الحقول"); return; }
-    const client = clients.find((c) => c.id === formData.clientId);
-    if (!client) return;
-    if (editingOrder) {
-      updateOrder(editingOrder.id, { clientId: formData.clientId, clientName: client.name, description: formData.description, status: formData.status });
-      toast.success("تم تحديث الطلب");
-    } else {
-      addOrder({ clientId: formData.clientId, clientName: client.name, description: formData.description, status: formData.status });
-      toast.success("تم إنشاء الطلب بنجاح");
-    }
-    setDialogOpen(false);
-  }
 
   function confirmDelete(order: (typeof orders)[0]) { setDeletingOrder(order); setDeleteDialogOpen(true); }
 
@@ -176,7 +149,7 @@ function DesktopOrders() {
               </button>
             )}
             <div className="mr-auto flex gap-0.5">
-              <button onClick={() => openEditDialog(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
+              <button onClick={() => router.push(`/orders/${order.id}/edit`)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
               <button onClick={() => shareOrderWhatsApp(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-green-50 hover:text-green-600"><MessageCircle className="h-3.5 w-3.5" /></button>
               <button onClick={() => confirmDelete(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
@@ -254,7 +227,7 @@ function DesktopOrders() {
                 <span className="hidden sm:inline">قائمة</span>
               </button>
             </div>
-            <Button size="sm" className="gap-1.5" onClick={openAddDialog}><Plus className="h-5 w-5" />طلب جديد</Button>
+            <Button size="sm" className="gap-1.5" onClick={() => router.push("/orders/new")}><Plus className="h-5 w-5" />طلب جديد</Button>
           </div>
         </div>
 
@@ -302,7 +275,7 @@ function DesktopOrders() {
                       <div className="flex flex-col items-center py-8 text-muted-foreground">
                         <ClipboardList className="mb-2 h-8 w-8 opacity-15" />
                         <p className="text-xs">لا توجد طلبات</p>
-                        <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" onClick={openAddDialog}><Plus className="h-3.5 w-3.5" />طلب جديد</Button>
+                        <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" onClick={() => router.push("/orders/new")}><Plus className="h-3.5 w-3.5" />طلب جديد</Button>
                       </div>
                     ) : (
                       statusOrders.map((order) => renderOrderCard(order, true))
@@ -333,7 +306,7 @@ function DesktopOrders() {
                   <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
                     <ClipboardList className="mb-3 h-10 w-10 opacity-30" />
                     <p className="text-base">لا توجد طلبات مطابقة</p>
-                    <Button size="sm" className="mt-4 gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />طلب جديد</Button>
+                    <Button size="sm" className="mt-4 gap-1.5" onClick={() => router.push("/orders/new")}><Plus className="h-4 w-4" />طلب جديد</Button>
                   </CardContent>
                 </Card>
               ) : (
@@ -343,22 +316,6 @@ function DesktopOrders() {
           </>
         )}
       </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader><DialogTitle>{editingOrder ? "تعديل الطلب" : "طلب جديد"}</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-1.5"><label className="text-sm font-medium">العميل</label>
-              <Select value={formData.clientId} onValueChange={(v) => v && setFormData({ ...formData, clientId: v })}><SelectTrigger><SelectValue placeholder="اختر عميل..." /></SelectTrigger><SelectContent>{clients.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select>
-            </div>
-            <div className="grid gap-1.5"><label className="text-sm font-medium">وصف الطلب</label><Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="مثال: صيانة طابعة HP" /></div>
-            <div className="grid gap-1.5"><label className="text-sm font-medium">الحالة</label>
-              <Select value={formData.status} onValueChange={(v) => v && setFormData({ ...formData, status: v as OrderStatus })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{statusOptions.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0"><Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button><Button onClick={handleSave}>{editingOrder ? "حفظ" : "إنشاء"}</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">

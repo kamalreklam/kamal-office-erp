@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Search, Users, Plus, Pencil, Trash2, Phone, MapPin, DollarSign,
-  FileText, ChevronDown, ChevronUp, Clock, CheckCircle2, PackageCheck, Loader2, AlertTriangle, ArrowUpDown, Download,
+  FileText, ChevronDown, AlertTriangle, ArrowUpDown, Download,
   LayoutGrid, List, MessageCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -20,7 +20,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useStore } from "@/lib/store";
-import { type Client, formatCurrency, getStatusColor, getOrderStatusColor } from "@/lib/data";
+import { type Client, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -28,8 +28,6 @@ import { CardGridSkeleton } from "@/components/skeletons";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileClients } from "@/components/mobile/mobile-clients";
 import { MobileShell } from "@/components/mobile/mobile-shell";
-
-const emptyClient = { name: "", phone: "", address: "", notes: "" };
 
 const avatarColors = [
   "bg-sky-100 text-sky-700",
@@ -64,15 +62,11 @@ export default function ClientsPage() {
 }
 
 function DesktopClients() {
-  const { clients, invoices, orders, settings, addClient, updateClient, deleteClient: removeClient } = useStore();
+  const { clients, invoices, orders, settings, deleteClient: removeClient } = useStore();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
-  const [formData, setFormData] = useState(emptyClient);
-  const [expandedClient, setExpandedClient] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -89,30 +83,6 @@ function DesktopClients() {
     }
   }, [clients, debouncedSearch, sortBy]);
 
-  function openAddDialog() {
-    setEditingClient(null);
-    setFormData(emptyClient);
-    setDialogOpen(true);
-  }
-
-  function openEditDialog(client: Client) {
-    setEditingClient(client);
-    setFormData({ name: client.name, phone: client.phone, address: client.address, notes: client.notes || "" });
-    setDialogOpen(true);
-  }
-
-  function handleSave() {
-    if (!formData.name.trim()) { toast.error("يرجى إدخال اسم العميل"); return; }
-    if (editingClient) {
-      updateClient(editingClient.id, formData);
-      toast.success("تم تحديث بيانات العميل");
-    } else {
-      addClient(formData);
-      toast.success("تم إضافة العميل بنجاح");
-    }
-    setDialogOpen(false);
-  }
-
   function confirmDelete(client: Client) {
     setDeletingClient(client);
     setDeleteDialogOpen(true);
@@ -123,31 +93,6 @@ function DesktopClients() {
     removeClient(deletingClient.id);
     toast.success("تم حذف العميل");
     setDeleteDialogOpen(false);
-  }
-
-  function getClientTimeline(clientId: string) {
-    const clientInvoices = invoices.filter((inv) => inv.clientId === clientId).map((inv) => ({
-      type: "invoice" as const, id: inv.id, date: inv.createdAt, title: inv.invoiceNumber,
-      subtitle: `${inv.items.length} منتجات · ${formatCurrency(inv.total)}`,
-      status: inv.status, statusColor: getStatusColor(inv.status),
-      href: `/invoices/${inv.id}`,
-    }));
-    const clientOrders = orders.filter((o) => o.clientId === clientId).map((ord) => ({
-      type: "order" as const, id: ord.id, date: ord.updatedAt, title: ord.trackingId,
-      subtitle: ord.description, status: ord.status, statusColor: getOrderStatusColor(ord.status),
-      href: "/orders",
-    }));
-    return [...clientInvoices, ...clientOrders].sort((a, b) => b.date.localeCompare(a.date));
-  }
-
-  function getOrderIcon(status: string) {
-    switch (status) {
-      case "قيد الانتظار": return Clock;
-      case "قيد التنفيذ": return Loader2;
-      case "جاهز للاستلام": return PackageCheck;
-      case "مكتمل": return CheckCircle2;
-      default: return Clock;
-    }
   }
 
   function shareWhatsApp() {
@@ -218,9 +163,11 @@ function DesktopClients() {
               <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
             </Button>
-            <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
-              <Plus className="h-5 w-5" />
-              إضافة عميل
+            <Button size="sm" className="gap-1.5" asChild>
+              <Link href="/clients/new">
+                <Plus className="h-5 w-5" />
+                إضافة عميل
+              </Link>
             </Button>
           </div>
         </div>
@@ -288,7 +235,7 @@ function DesktopClients() {
           <Card className="border border-[var(--glass-border)] shadow-sm">
             <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
               <Users className="mb-3 h-10 w-10 opacity-30" /><p className="text-base">لا يوجد عملاء مطابقين</p>
-              <Button size="sm" className="mt-4 gap-1.5" onClick={openAddDialog}><Plus className="h-4 w-4" />إضافة عميل</Button>
+              <Button size="sm" className="mt-4 gap-1.5" asChild><Link href="/clients/new"><Plus className="h-4 w-4" />إضافة عميل</Link></Button>
             </CardContent>
           </Card>
         ) : viewMode === "list" ? (
@@ -311,11 +258,9 @@ function DesktopClients() {
                 <tbody>
                   {filtered.map((client, idx) => {
                     const invCount = invoices.filter((i) => i.clientId === client.id).length;
-                    const isExpanded = expandedClient === client.id;
-                    const timeline = isExpanded ? getClientTimeline(client.id) : [];
                     return (
                       <React.Fragment key={client.id}>
-                        <tr className={`border-b border-border/40 transition-colors hover:bg-[var(--surface-2)] ${isExpanded ? "bg-[var(--surface-2)]/30" : ""}`}>
+                        <tr className="border-b border-border/40 transition-colors hover:bg-[var(--surface-2)]">
                           <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
@@ -337,57 +282,18 @@ function DesktopClients() {
                               <button onClick={() => exportClientSheet(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600" title="تصدير بيانات العميل">
                                 <Download className="h-3.5 w-3.5" />
                               </button>
-                              <button onClick={() => openEditDialog(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
+                              <Link href={`/clients/${client.id}/edit`} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground">
                                 <Pencil className="h-3.5 w-3.5" />
-                              </button>
+                              </Link>
                               <button onClick={() => confirmDelete(client)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
-                              <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)]">
-                                {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                              </button>
+                              <Link href={`/clients/${client.id}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)]">
+                                <ChevronDown className="h-3.5 w-3.5" />
+                              </Link>
                             </div>
                           </td>
                         </tr>
-                        {isExpanded && (
-                          <tr>
-                            <td colSpan={8} className="bg-muted/10 p-0">
-                              <div className="p-5">
-                                <h4 className="mb-3 text-sm font-bold text-muted-foreground">سجل العمليات</h4>
-                                {timeline.length === 0 ? (
-                                  <p className="py-4 text-center text-sm text-muted-foreground">لا توجد سجلات لهذا العميل</p>
-                                ) : (
-                                  <div className="relative pr-8">
-                                    <div className="absolute right-3 top-2 bottom-2 w-0.5 bg-border" />
-                                    <div className="space-y-3">
-                                      {timeline.map((item, tidx) => {
-                                        const Icon = item.type === "invoice" ? FileText : getOrderIcon(item.status);
-                                        return (
-                                          <Link key={tidx} href={item.href} className="relative flex gap-3 group/tl">
-                                            <div className="absolute -right-6.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15">
-                                              <div className="h-2 w-2 rounded-full bg-primary" />
-                                            </div>
-                                            <div className="flex-1 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-3 transition-colors group-hover/tl:bg-[var(--surface-2)]/30 group-hover/tl:border-primary/20">
-                                              <div className="flex items-center justify-between gap-2">
-                                                <div className="flex items-center gap-2">
-                                                  <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                                                  <span className="text-sm font-medium">{item.title}</span>
-                                                  <Badge variant="outline" className={`text-[10px] ${item.statusColor}`}>{item.status}</Badge>
-                                                </div>
-                                                <span className="shrink-0 text-[10px] text-muted-foreground">{item.date}</span>
-                                              </div>
-                                              <p className="mt-1.5 text-xs text-muted-foreground">{item.subtitle}</p>
-                                            </div>
-                                          </Link>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </React.Fragment>
                     );
                   })}
@@ -413,8 +319,6 @@ function DesktopClients() {
           /* ===== GRID (CARD) VIEW ===== */
           <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2 stagger-list">
             {filtered.map((client) => {
-              const isExpanded = expandedClient === client.id;
-              const timeline = getClientTimeline(client.id);
               const invCount = invoices.filter((i) => i.clientId === client.id).length;
               const ordCount = orders.filter((o) => o.clientId === client.id).length;
 
@@ -434,11 +338,11 @@ function DesktopClients() {
                       </div>
                       <div className="flex shrink-0 items-center gap-0.5">
                         <button onClick={() => exportClientSheet(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-blue-50 hover:text-blue-600" title="تصدير بيانات العميل"><Download className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => openEditDialog(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => confirmDelete(client)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
-                        <button onClick={() => setExpandedClient(isExpanded ? null : client.id)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]">
-                          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                        </button>
+                        <Link href={`/clients/${client.id}/edit`} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></Link>
+                        <button onClick={() => confirmDelete(client)} title="حذف العميل" className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+                        <Link href={`/clients/${client.id}`} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]">
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        </Link>
                       </div>
                     </div>
 
@@ -451,42 +355,6 @@ function DesktopClients() {
                       <span className="text-sm font-bold text-primary sm:text-base">{formatCurrency(client.totalSpent)}</span>
                     </div>
 
-                    {/* Timeline */}
-                    {isExpanded && (
-                      <div className="border-t border-[var(--glass-border)] bg-muted/10 p-4 sm:p-5">
-                        <h4 className="mb-3 text-sm font-bold text-muted-foreground">سجل العمليات</h4>
-                        {timeline.length === 0 ? (
-                          <p className="py-4 text-center text-sm text-muted-foreground">لا توجد سجلات لهذا العميل</p>
-                        ) : (
-                          <div className="relative pr-8">
-                            <div className="absolute right-3 top-2 bottom-2 w-0.5 bg-border" />
-                            <div className="space-y-3">
-                              {timeline.map((item, idx) => {
-                                const Icon = item.type === "invoice" ? FileText : getOrderIcon(item.status);
-                                return (
-                                  <Link key={idx} href={item.href} className="relative flex gap-3 group/tl">
-                                    <div className="absolute -right-6.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/15">
-                                      <div className="h-2 w-2 rounded-full bg-primary" />
-                                    </div>
-                                    <div className="flex-1 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-3 transition-colors group-hover/tl:bg-[var(--surface-2)]/30 group-hover/tl:border-primary/20">
-                                      <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2">
-                                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                                          <span className="text-sm font-medium">{item.title}</span>
-                                          <Badge variant="outline" className={`text-[10px] ${item.statusColor}`}>{item.status}</Badge>
-                                        </div>
-                                        <span className="shrink-0 text-[10px] text-muted-foreground">{item.date}</span>
-                                      </div>
-                                      <p className="mt-1.5 text-xs text-muted-foreground">{item.subtitle}</p>
-                                    </div>
-                                  </Link>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               );
@@ -494,22 +362,6 @@ function DesktopClients() {
           </div>
         )}
       </div>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md" dir="rtl">
-          <DialogHeader><DialogTitle>{editingClient ? "تعديل بيانات العميل" : "إضافة عميل جديد"}</DialogTitle></DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="grid gap-1.5"><label className="text-sm font-medium">الاسم</label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="اسم العميل" /></div>
-            <div className="grid gap-1.5"><label className="text-sm font-medium">رقم الهاتف</label><Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="09XXXXXXXX" dir="ltr" /></div>
-            <div className="grid gap-1.5"><label className="text-sm font-medium">العنوان</label><Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="حلب - الحي" /></div>
-            <div className="grid gap-1.5"><label className="text-sm font-medium">ملاحظات</label><Input value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="ملاحظات إضافية عن العميل..." /></div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave}>{editingClient ? "حفظ" : "إضافة"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">

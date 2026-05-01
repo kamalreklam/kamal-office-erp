@@ -317,14 +317,16 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     if (!bundle) return;
 
     const blocked = bundle.items
-      .map(bi => products.find(p => p.id === bi.productId))
-      .filter(p => p && p.stock <= 0)
-      .map(p => p!.name);
+      .filter(bi => {
+        const p = products.find(p => p.id === bi.productId);
+        return !p || p.stock < bi.quantity;
+      })
+      .map(bi => bi.productName);
     if (blocked.length > 0) { toast.error(`نفذ المخزون: ${blocked.join("، ")}`); return; }
 
     const components = bundle.items.map((bi) => {
       const product = products.find((p) => p.id === bi.productId);
-      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: 1 };
+      return { productId: bi.productId, productName: product?.name || bi.productName, quantity: bi.quantity };
     });
 
     const bundleItem: CartItem = {

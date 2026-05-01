@@ -79,6 +79,9 @@ export interface BundleItem {
   productId: string;
   productName: string;
   quantity: number;
+  componentType?: "printer" | "ink" | "tank" | "other";
+  costPrice?: number;
+  sellingPrice?: number;
 }
 
 export interface ProductBundle {

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,13 +14,11 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  ArrowUpDown, Download, History, ExternalLink, TrendingDown, CheckCircle2,
-  LayoutGrid, List,
+  ArrowUpDown, Download, History, LayoutGrid, List,
 } from "lucide-react";
 import Link from "next/link";
-import { ImageUpload } from "@/components/image-upload";
 import { useStore } from "@/lib/store";
-import { type Product, type Invoice, getLowStockProducts, formatCurrency, getStatusColor } from "@/lib/data";
+import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -31,18 +28,6 @@ import { InlineEdit } from "@/components/inline-edit";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileInventory } from "@/components/mobile/mobile-inventory";
 import { MobileShell } from "@/components/mobile/mobile-shell";
-
-const emptyForm = {
-  name: "",
-  category: "Printers",
-  sku: "",
-  description: "",
-  price: 0,
-  stock: 0,
-  minStock: 0,
-  unit: "عبوة",
-  image: "",
-};
 
 export default function InventoryPage() {
   const isMobile = useIsMobile();
@@ -60,19 +45,15 @@ export default function InventoryPage() {
 }
 
 function DesktopInventory() {
-  const { products, invoices, addProduct, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
+  const { products, invoices, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
   const [activeCategory, setActiveCategory] = useState("الكل");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
-  const [formData, setFormData] = useState(emptyForm);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
 
 
   const filtered = useMemo(() => {
@@ -99,44 +80,6 @@ function DesktopInventory() {
   const paged = filtered; // Show all items without pagination
 
   const lowStock = getLowStockProducts(products);
-
-  function openAddDialog() {
-    setEditingProduct(null);
-    setFormData(emptyForm);
-    setDialogOpen(true);
-  }
-
-  function openEditDialog(product: Product) {
-    setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      category: product.category,
-      sku: product.sku,
-      description: product.description,
-      price: product.price,
-      stock: product.stock,
-      minStock: product.minStock,
-      unit: product.unit,
-      image: getProductImage(product.id),
-    });
-    setDialogOpen(true);
-  }
-
-  function handleSave() {
-    if (!formData.name.trim()) {
-      toast.error("يرجى إدخال اسم المنتج");
-      return;
-    }
-    const { image, ...productData } = formData;
-    if (editingProduct) {
-      updateProduct(editingProduct.id, { ...productData, image } as Partial<Product> & { image?: string });
-      toast.success("تم تحديث المنتج بنجاح");
-    } else {
-      addProduct({ ...productData, image } as Omit<Product, "id" | "createdAt"> & { image?: string });
-      toast.success("تم إضافة المنتج بنجاح");
-    }
-    setDialogOpen(false);
-  }
 
   function confirmDelete(product: Product) {
     setDeletingProduct(product);
@@ -233,9 +176,11 @@ function DesktopInventory() {
               <MessageCircle className="h-5 w-5 text-green-600" />
               <span className="hidden sm:inline">مشاركة واتساب</span>
             </Button>
-            <Button size="sm" className="gap-1.5" onClick={openAddDialog}>
-              <Plus className="h-5 w-5" />
-              إضافة منتج
+            <Button size="sm" className="gap-1.5" asChild>
+              <Link href="/inventory/new">
+                <Plus className="h-5 w-5" />
+                إضافة منتج
+              </Link>
             </Button>
           </div>
         </div>
@@ -416,19 +361,19 @@ function DesktopInventory() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => setHistoryProduct(product)}
+                            <Link
+                              href={`/inventory/${product.id}/history`}
                               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600"
                               title="سجل المبيعات"
                             >
                               <History className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => openEditDialog(product)}
+                            </Link>
+                            <Link
+                              href={`/inventory/${product.id}/edit`}
                               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
                             >
                               <Pencil className="h-3.5 w-3.5" />
-                            </button>
+                            </Link>
                             <button
                               onClick={() => confirmDelete(product)}
                               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
@@ -528,20 +473,20 @@ function DesktopInventory() {
 
                     {/* Actions */}
                     <div className="mt-2 flex gap-1 border-t border-[var(--glass-border)] pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
-                      <button
-                        onClick={() => setHistoryProduct(product)}
+                      <Link
+                        href={`/inventory/${product.id}/history`}
                         className="flex items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:gap-1.5 sm:py-2.5 sm:text-sm"
                         title="سجل المبيعات"
                       >
                         <History className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => openEditDialog(product)}
+                      </Link>
+                      <Link
+                        href={`/inventory/${product.id}/edit`}
                         className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
                       >
                         <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         تعديل
-                      </button>
+                      </Link>
                       <button
                         onClick={() => confirmDelete(product)}
                         className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 sm:gap-1.5 sm:py-2.5 sm:text-sm"
@@ -563,115 +508,6 @@ function DesktopInventory() {
         </div>
       </div>
 
-      {/* Add/Edit Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" dir="rtl">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? "تعديل المنتج" : "إضافة منتج جديد"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-6 py-2">
-            {/* Image upload */}
-            <div className="flex items-center gap-4">
-              <ImageUpload
-                value={formData.image}
-                onChange={(img) => setFormData({ ...formData, image: img })}
-                size="lg"
-                label="صورة المنتج"
-              />
-              <div className="flex-1 grid gap-3">
-                <div className="grid gap-1.5">
-                  <label className="text-sm font-medium">اسم المنتج</label>
-                  <Input
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="مثال: HP LaserJet Pro M404dn"
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <label className="text-sm font-medium">الكود (SKU)</label>
-                  <Input
-                    value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                    placeholder="HP-LJ-M404"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">الفئة</label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(v) => v && setFormData({ ...formData, category: v })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {settings.productCategories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">الوحدة</label>
-                <Select
-                  value={formData.unit}
-                  onValueChange={(v) => v && setFormData({ ...formData, unit: v })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="قطعة">قطعة</SelectItem>
-                    <SelectItem value="عبوة">عبوة</SelectItem>
-                    <SelectItem value="عبوة">عبوة</SelectItem>
-                    <SelectItem value="مجموعة">مجموعة</SelectItem>
-                    <SelectItem value="رزمة">رزمة</SelectItem>
-                    <SelectItem value="خرطوشة">خرطوشة</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid gap-1.5">
-              <label className="text-sm font-medium">الوصف</label>
-              <Input
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="وصف مختصر للمنتج"
-              />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">السعر ($)</label>
-                <Input
-                  type="number" min={0} step={0.5} value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">الكمية</label>
-                <Input
-                  type="number" min={0} value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <label className="text-sm font-medium">الحد الأدنى</label>
-                <Input
-                  type="number" min={0} value={formData.minStock}
-                  onChange={(e) => setFormData({ ...formData, minStock: parseInt(e.target.value) || 0 })}
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>إلغاء</Button>
-            <Button onClick={handleSave}>{editingProduct ? "حفظ التعديلات" : "إضافة المنتج"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Delete Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm" dir="rtl">
@@ -688,213 +524,6 @@ function DesktopInventory() {
         </DialogContent>
       </Dialog>
 
-      {/* Stock History Dialog */}
-      {historyProduct && (
-        <StockHistoryDialog
-          product={historyProduct}
-          invoices={invoices}
-          currencySymbol={settings.currencySymbol}
-          onClose={() => setHistoryProduct(null)}
-        />
-      )}
     </ResponsiveShell>
-  );
-}
-
-// ============================================================
-// Stock History / Audit Dialog
-// ============================================================
-function StockHistoryDialog({
-  product,
-  invoices,
-  currencySymbol,
-  onClose,
-}: {
-  product: Product;
-  invoices: Invoice[];
-  currencySymbol: string;
-  onClose: () => void;
-}) {
-  const deductsStock = (s: string) => s !== "مسودة" && s !== "ملغاة";
-
-  // Build sale records for this product across all invoices
-  type SaleRecord = {
-    invoiceId: string;
-    invoiceNumber: string;
-    date: string;
-    clientName: string;
-    qty: number;
-    status: string;
-    viaBundle: boolean;
-    bundleName?: string;
-    revenue: number;
-  };
-
-  const sales: SaleRecord[] = [];
-
-  invoices.forEach((inv) => {
-    const items = Array.isArray(inv.items) ? inv.items : (inv.items as any)?._items || [];
-    items.forEach((item: any) => {
-      // Direct sale
-      if (!item.isBundle && item.productId === product.id) {
-        sales.push({
-          invoiceId: inv.id,
-          invoiceNumber: inv.invoiceNumber,
-          date: inv.createdAt,
-          clientName: inv.clientName,
-          qty: item.quantity,
-          status: inv.status,
-          viaBundle: false,
-          revenue: item.total ?? item.quantity * item.unitPrice,
-        });
-      }
-      // As bundle/ink-set component
-      if (item.isBundle && item.bundleComponents) {
-        const comp = (item.bundleComponents as any[]).find((c: any) => c.productId === product.id);
-        if (comp) {
-          const qty = comp.quantity * item.quantity;
-          sales.push({
-            invoiceId: inv.id,
-            invoiceNumber: inv.invoiceNumber,
-            date: inv.createdAt,
-            clientName: inv.clientName,
-            qty,
-            status: inv.status,
-            viaBundle: true,
-            bundleName: item.productName,
-            revenue: 0, // bundled price, no individual revenue
-          });
-        }
-      }
-    });
-  });
-
-  // Sort newest first
-  sales.sort((a, b) => b.date.localeCompare(a.date));
-
-  // Audit totals (only deducting statuses)
-  const activeSales = sales.filter((s) => deductsStock(s.status));
-  const totalSold = activeSales.reduce((sum, s) => sum + s.qty, 0);
-  const impliedInitial = product.stock + totalSold;
-  const totalRevenue = activeSales.filter((s) => !s.viaBundle).reduce((sum, s) => sum + s.revenue, 0);
-
-  return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" dir="rtl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <History className="h-5 w-5 text-blue-600" />
-            سجل مبيعات: {product.name}
-          </DialogTitle>
-        </DialogHeader>
-
-        {/* Audit Summary */}
-        <div className="grid grid-cols-3 gap-3 rounded-xl border border-[var(--glass-border)] bg-[var(--surface-2)] p-4 text-center">
-          <div>
-            <p className="text-xs text-muted-foreground">المخزون الحالي</p>
-            <p className={`mt-1 text-2xl font-extrabold ${product.stock <= 0 ? "text-red-600" : "text-foreground"}`}>
-              {product.stock}
-            </p>
-            <p className="text-xs text-muted-foreground">{product.unit}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">إجمالي المباع</p>
-            <p className="mt-1 text-2xl font-extrabold text-amber-600">{totalSold}</p>
-            <p className="text-xs text-muted-foreground">{product.unit}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">المخزون الأولي المتوقع</p>
-            <p className="mt-1 text-2xl font-extrabold text-blue-600">{impliedInitial}</p>
-            <p className="text-xs text-muted-foreground">= حالي + مباع</p>
-          </div>
-        </div>
-
-        {/* Revenue summary */}
-        <div className="flex items-center justify-between rounded-xl border border-[var(--glass-border)] px-4 py-3">
-          <span className="text-sm text-muted-foreground">إجمالي الإيرادات المباشرة</span>
-          <span className="text-base font-bold text-green-600">{currencySymbol}{totalRevenue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
-        </div>
-
-        {/* Invoice table */}
-        {sales.length === 0 ? (
-          <div className="flex flex-col items-center py-10 text-muted-foreground">
-            <CheckCircle2 className="h-10 w-10 mb-3 opacity-30" />
-            <p>لا توجد فواتير تحتوي على هذا المنتج</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--glass-border)]">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[var(--glass-border)] bg-[var(--surface-2)]">
-                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">التاريخ</th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">الفاتورة</th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">العميل</th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-muted-foreground">الكمية</th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">النوع</th>
-                  <th className="px-3 py-2.5 text-right font-semibold text-muted-foreground">الحالة</th>
-                  <th className="px-3 py-2.5 text-center font-semibold text-muted-foreground"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.map((s, i) => {
-                  const deducts = deductsStock(s.status);
-                  return (
-                    <tr
-                      key={`${s.invoiceId}-${i}`}
-                      className={`border-b border-border/30 transition-colors hover:bg-[var(--surface-2)] ${!deducts ? "opacity-50" : ""}`}
-                    >
-                      <td className="px-3 py-2.5 text-muted-foreground text-xs">{s.date}</td>
-                      <td className="px-3 py-2.5 font-mono text-xs font-semibold text-foreground">{s.invoiceNumber}</td>
-                      <td className="px-3 py-2.5 text-foreground">{s.clientName}</td>
-                      <td className="px-3 py-2.5 text-center">
-                        <span className={`font-bold ${deducts ? "text-amber-600" : "text-muted-foreground"}`}>
-                          {deducts ? "-" : ""}{s.qty}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5">
-                        {s.viaBundle ? (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs text-purple-700">
-                            طقم — {s.bundleName}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
-                            مباشر
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 py-2.5">
-                        <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${getStatusColor(s.status as any)}`}>
-                          {s.status}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        <Link href={`/invoices/${s.invoiceId}`} target="_blank" className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground mx-auto">
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t border-[var(--glass-border)] bg-[var(--surface-2)] font-semibold">
-                  <td colSpan={3} className="px-3 py-2.5 text-sm text-muted-foreground">
-                    المجموع ({activeSales.length} فاتورة نشطة)
-                  </td>
-                  <td className="px-3 py-2.5 text-center text-amber-600 font-bold text-sm">
-                    -{totalSold}
-                  </td>
-                  <td colSpan={3} />
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>إغلاق</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
