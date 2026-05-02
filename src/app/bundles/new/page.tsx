@@ -273,38 +273,41 @@ export default function NewBundlePage() {
                         const rowMargin = sell > 0 ? ((sell - cost) / sell * 100) : 0;
                         const underCost = sell < cost;
                         return (
-                          <div key={gIdx} className="grid grid-cols-[auto_1fr_auto_90px_auto_auto] items-center gap-2 rounded-xl px-3 py-2.5 bg-[var(--surface-2)]">
-                            {cs
-                              ? <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cs.dot }} />
-                              : item.type === "printer" ? <Printer className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                              : item.type === "tank" ? <Droplets className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                              : <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                            }
-                            <p className="text-sm font-medium truncate">{item.product?.name || item.productName}</p>
-                            {/* Qty stepper */}
-                            <div className="flex items-center gap-1">
-                              <button aria-label="تقليل الكمية" onClick={() => adjustQty(globalIndex, -1)} className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--surface-1)] text-muted-foreground hover:text-foreground">
-                                <Minus className="h-3 w-3" />
-                              </button>
-                              <span className="w-5 text-center text-xs font-bold">{item.quantity}</span>
-                              <button aria-label="زيادة الكمية" onClick={() => adjustQty(globalIndex, 1)} className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--surface-1)] text-muted-foreground hover:text-foreground">
-                                <Plus className="h-3 w-3" />
+                          <div key={gIdx} className="rounded-xl bg-[var(--surface-2)] px-3 py-2.5 space-y-1.5">
+                            {/* Line 1: icon + name + delete */}
+                            <div className="flex items-center gap-2">
+                              {cs
+                                ? <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cs.dot }} />
+                                : item.type === "printer" ? <Printer className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                                : item.type === "tank" ? <Droplets className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                                : <Package className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              }
+                              <p className="flex-1 text-sm font-medium truncate min-w-0">{item.product?.name || item.productName}</p>
+                              <button aria-label="حذف المنتج" onClick={() => removeItem(globalIndex)} className="rounded p-1 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 shrink-0">
+                                <X className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            {/* Sell price */}
-                            <Input
-                              type="number" min={0}
-                              value={item.sellingPrice ?? 0}
-                              onChange={e => setSellPrice(globalIndex, parseFloat(e.target.value) || 0)}
-                              className={`h-7 text-xs text-center ${underCost ? "border-red-400 text-red-600" : ""}`}
-                            />
-                            {/* Margin badge */}
-                            <span className={`text-[10px] font-bold shrink-0 ${rowMargin >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                              {rowMargin.toFixed(0)}%
-                            </span>
-                            <button aria-label="حذف المنتج" onClick={() => removeItem(globalIndex)} className="rounded p-1 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950">
-                              <X className="h-3.5 w-3.5" />
-                            </button>
+                            {/* Line 2: qty stepper + price + margin */}
+                            <div className="flex items-center gap-2 pr-5">
+                              <div className="flex items-center gap-1">
+                                <button aria-label="تقليل الكمية" onClick={() => adjustQty(globalIndex, -1)} className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--surface-1)] text-muted-foreground hover:text-foreground">
+                                  <Minus className="h-3 w-3" />
+                                </button>
+                                <span className="w-5 text-center text-xs font-bold">{item.quantity}</span>
+                                <button aria-label="زيادة الكمية" onClick={() => adjustQty(globalIndex, 1)} className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--surface-1)] text-muted-foreground hover:text-foreground">
+                                  <Plus className="h-3 w-3" />
+                                </button>
+                              </div>
+                              <Input
+                                type="number" min={0}
+                                value={item.sellingPrice ?? 0}
+                                onChange={e => setSellPrice(globalIndex, parseFloat(e.target.value) || 0)}
+                                className={`h-7 w-20 text-xs text-center ${underCost ? "border-red-400 text-red-600" : ""}`}
+                              />
+                              <span className={`text-[10px] font-bold shrink-0 ${rowMargin >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                                {rowMargin.toFixed(0)}%
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
