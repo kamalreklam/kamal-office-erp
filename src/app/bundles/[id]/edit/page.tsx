@@ -155,7 +155,7 @@ export default function EditBundlePage() {
 
         <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
           {/* ── LEFT: Builder ── */}
-          <div className="space-y-5">
+          <div className="space-y-5 min-w-0">
             {/* Section A: Info */}
             <div className="rounded-2xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-5">
               <p className="mb-4 text-sm font-bold">معلومات المجموعة</p>
