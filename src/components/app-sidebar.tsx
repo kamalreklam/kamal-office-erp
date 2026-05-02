@@ -10,12 +10,13 @@ import {
   FileText,
   Users,
   ClipboardList,
-  Printer,
-  Settings,
   Layers,
   BarChart3,
   Calculator,
+  Settings,
+  Printer,
   X,
+  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -35,9 +36,11 @@ const navItems = [
 interface AppSidebarProps {
   open: boolean;
   onClose: () => void;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-export function AppSidebar({ open, onClose }: AppSidebarProps) {
+export function AppSidebar({ open, onClose, collapsed, onToggleCollapse }: AppSidebarProps) {
   const pathname = usePathname();
   const { settings } = useStore();
 
@@ -57,11 +60,11 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
 
   return (
     <>
-      {/* Overlay */}
+      {/* Mobile overlay */}
       {mounted && (
         <div
           className={cn(
-            "fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300 ease-out lg:hidden",
+            "fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ease-out lg:hidden",
             visible ? "opacity-100" : "opacity-0"
           )}
           onClick={onClose}
@@ -70,92 +73,182 @@ export function AppSidebar({ open, onClose }: AppSidebarProps) {
 
       <aside
         className={cn(
-          "fixed top-0 right-0 z-50 flex h-full w-[260px] flex-col transition-all duration-300 lg:shadow-none",
-          open ? "translate-x-0" : "translate-x-full lg:translate-x-0",
-          open ? "ease-[cubic-bezier(0.22,1,0.36,1)]" : "ease-[cubic-bezier(0.55,0,1,0.45)]"
+          "fixed top-0 right-0 z-50 flex h-dvh flex-col",
+          "transition-[width,transform] duration-300 ease-in-out",
+          collapsed ? "lg:w-20" : "lg:w-[260px]",
+          "w-[260px]",
+          open
+            ? "translate-x-0 shadow-[0_0_40px_rgba(0,0,0,0.2)]"
+            : "translate-x-full lg:translate-x-0 lg:shadow-none"
         )}
         style={{
           background: "var(--surface-1)",
-          borderLeft: "1px solid var(--border-default)",
+          borderInlineStart: "1px solid var(--border-subtle)",
+          boxShadow: "var(--shadow-md)",
         }}
       >
-        {/* Accent edge gradient on left border */}
-        <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: "var(--gradient-brand)", opacity: 0.4 }} />
-
-        {/* Logo */}
-        <div className="flex h-[68px] shrink-0 items-center justify-between px-5" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
+        {/* ── Brand / Logo header ─────────────── */}
+        <div
+          className="flex h-[64px] shrink-0 items-center px-5"
+          style={{ borderBottom: "1px solid var(--border-subtle)" }}
+        >
+          {/* Logo mark + text */}
+          <Link
+            href="/"
+            onClick={onClose}
+            className={cn(
+              "flex min-w-0 flex-1 items-center gap-3",
+              collapsed && "lg:justify-center"
+            )}
+          >
             {settings.logo ? (
-              <Image src={settings.logo} alt="Logo" width={40} height={40} className="h-10 w-10 rounded-xl object-cover" />
+              <Image
+                src={settings.logo}
+                alt="Logo"
+                width={34}
+                height={34}
+                className="h-[34px] w-[34px] shrink-0 rounded-lg object-cover"
+              />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl avatar-gradient shadow-sm">
-                <Printer className="h-5 w-5" />
+              <div
+                className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg"
+                style={{ background: "var(--primary)" }}
+              >
+                <Printer className="h-[18px] w-[18px] text-white" />
               </div>
             )}
-            <div>
-              <h1 className="text-sm font-bold leading-tight text-gradient-brand">
-                {settings.businessName.split(" ")[0] || "كمال"}
-              </h1>
-              <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                {settings.businessName.split(" ").slice(1).join(" ") || "للتجهيزات المكتبية"}
-              </p>
+
+            <div
+              className={cn(
+                "min-w-0 overflow-hidden transition-[max-width,opacity] duration-300",
+                collapsed ? "lg:max-w-0 lg:opacity-0" : "max-w-[180px] opacity-100"
+              )}
+            >
+              <span
+                className="block truncate text-[15px] font-semibold leading-tight"
+                style={{ color: "var(--primary)" }}
+              >
+                {settings.businessName || "كمال"}
+              </span>
             </div>
           </Link>
+
+          {/* Mobile close */}
           <button
+            type="button"
+            title="إغلاق"
             onClick={onClose}
-            className="rounded-lg p-1.5 transition-colors hover:text-foreground lg:hidden"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-[var(--surface-2)] lg:hidden"
             style={{ color: "var(--text-muted)" }}
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Desktop collapse toggle */}
+          <button
+            type="button"
+            title="تصغير"
+            onClick={onToggleCollapse}
+            className={cn(
+              "hidden h-8 w-8 shrink-0 items-center justify-center rounded-md transition-all lg:flex",
+              "hover:bg-[var(--surface-2)]",
+              collapsed && "lg:hidden"
+            )}
+            style={{ color: "var(--text-muted)" }}
+          >
+            <ChevronLeft className="h-[18px] w-[18px]" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
-          {navItems.map((item, i) => {
+        {/* ── Navigation ─────────────────────── */}
+        <nav
+          className={cn(
+            "flex flex-1 flex-col overflow-y-auto py-2",
+            collapsed ? "lg:px-2 px-3" : "px-3"
+          )}
+        >
+          {navItems.map((item) => {
             const isActive =
               item.href === "/"
                 ? pathname === "/"
                 : pathname.startsWith(item.href);
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={onClose}
-                style={{
-                  transitionDelay: open ? `${50 + i * 30}ms` : "0ms",
-                  ...(isActive ? {
-                    background: "var(--accent-soft)",
-                    color: "var(--primary)",
-                  } : {
-                    color: "var(--text-secondary)",
-                  }),
-                }}
+                title={collapsed ? item.label : undefined}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium transition-all duration-200",
-                  !isActive && "hover:text-foreground",
-                  open ? "translate-x-0 opacity-100" : "lg:translate-x-0 lg:opacity-100"
+                  "group mt-1 flex items-center gap-3 rounded-md px-3 py-[9px]",
+                  "text-[13.5px] font-medium transition-colors duration-150",
+                  collapsed && "lg:justify-center lg:px-0",
+                  isActive
+                    ? "text-[var(--primary)]"
+                    : "hover:bg-[var(--surface-2)]"
                 )}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--surface-2)"; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "transparent"; }}
+                style={
+                  isActive
+                    ? {
+                        background: "rgba(115,103,240,0.12)",
+                        color: "var(--primary)",
+                      }
+                    : { color: "var(--text-secondary)" }
+                }
               >
-                {/* Active indicator bar */}
-                {isActive && (
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[3px] h-6 rounded-full" style={{ background: "var(--gradient-brand)" }} />
-                )}
-                <item.icon className="h-[18px] w-[18px]" />
-                {item.label}
+                <item.icon
+                  className={cn(
+                    "shrink-0 transition-all duration-300",
+                    isActive ? "opacity-100" : "opacity-70 group-hover:opacity-100",
+                    collapsed ? "lg:h-5 lg:w-5 h-[18px] w-[18px]" : "h-[18px] w-[18px]"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "truncate transition-[max-width,opacity] duration-300",
+                    collapsed ? "lg:max-w-0 lg:opacity-0 lg:overflow-hidden" : "max-w-full opacity-100"
+                  )}
+                >
+                  {item.label}
+                </span>
               </Link>
             );
           })}
         </nav>
 
-        {/* Footer */}
-        <div className="shrink-0 p-4" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-          <div className="text-center text-xs" style={{ color: "var(--text-muted)" }}>
-            <p className="font-medium">{settings.businessName}</p>
-            <p className="mt-0.5">{settings.address}</p>
-          </div>
+        {/* ── Footer ─────────────────────────── */}
+        <div style={{ borderTop: "1px solid var(--border-subtle)" }}>
+          {collapsed ? (
+            /* Expand button when icon-only mode */
+            <div className="hidden lg:flex px-2 py-3">
+              <button
+                type="button"
+                title="توسيع"
+                onClick={onToggleCollapse}
+                className="flex h-9 w-full items-center justify-center rounded-md transition-colors hover:bg-[var(--surface-2)]"
+                style={{ color: "var(--text-muted)" }}
+              >
+                <ChevronLeft className="h-4 w-4 rotate-180" />
+              </button>
+            </div>
+          ) : (
+            <div className="px-5 py-3">
+              <p
+                className="truncate text-[11px] font-medium"
+                style={{ color: "var(--text-muted)" }}
+              >
+                {settings.businessName}
+              </p>
+              {settings.address && (
+                <p
+                  className="mt-0.5 truncate text-[11px]"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  {settings.address}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </aside>
     </>

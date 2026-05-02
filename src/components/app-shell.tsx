@@ -50,6 +50,7 @@ function getPageInfo(pathname: string) {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -57,7 +58,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
   const { settings, products, invoices, connectionStatus } = useStore();
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved === "true") setCollapsed(true);
+  }, []);
+
+  const handleToggleCollapse = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  };
+
   const page = getPageInfo(pathname);
   const PageIcon = page.icon;
 
@@ -83,162 +97,241 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--ground)" }}>
-      <AppSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AppSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        collapsed={collapsed}
+        onToggleCollapse={handleToggleCollapse}
+      />
 
-      {/* Main content */}
-      <div className="lg:mr-[260px]">
-        {/* Header — glassmorphic with gradient accent line */}
-        <header className="sticky top-0 z-30 glass">
-          {/* Scroll progress bar */}
-          <motion.div
-            className="h-[2px] origin-right"
-            style={{
-              scaleX,
-              background: "var(--gradient-brand)",
-            }}
-          />
-          <div className="flex h-[66px] items-center justify-between px-3 sm:px-5 md:px-7 lg:px-8">
-            {/* Right side: menu button */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:text-foreground lg:hidden"
-                style={{ background: "var(--surface-2)" }}
-              >
-                <Menu className="h-5 w-5" />
-              </button>
+      {/* Main content — offset right for the sidebar */}
+      <div
+        className="transition-[margin] duration-300"
+        style={{ marginRight: collapsed ? 80 : 260 }}
+      >
+        {/* Floating navbar */}
+        <div className="sticky top-0 z-30 px-5 pt-4">
+          {/* Scroll progress bar inside the navbar card */}
+          <div className="relative overflow-hidden rounded-xl shadow-sm" style={{
+            background: "var(--surface-1)",
+            border: "1px solid var(--border-subtle)",
+          }}>
+            <motion.div
+              className="absolute top-0 right-0 left-0 h-[2px] origin-right"
+              style={{ scaleX, background: "var(--gradient-brand)" }}
+            />
 
-              {/* Desktop: breadcrumb */}
-              <div className="hidden items-center gap-2.5 text-sm lg:flex">
-                <span style={{ color: "var(--text-muted)" }}>{settings.businessName}</span>
-                <span style={{ color: "var(--border-strong)" }}>/</span>
-                <div className="flex items-center gap-2">
-                  <PageIcon className="h-4 w-4" style={{ color: "var(--primary)" }} />
-                  <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{page.title}</span>
+            <div className="flex h-[54px] items-center justify-between px-4">
+              {/* Right side: mobile menu + breadcrumb */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSidebarOpen(true)}
+                  title="فتح القائمة"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface-2)] lg:hidden"
+                  style={{ color: "var(--text-muted)" }}
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+
+                {/* Desktop breadcrumb */}
+                <div className="hidden items-center gap-2 text-sm lg:flex">
+                  <span style={{ color: "var(--text-muted)" }}>
+                    {settings.businessName}
+                  </span>
+                  <span style={{ color: "var(--border-strong)" }}>/</span>
+                  <div className="flex items-center gap-1.5">
+                    <PageIcon className="h-4 w-4" style={{ color: "var(--primary)" }} />
+                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
+                      {page.title}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Center: logo (mobile only) */}
-            <div className="lg:hidden">
-              {settings.logo ? (
-                <img src={settings.logo} alt="" className="h-11 w-11 rounded-xl object-cover" />
-              ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl avatar-gradient">
-                  <Printer className="h-4.5 w-4.5" />
-                </div>
-              )}
-            </div>
-
-            {/* Left side: actions */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Command palette trigger */}
-              <CommandPalette />
-
-              {/* Theme toggle */}
-              {mounted && (
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:text-foreground"
-                  style={{ color: "var(--text-muted)" }}
-                  title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
-                >
-                  {theme === "dark" ? (
-                    <motion.div initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                      <Sun className="h-[18px] w-[18px]" />
-                    </motion.div>
-                  ) : (
-                    <motion.div initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                      <Moon className="h-[18px] w-[18px]" />
-                    </motion.div>
-                  )}
-                </button>
-              )}
-
-              {/* Notification bell */}
-              <div ref={notifRef} className="relative">
-                <button
-                  onClick={() => setNotifOpen(!notifOpen)}
-                  className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-colors hover:text-foreground"
-                  style={{ color: "var(--text-muted)", background: notifOpen ? "var(--surface-3)" : "transparent" }}
-                >
-                  <Bell className={`h-[18px] w-[18px] ${alertCount > 0 && !notifOpen ? "bell-ring" : ""}`} />
-                  {alertCount > 0 && (
-                    <span className="absolute top-1 left-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-bold text-white" style={{ background: "var(--red-500)" }}>
-                      {alertCount > 9 ? "+9" : alertCount}
-                    </span>
-                  )}
-                </button>
-
-                {notifOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-2xl border dropdown-enter sm:w-80" style={{ background: "var(--surface-1)", borderColor: "var(--glass-border)", boxShadow: "var(--shadow-lg)" }} dir="rtl">
-                    <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                      <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>التنبيهات</h3>
-                      {alertCount > 0 && (
-                        <span className="badge-danger rounded-full px-2 py-0.5 text-xs font-bold">{alertCount}</span>
-                      )}
-                    </div>
-                    <div className="max-h-72 overflow-y-auto sm:max-h-80">
-                      {alertCount === 0 ? (
-                        <div className="flex flex-col items-center py-8" style={{ color: "var(--text-muted)" }}>
-                          <Bell className="mb-2 h-8 w-8 opacity-20" />
-                          <p className="text-sm">لا توجد تنبيهات</p>
-                        </div>
-                      ) : (
-                        <div className="p-2 space-y-1">
-                          {lowStock.slice(0, 5).map((p) => (
-                            <Link key={p.id} href="/inventory" onClick={() => setNotifOpen(false)}
-                              className="flex items-center gap-3 rounded-xl p-2.5 transition-colors sm:p-3"
-                              style={{ color: "var(--text-primary)" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "var(--surface-2)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                            >
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--warning-soft)", color: "var(--amber-500)" }}>
-                                <AlertTriangle className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{p.name}</p>
-                                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                                  المخزون: {p.stock} {p.unit} (الحد الأدنى: {p.minStock})
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                          {unpaidInvoices.slice(0, 5).map((inv) => (
-                            <Link key={inv.id} href={`/invoices/${inv.id}`} onClick={() => setNotifOpen(false)}
-                              className="flex items-center gap-3 rounded-xl p-2.5 transition-colors sm:p-3"
-                              style={{ color: "var(--text-primary)" }}
-                              onMouseEnter={e => (e.currentTarget.style.background = "var(--surface-2)")}
-                              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                            >
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: "var(--info-soft)", color: "var(--blue-500)" }}>
-                                <DollarSign className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium truncate">{inv.invoiceNumber}</p>
-                                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-                                  {inv.clientName} · {formatCurrency(inv.total)}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+              {/* Center: logo (mobile only) */}
+              <div className="lg:hidden">
+                {settings.logo ? (
+                  <img
+                    src={settings.logo}
+                    alt=""
+                    className="h-8 w-8 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg avatar-gradient">
+                    <Printer className="h-4 w-4 text-white" />
                   </div>
                 )}
               </div>
+
+              {/* Left side: actions */}
+              <div className="flex items-center gap-1">
+                <CommandPalette />
+
+                {/* Theme toggle */}
+                {mounted && (
+                  <button
+                    type="button"
+                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                    title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface-2)]"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {theme === "dark" ? (
+                      <motion.div
+                        initial={{ rotate: -90, scale: 0 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <Sun className="h-[18px] w-[18px]" />
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        initial={{ rotate: 90, scale: 0 }}
+                        animate={{ rotate: 0, scale: 1 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        <Moon className="h-[18px] w-[18px]" />
+                      </motion.div>
+                    )}
+                  </button>
+                )}
+
+                {/* Notification bell */}
+                <div ref={notifRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setNotifOpen(!notifOpen)}
+                    title="التنبيهات"
+                    className="relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface-2)]"
+                    style={{
+                      color: "var(--text-muted)",
+                      background: notifOpen ? "var(--surface-2)" : undefined,
+                    }}
+                  >
+                    <Bell
+                      className={`h-[18px] w-[18px] ${alertCount > 0 && !notifOpen ? "bell-ring" : ""}`}
+                    />
+                    {alertCount > 0 && (
+                      <span
+                        className="absolute top-1 left-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[9px] font-bold text-white"
+                        style={{ background: "var(--red-500)" }}
+                      >
+                        {alertCount > 9 ? "+9" : alertCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {notifOpen && (
+                    <div
+                      className="absolute left-0 top-full z-50 mt-2 w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-2xl border sm:w-80"
+                      style={{
+                        background: "var(--surface-1)",
+                        borderColor: "var(--glass-border)",
+                        boxShadow: "var(--shadow-lg)",
+                      }}
+                      dir="rtl"
+                    >
+                      <div
+                        className="flex items-center justify-between px-4 py-3"
+                        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+                      >
+                        <h3 className="text-sm font-bold" style={{ color: "var(--text-primary)" }}>
+                          التنبيهات
+                        </h3>
+                        {alertCount > 0 && (
+                          <span className="badge-danger rounded-full px-2 py-0.5 text-xs font-bold">
+                            {alertCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="max-h-72 overflow-y-auto sm:max-h-80">
+                        {alertCount === 0 ? (
+                          <div
+                            className="flex flex-col items-center py-8"
+                            style={{ color: "var(--text-muted)" }}
+                          >
+                            <Bell className="mb-2 h-8 w-8 opacity-20" />
+                            <p className="text-sm">لا توجد تنبيهات</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1 p-2">
+                            {lowStock.slice(0, 5).map((p) => (
+                              <Link
+                                key={p.id}
+                                href="/inventory"
+                                onClick={() => setNotifOpen(false)}
+                                className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-[var(--surface-2)] sm:p-3"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                <div
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                                  style={{
+                                    background: "var(--warning-soft)",
+                                    color: "var(--amber-500)",
+                                  }}
+                                >
+                                  <AlertTriangle className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium">{p.name}</p>
+                                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                                    المخزون: {p.stock} {p.unit} (الحد الأدنى: {p.minStock})
+                                  </p>
+                                </div>
+                              </Link>
+                            ))}
+                            {unpaidInvoices.slice(0, 5).map((inv) => (
+                              <Link
+                                key={inv.id}
+                                href={`/invoices/${inv.id}`}
+                                onClick={() => setNotifOpen(false)}
+                                className="flex items-center gap-3 rounded-xl p-2.5 transition-colors hover:bg-[var(--surface-2)] sm:p-3"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                <div
+                                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                                  style={{
+                                    background: "var(--info-soft)",
+                                    color: "var(--blue-500)",
+                                  }}
+                                >
+                                  <DollarSign className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-medium">
+                                    {inv.invoiceNumber}
+                                  </p>
+                                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                                    {inv.clientName} · {formatCurrency(inv.total)}
+                                  </p>
+                                </div>
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </header>
+        </div>
 
+        {/* Offline banner */}
         {connectionStatus === "offline" && (
-          <div className="px-4 py-2 text-center text-sm font-medium" style={{ background: "var(--warning-soft)", color: "var(--amber-500)" }}>
+          <div
+            className="mx-5 mt-3 rounded-xl px-4 py-2 text-center text-sm font-medium"
+            style={{ background: "var(--warning-soft)", color: "var(--amber-500)" }}
+          >
             <AlertTriangle className="inline h-4 w-4 ml-1" />
             غير متصل بقاعدة البيانات — البيانات المعروضة قد تكون قديمة
           </div>
         )}
-        <main className="p-4 md:p-6 lg:p-8">
+
+        {/* Page content */}
+        <main className="p-5 md:p-6 lg:p-7">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

@@ -84,38 +84,38 @@
   --gradient-berry:      linear-gradient(135deg, #ec4899, #8b5cf6, #6366f1);
   --gradient-fire:       linear-gradient(135deg, #f97316, #ef4444, #ec4899);
   --gradient-glass-edge: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-  --gradient-brand:      linear-gradient(135deg, var(--blue-600), var(--purple-500));
+  --gradient-brand:      linear-gradient(135deg, #7367F0, #9E95F5);
 }
 
 /* ── Layer 2: Light Mode (Default) ────────────────── */
 :root {
-  /* Surfaces — sky blue tinted whites */
-  --ground:     #F0F5FF;
+  /* Surfaces — Vuexy clean gray */
+  --ground:     #F8F7FA;
   --surface-1:  #ffffff;
-  --surface-2:  #F0F5FF;
-  --surface-3:  #E8EEF8;
-  --surface-4:  #DBEAFE;
+  --surface-2:  #F8F7FA;
+  --surface-3:  #F0EFF5;
+  --surface-4:  #E8E6F2;
 
-  /* Borders — blue-tinted */
-  --border-subtle: rgba(37, 99, 235, 0.06);
-  --border-default: rgba(37, 99, 235, 0.1);
-  --border-strong: rgba(37, 99, 235, 0.18);
-  --border-glow:   rgba(37, 99, 235, 0.15);
+  /* Borders — neutral */
+  --border-subtle: rgba(47, 43, 61, 0.08);
+  --border-default: rgba(47, 43, 61, 0.12);
+  --border-strong: rgba(47, 43, 61, 0.22);
+  --border-glow:   rgba(115, 103, 240, 0.2);
 
   /* Text */
-  --text-primary:   #1E293B;
-  --text-secondary: #475569;
-  --text-muted:     #94A3B8;
+  --text-primary:   #2F2B3D;
+  --text-secondary: #655E7B;
+  --text-muted:     #9C9BA6;
 
-  /* Accent — vibrant blue primary */
-  --accent:         var(--blue-600);
-  --accent-hover:   var(--blue-500);
-  --accent-soft:    rgba(37, 99, 235, 0.08);
+  /* Accent — Vuexy purple primary */
+  --accent:         #7367F0;
+  --accent-hover:   #8F85F3;
+  --accent-soft:    rgba(115, 103, 240, 0.12);
   --accent-glow:    none;
 
-  /* Action accent — orange CTA for contrast */
-  --action:         #EA580C;
-  --action-soft:    rgba(234, 88, 12, 0.1);
+  /* Action accent */
+  --action:         #FF9F43;
+  --action-soft:    rgba(255, 159, 67, 0.1);
 
   /* Semantic Colors */
   --success:      var(--green-500);
@@ -157,7 +157,7 @@
   --card-foreground: var(--text-primary);
   --popover: var(--surface-1);
   --popover-foreground: var(--text-primary);
-  --primary: var(--blue-600);
+  --primary: #7367F0;
   --primary-foreground: #ffffff;
   --secondary: var(--surface-3);
   --secondary-foreground: var(--text-primary);
@@ -165,53 +165,52 @@
   --muted-foreground: var(--text-muted);
   --accent: var(--surface-3);
   --accent-foreground: var(--text-primary);
-  --destructive: var(--red-500);
+  --destructive: #FF4C51;
   --border: var(--border-default);
   --input: var(--border-default);
-  --ring: var(--blue-600);
-  --chart-1: var(--blue-500);
-  --chart-2: var(--teal-600);
-  --chart-3: var(--purple-500);
-  --chart-4: var(--pink-500);
-  --chart-5: var(--amber-500);
-  --radius: 0.75rem;
+  --ring: #7367F0;
+  --chart-1: #7367F0;
+  --chart-2: #28C76F;
+  --chart-3: #00BAD1;
+  --chart-4: #FF9F43;
+  --chart-5: #FF4C51;
+  --radius: 0.5rem;
   --sidebar: var(--surface-1);
   --sidebar-foreground: var(--text-primary);
-  --sidebar-primary: var(--blue-600);
+  --sidebar-primary: #7367F0;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: var(--surface-3);
   --sidebar-accent-foreground: var(--text-primary);
   --sidebar-border: var(--border-default);
-  --sidebar-ring: var(--blue-600);
+  --sidebar-ring: #7367F0;
 }
 
 /* ── Layer 2: Dark Mode ───────────────────────────── */
 .dark, [data-theme="dark"] {
-  /* Deeper, richer ground — less purple, more true dark */
-  --ground:     #08090e;
-  --surface-1:  #0d1117;
-  --surface-2:  #111922;
-  --surface-3:  #16202e;
-  --surface-4:  #1c2a3d;
+  /* Vuexy dark palette */
+  --ground:     #25293C;
+  --surface-1:  #2F3349;
+  --surface-2:  #3A3D5C;
+  --surface-3:  #444968;
+  --surface-4:  #4E5475;
 
-  /* Softer borders — less blue tint, more neutral */
-  --border-subtle: rgba(148, 163, 184, 0.06);
-  --border-default: rgba(148, 163, 184, 0.12);
-  --border-strong: rgba(148, 163, 184, 0.2);
-  --border-glow:   rgba(96, 165, 250, 0.2);
+  /* Borders */
+  --border-subtle: rgba(231, 227, 252, 0.06);
+  --border-default: rgba(231, 227, 252, 0.12);
+  --border-strong: rgba(231, 227, 252, 0.22);
+  --border-glow:   rgba(115, 103, 240, 0.3);
 
-  /* Higher contrast text */
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted:     #64748b;
+  /* Text */
+  --text-primary:   #E7E3FC;
+  --text-secondary: #B0AECA;
+  --text-muted:     #7983BB;
 
-  --accent:         var(--blue-400);
-  --accent-hover:   var(--blue-300);
-  --accent-soft:    rgba(96, 165, 250, 0.12);
-  /* Reduced glow — less eye strain */
-  --accent-glow:    0 0 16px rgba(96, 165, 250, 0.15), 0 0 32px rgba(139, 92, 246, 0.06);
+  --accent:         #8F85F3;
+  --accent-hover:   #A39CF5;
+  --accent-soft:    rgba(115, 103, 240, 0.16);
+  --accent-glow:    none;
 
-  --gradient-brand: linear-gradient(135deg, var(--blue-400), var(--purple-400));
+  --gradient-brand: linear-gradient(135deg, #7367F0, #9E95F5);
 
   /* Slightly more saturated soft backgrounds for better visibility */
   --success-soft: rgba(34, 197, 94, 0.1);
