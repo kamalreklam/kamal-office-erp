@@ -25,6 +25,7 @@ import {
   Trash2,
   AlertCircle
 } from 'lucide-react'
+import confetti from 'canvas-confetti'
 
 // ─── SaaS Status Config ──────────────────────────────────────────────────
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string; border: string }> = {
@@ -200,6 +201,15 @@ export default function InvoiceDetailPage({
     const newStatus = cycle[invoice.status] || 'غير مدفوعة'
     updateInvoiceStatus(invoice.id, newStatus)
     toast.success(`تم تغيير حالة الدفع إلى: ${newStatus}`)
+    
+    if (newStatus === 'مدفوعة') {
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#4f46e5', '#ec4899', '#f59e0b', '#10b981']
+      })
+    }
   }
 
   function handleDeleteInvoice() {

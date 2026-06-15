@@ -57,6 +57,12 @@
   --z-footer: var(--footer-z-index);
   --z-customizer: var(--customizer-z-index);
   --z-drawer: var(--drawer-z-index);
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
 }
 
 :root {
@@ -244,4 +250,42 @@ code {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Force English/Arabic Digits (0-9) */
+.force-english-digits {
+  direction: ltr !important;
+  unicode-bidi: bidi-override !important;
+  font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji' !important;
+}
+
+@media print {
+  /* A4 optimizations */
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+  
+  body {
+    background: white !important;
+    font-size: 12pt !important;
+    color: black !important;
+  }
+
+  /* Hide UI elements not meant for printing */
+  .no-print, nav, header, footer, button, .sidebar {
+    display: none !important;
+  }
+
+  /* Ensure background colors and shadows are removed for clean printing */
+  * {
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Prevent page breaks inside important components */
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
 }

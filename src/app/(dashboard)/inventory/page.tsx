@@ -10,7 +10,9 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { exportCSV } from '@/lib/export'
 import { DateRangeExportButton, type DateRange } from '@/components/date-range-picker'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { InlineEdit } from '@/components/inline-edit'
+import { CopyToClipboard } from '@/components/copy-to-clipboard'
 import { EmptyState } from '@/components/empty-state'
 import {
   Plus,
@@ -86,9 +88,9 @@ export default function InventoryPage() {
     
     switch (sortBy) {
       case 'price-asc':
-        return [...list].sort((a, b) => a.price - b.price)
+        return [...list].sort((a, b) => a.sellingPrice - b.sellingPrice)
       case 'price-desc':
-        return [...list].sort((a, b) => b.price - a.price)
+        return [...list].sort((a, b) => b.sellingPrice - a.sellingPrice)
       case 'stock-asc':
         return [...list].sort((a, b) => a.stock - b.stock)
       case 'stock-desc':
@@ -101,7 +103,7 @@ export default function InventoryPage() {
   }, [products, debouncedSearch, activeCategory, sortBy])
 
   const lowStock = useMemo(() => getLowStockProducts(products), [products])
-  const totalValue = filtered.reduce((sum, p) => sum + p.price * p.stock, 0)
+  const totalValue = filtered.reduce((sum, p) => sum + p.costPrice * p.stock, 0)
   const totalUnits = filtered.reduce((sum, p) => sum + p.stock, 0)
 
   // Handlers
@@ -112,7 +114,8 @@ export default function InventoryPage() {
       category: product.category,
       sku: product.sku,
       description: product.description,
-      price: product.price,
+      costPrice: product.costPrice,
+      sellingPrice: product.sellingPrice,
       stock: product.stock,
       minStock: product.minStock,
       unit: product.unit,
@@ -141,7 +144,7 @@ export default function InventoryPage() {
       `📋 *قائمة المنتجات الأهم:*`,
     ]
     filtered.slice(0, 15).forEach((p, i) => {
-      const val = p.price * p.stock
+      const val = p.costPrice * p.stock
       const warn = p.stock <= p.minStock ? ' ⚠️ (منخفض)' : ''
       lines.push(`${i + 1}. ${p.name}${warn} | الكمية: ${p.stock} ${p.unit} | القيمة: ${formatCurrency(val)}`)
     })
@@ -197,8 +200,8 @@ export default function InventoryPage() {
               onClick={() => {
                 exportCSV(
                   'inventory',
-                  ['الاسم', 'الكود', 'الفئة', 'السعر', 'المخزون', 'الوحدة', 'الحد الأدنى'],
-                  filtered.map(p => [p.name, p.sku, p.category, String(p.price), String(p.stock), p.unit, String(p.minStock)])
+                  ['الاسم', 'الكود', 'الفئة', 'سعر التكلفة', 'سعر المبيع', 'المخزون', 'الوحدة', 'الحد الأدنى'],
+                  filtered.map(p => [p.name, p.sku, p.category, String(p.costPrice), String(p.sellingPrice), String(p.stock), p.unit, String(p.minStock)])
                 )
                 toast.success('تم تصدير المخزون بنجاح')
               }}
@@ -236,10 +239,11 @@ export default function InventoryPage() {
 
       {/* Low Stock Alerts */}
       {lowStock.length > 0 && (
-        <div className="bg-rose-50 border border-rose-200 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-sm">
+        <div className="bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-[0_0_25px_rgba(244,63,94,0.15)] ring-1 ring-rose-200/50">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white text-rose-500 flex items-center justify-center shrink-0 shadow-sm border border-rose-100">
-              <AlertTriangle className="size-6" />
+            <div className="w-12 h-12 rounded-2xl bg-white text-rose-500 flex items-center justify-center shrink-0 shadow-sm border border-rose-100 relative">
+              <div className="absolute inset-0 rounded-2xl bg-rose-400 opacity-20 animate-ping"></div>
+              <AlertTriangle className="size-6 relative z-10" />
             </div>
             <div>
               <h4 className="font-black text-rose-800 text-lg">{lowStock.length} منتجات في حالة عجز أو مخزون منخفض</h4>
@@ -388,7 +392,9 @@ export default function InventoryPage() {
       {/* Product Display Area */}
       {filtered.length === 0 ? (
         <div className="bg-white rounded-[2rem] p-12 border border-slate-100 shadow-sm mt-6 flex flex-col items-center justify-center text-center">
-          <Package className="size-16 text-slate-200 mb-4" />
+          <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}>
+            <Package className="size-16 text-slate-200 mb-4" />
+          </motion.div>
           <h3 className="text-xl font-black text-slate-900 mb-2">لا توجد منتجات مطابقة للمخزون</h3>
           <p className="text-slate-500 font-bold mb-6">جرّب البحث بكلمات أخرى أو اختر فئة بديلة</p>
           <Link href="/inventory/new" className="h-14 px-8 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2">
@@ -403,12 +409,13 @@ export default function InventoryPage() {
           <div className="hidden md:block bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-right">
-                <thead className="text-xs font-black text-slate-400 uppercase bg-slate-50">
+                <thead className="sticky top-0 z-10 text-xs font-black text-slate-400 uppercase bg-slate-50/80 backdrop-blur-md shadow-sm">
                   <tr>
                     <th className="px-6 py-4">#</th>
                     <th className="px-6 py-4">اسم الصنف</th>
                     <th className="px-6 py-4">الفئة</th>
-                    <th className="px-6 py-4">السعر</th>
+                    <th className="px-6 py-4">التكلفة</th>
+                    <th className="px-6 py-4">المبيع</th>
                     <th className="px-6 py-4">المخزون المتوفر</th>
                     <th className="px-6 py-4">القيمة الإجمالية</th>
                     <th className="px-6 py-4 text-center">إجراءات</th>
@@ -419,13 +426,15 @@ export default function InventoryPage() {
                   variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
                 >
                   {filtered.map((product, idx) => {
-                    const isLow = product.stock <= product.minStock
+                    const isEmpty = product.stock === 0
+                    const isLow = product.stock > 0 && product.stock <= product.minStock
                     const img = getProductImage(product.id)
                     return (
                       <motion.tr 
                         variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
                         key={product.id} 
-                        className={`border-b border-slate-50 hover:bg-slate-50 transition-colors group ${isLow ? 'bg-rose-50/40 hover:bg-rose-50' : ''}`}
+                        onDoubleClick={() => router.push(`/inventory/${product.id}/edit`)}
+                        className={`border-b border-slate-50 transition-colors group cursor-pointer ${isEmpty ? 'grayscale opacity-60 hover:opacity-80 bg-slate-50/50' : isLow ? 'bg-rose-50/40 hover:bg-rose-50/80 shadow-[inset_4px_0_0_rgba(244,63,94,0.5)]' : 'hover:bg-slate-50'}`}
                       >
                         <td className="px-6 py-4 font-bold text-slate-400">{idx + 1}</td>
                         <td className="px-6 py-4">
@@ -439,7 +448,7 @@ export default function InventoryPage() {
                             )}
                             <div>
                               <span className="font-bold text-slate-900 block">{product.name}</span>
-                              <span className="font-mono text-xs font-bold text-slate-400 block mt-0.5">{product.sku}</span>
+                              <div className="font-mono text-xs font-bold text-slate-400 mt-0.5"><CopyToClipboard text={product.sku}>{product.sku}</CopyToClipboard></div>
                             </div>
                           </div>
                         </td>
@@ -448,10 +457,18 @@ export default function InventoryPage() {
                         </td>
                         <td className="px-6 py-4 font-mono font-bold text-slate-700">
                           <InlineEdit
-                            value={product.price}
+                            value={product.costPrice}
                             type="currency"
                             format={formatCurrency}
-                            onSave={v => updateProduct(product.id, { price: v })}
+                            onSave={v => updateProduct(product.id, { costPrice: v })}
+                          />
+                        </td>
+                        <td className="px-6 py-4 font-mono font-bold text-slate-700">
+                          <InlineEdit
+                            value={product.sellingPrice}
+                            type="currency"
+                            format={formatCurrency}
+                            onSave={v => updateProduct(product.id, { sellingPrice: v })}
                           />
                         </td>
                         <td className="px-6 py-4">
@@ -480,7 +497,7 @@ export default function InventoryPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 font-mono font-black text-slate-900">
-                          {formatCurrency(product.price * product.stock)}
+                          {formatCurrency(product.costPrice * product.stock)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -522,13 +539,15 @@ export default function InventoryPage() {
             className="block md:hidden space-y-4"
           >
             {filtered.map(product => {
-              const isLow = product.stock <= product.minStock
+              const isEmpty = product.stock === 0
+              const isLow = product.stock > 0 && product.stock <= product.minStock
               const img = getProductImage(product.id)
               return (
                 <motion.div 
                   variants={{ hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } }}
                   key={product.id}
-                  className={`bg-white rounded-[2rem] border ${isLow ? 'border-rose-200 shadow-[0_4px_20px_-4px_rgba(244,63,94,0.1)]' : 'border-slate-100 shadow-sm'} p-5`}
+                  onDoubleClick={() => router.push(`/inventory/${product.id}/edit`)}
+                  className={`bg-white rounded-[2rem] border p-5 cursor-pointer ${isEmpty ? 'grayscale opacity-75 border-slate-200' : isLow ? 'border-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.15)] ring-1 ring-rose-500/20' : 'border-slate-100 shadow-sm'}`}
                 >
                   <div className="flex gap-4">
                     {img ? (
@@ -545,9 +564,10 @@ export default function InventoryPage() {
                       </div>
                       <div className="flex items-center gap-2 mt-2">
                         <CategoryBadge category={product.category} />
-                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-100 text-rose-700">منخفض المخزون</span>}
+                        {isEmpty && <span className="inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-slate-200 text-slate-600">نفذت الكمية</span>}
+                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-100 text-rose-700 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]">منخفض المخزون</span>}
                       </div>
-                      <p className="font-mono text-xs font-bold text-slate-400 mt-2">{product.sku}</p>
+                      <div className="font-mono text-xs font-bold text-slate-400 mt-2"><CopyToClipboard text={product.sku}>{product.sku}</CopyToClipboard></div>
                     </div>
                   </div>
 
@@ -578,7 +598,7 @@ export default function InventoryPage() {
 
                     <div className="text-left bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100">
                       <span className="text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">الإجمالي</span>
-                      <span className="font-mono text-lg font-black text-indigo-600">{formatCurrency(product.price * product.stock)}</span>
+                      <span className="font-mono text-lg font-black text-indigo-600">{formatCurrency(product.costPrice * product.stock)}</span>
                     </div>
                   </div>
 
@@ -635,7 +655,7 @@ export default function InventoryPage() {
                     </div>
                   )}
                   {isLow && (
-                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-500 text-white shadow-sm">منخفض</span>
+                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-500 text-white shadow-sm animate-pulse">منخفض</span>
                   )}
                 </div>
 
@@ -654,13 +674,28 @@ export default function InventoryPage() {
                 <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-50">
                   <div>
                     <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">السعر</span>
-                    <span className="font-mono text-sm font-black text-indigo-600">{formatCurrency(product.price)}</span>
+                    <span className="font-mono text-sm font-black text-indigo-600">{formatCurrency(product.sellingPrice)}</span>
                   </div>
-                  <div className="text-left bg-slate-50 rounded-xl px-2 py-1">
-                    <span className="text-[9px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">المتوفر</span>
-                    <span className={`font-mono text-sm font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
-                      {product.stock} <span className="text-[9px] font-bold text-slate-400">{product.unit}</span>
-                    </span>
+                  <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5 border border-slate-100">
+                    <button
+                      onClick={(e) => { e.preventDefault(); adjustStock(product.id, -1) }}
+                      className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md p-0.5 transition-colors"
+                      title="إنقاص المخزون"
+                    >
+                      <MinusCircle className="size-4" />
+                    </button>
+                    <div className="text-center min-w-[28px]">
+                      <span className={`font-mono text-sm font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
+                        {product.stock}
+                      </span>
+                    </div>
+                    <button
+                      onClick={(e) => { e.preventDefault(); adjustStock(product.id, 1) }}
+                      className="text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-md p-0.5 transition-colors"
+                      title="زيادة المخزون"
+                    >
+                      <PlusCircle className="size-4" />
+                    </button>
                   </div>
                 </div>
 

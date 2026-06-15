@@ -33,7 +33,17 @@ export default function CustomLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [timeBg, setTimeBg] = useState('bg-gradient-to-br from-slate-50 to-indigo-50/10')
   const drawerRef = useRef<HTMLDivElement>(null)
+
+  // Dynamic Time-based Backgrounds
+  useEffect(() => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) setTimeBg('bg-gradient-to-br from-amber-50/50 via-white to-orange-50/30') // Morning
+    else if (hour >= 12 && hour < 17) setTimeBg('bg-gradient-to-br from-sky-50/50 via-white to-indigo-50/30') // Afternoon
+    else if (hour >= 17 && hour < 20) setTimeBg('bg-gradient-to-br from-rose-50/50 via-white to-purple-50/30') // Evening
+    else setTimeBg('bg-gradient-to-br from-indigo-50/80 via-white to-slate-200/50') // Night (subtle tint)
+  }, [])
 
   // Persist collapsed state
   useEffect(() => {
@@ -144,7 +154,7 @@ export default function CustomLayout({ children }: { children: React.ReactNode }
         </aside>
 
         {/* ── MAIN AREA ──────────────────────────────────────────── */}
-        <main className="flex flex-col flex-1 min-w-0 min-h-screen">
+        <main className={cn("flex flex-col flex-1 min-w-0 min-h-screen transition-colors duration-1000", timeBg)}>
           {/* TopBar — passes hamburger props */}
           <TopBar onMenuClick={() => setMobileOpen(true)} />
 

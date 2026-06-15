@@ -9,6 +9,7 @@ import { useStore } from "@/lib/store";
 import { type OrderStatus } from "@/lib/data";
 import { toast } from "sonner";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { motion } from "framer-motion";
 import {
   Clock,
   Loader2,
@@ -463,9 +464,9 @@ function KanbanView({ orders, filtered, debouncedSearch, dateFrom, dateTo, rende
             <div className="p-4 overflow-y-auto hide-scrollbar flex-1">
               {statusOrders.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-slate-400">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
                     <ClipboardList className="size-8 text-slate-300" />
-                  </div>
+                  </motion.div>
                   <p className="font-bold text-sm">لا توجد طلبات</p>
                   <button
                     onClick={() => router.push("/orders/new")}
@@ -525,9 +526,9 @@ function ListView({ filtered, orders, statusFilter, setStatusFilter, allStatuses
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filtered.length === 0 ? (
           <div className="col-span-full bg-white rounded-[2.5rem] border border-slate-200/60 p-12 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
+            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
               <ClipboardList className="size-10 text-slate-300" />
-            </div>
+            </motion.div>
             <h3 className="text-xl font-black text-slate-900 mb-2">لا توجد طلبات مطابقة</h3>
             <p className="text-slate-500 font-bold">حاول تغيير معايير البحث أو إضافة طلب جديد.</p>
             <button

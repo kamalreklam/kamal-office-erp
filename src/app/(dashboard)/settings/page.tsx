@@ -60,6 +60,13 @@ export default function SettingsPage() {
     setHasChanges(true);
   }
 
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 4 && val.length <= 7) val = val.slice(0, 4) + " " + val.slice(4);
+    else if (val.length > 7) val = val.slice(0, 4) + " " + val.slice(4, 7) + " " + val.slice(7, 10);
+    handleChange("phone", val);
+  }
+
   function handleSave() {
     updateSettings(form);
     setHasChanges(false);
@@ -180,9 +187,9 @@ export default function SettingsPage() {
                       type="text"
                       dir="ltr"
                       value={form.phone}
-                      onChange={(e) => handleChange("phone", e.target.value)}
-                      placeholder="0912345678"
-                      className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold font-mono text-slate-900"
+                      onChange={handlePhoneChange}
+                      placeholder="0912 345 678"
+                      className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold font-mono text-slate-900 text-left"
                     />
                   </div>
                   <div>

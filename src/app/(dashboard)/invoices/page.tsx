@@ -9,10 +9,12 @@ import { formatCurrency, type Invoice } from '@/lib/data'
 import { toast } from 'sonner'
 import { exportCSV } from '@/lib/export'
 import { DateRangeExportButton, type DateRange } from '@/components/date-range-picker'
+import { AnimatedCounter } from "@/components/animated-counter"
+import { motion } from "framer-motion"
 import { EmptyState } from '@/components/empty-state'
 import {
   Plus, Search, Download, Trash2, CheckCircle2,
-  FileText, MessageCircle, X, TrendingUp, Calendar, ChevronDown, Clock, AlertCircle, Pencil, ArrowRight
+  FileText, MessageCircle, X, TrendingUp, Calendar, ChevronDown, Clock, AlertCircle, Pencil, ArrowRight, Copy
 } from 'lucide-react'
 
 // ─── SaaS Status Config ──────────────────────────────────────────────────
@@ -112,6 +114,26 @@ export default function InvoicesPage() {
     }
   }
 
+  function handleDuplicate(inv: Invoice) {
+    const snapshot = {
+      clientId: inv.clientId, clientName: inv.clientName, items: inv.items,
+      subtotal: inv.subtotal, discountType: inv.discountType, discountValue: inv.discountValue,
+      discountAmount: inv.discountAmount, taxAmount: inv.taxAmount, total: inv.total,
+      status: 'مسودة' as const, notes: inv.notes,
+    }
+    addInvoice(snapshot)
+    toast.success('تم إنشاء نسخة مسودة من الفاتورة')
+  }
+
+  function handleShare(inv: Invoice) {
+    const client = clients.find(c => c.id === inv.clientId)
+    const phone = client?.phone || ''
+    const emoji = inv.status === 'مدفوعة' ? '✅' : inv.status === 'غير مدفوعة' ? '🔴' : '🔶'
+    const text = `مرحباً ${inv.clientName}،\n\nمرفق تفاصيل الفاتورة رقم ${inv.invoiceNumber}\n💰 الإجمالي: ${formatCurrency(inv.total)}\nحالة الفاتورة: ${inv.status} ${emoji}\n\nشكراً لثقتكم بنا!`
+    const url = phone ? `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`
+    window.open(url, '_blank')
+  }
+
   function handleExport() {
     exportCSV('invoices',
       ['رقم الفاتورة', 'العميل', 'التاريخ', 'المنتجات', 'الإجمالي', 'الحالة'],
@@ -139,6 +161,26 @@ export default function InvoicesPage() {
     filtered.slice(0, 5).forEach((inv, i) => {
       const emoji = inv.status === 'مدفوعة' ? '✅' : inv.status === 'غير مدفوعة' ? '🔴' : '🔶'
       lines.push(`${i + 1}. ${inv.invoiceNumber} | ${inv.clientName} | ${emoji} ${settings.currencySymbol}${inv.total.toLocaleString('en-US')}`)
+    })
+    window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
+  }
+
+  function shareAllOverdue() {
+    const overdue = invoices.filter(i => i.status === 'غير مدفوعة')
+    if (overdue.length === 0) {
+      toast.success('لا توجد فواتير متأخرة الدفع حالياً')
+      return
+    }
+    const lines = [
+      `🚨 *تذكير بالفواتير المتأخرة*`,
+      `📅 التاريخ: ${new Date().toLocaleDateString('ar-SY', { numberingSystem: 'latn' })}`,
+      '',
+      `يوجد ${overdue.length} فاتورة غير مدفوعة بقيمة إجمالية ${settings.currencySymbol}${overdue.reduce((s, i) => s + i.total, 0).toLocaleString('en-US')}`,
+      '',
+      `تفاصيل المتأخرات:`
+    ]
+    overdue.forEach((inv, i) => {
+      lines.push(`${i + 1}. ${inv.invoiceNumber} - ${inv.clientName} - ${settings.currencySymbol}${inv.total.toLocaleString('en-US')}`)
     })
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
   }
@@ -181,7 +223,15 @@ export default function InvoicesPage() {
               onClick={shareWhatsAppSummary}
             >
               <MessageCircle className="size-5" />
-              <span className="hidden sm:inline">واتساب</span>
+              <span className="hidden sm:inline">ملخص واتساب</span>
+            </button>
+
+            <button
+              className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-amber-500 text-white border border-amber-600 font-bold hover:bg-amber-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+              onClick={shareAllOverdue}
+            >
+              <AlertCircle className="size-5" />
+              <span className="hidden sm:inline">متأخرات (واتساب)</span>
             </button>
 
             <DateRangeExportButton
@@ -214,7 +264,7 @@ export default function InvoicesPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">إجمالي الفواتير</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">{totalInvoices}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight"><AnimatedCounter value={totalInvoices} /></p>
             </div>
           </div>
 
@@ -224,7 +274,7 @@ export default function InvoicesPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">مبيعات محصلة</p>
-              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight">{formatCurrency(totalRevenue)}</p>
+              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight"><AnimatedCounter value={totalRevenue} format={formatCurrency} /></p>
             </div>
           </div>
 
@@ -234,7 +284,7 @@ export default function InvoicesPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">الرصيد المستحق</p>
-              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight">{formatCurrency(unpaidTotal)}</p>
+              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight"><AnimatedCounter value={unpaidTotal} format={formatCurrency} /></p>
             </div>
           </div>
 
@@ -244,7 +294,7 @@ export default function InvoicesPage() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">مسودات</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">{draftCount}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight"><AnimatedCounter value={draftCount} /></p>
             </div>
           </div>
         </div>
@@ -332,9 +382,9 @@ export default function InvoicesPage() {
         {/* Content Area */}
         {filtered.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-[2rem] py-24 px-6 text-center shadow-sm">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FileText className="size-10 text-slate-400" />
-            </div>
+            </motion.div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">لا توجد فواتير مطابقة</h3>
             <p className="mt-3 text-base font-medium text-slate-500 max-w-md mx-auto leading-relaxed">
               لم يتم العثور على أي فواتير تطابق معايير البحث والفلترة المحددة.
@@ -353,7 +403,7 @@ export default function InvoicesPage() {
             <div className="hidden md:block bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-right text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
+                  <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md border-b border-slate-100 text-slate-500 font-bold shadow-sm">
                     <tr>
                       <th className="px-6 py-4 rounded-tr-[2rem]">رقم الفاتورة</th>
                       <th className="px-6 py-4">العميل</th>
@@ -403,13 +453,25 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
-                            <StatusBadge status={inv.status} />
+                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black
+                              ${inv.status === 'مدفوعة' ? 'bg-emerald-100 text-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.2)]' :
+                                inv.status === 'غير مدفوعة' ? 'bg-rose-100 text-rose-700 shadow-[0_0_10px_rgba(244,63,94,0.2)]' :
+                                'bg-slate-100 text-slate-600'
+                              }`}>
+                              {inv.status}
+                            </span>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2" onClick={e => e.stopPropagation()}>
                             <button onClick={() => router.push(`/invoices/new?edit=${inv.id}`)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors" title="تعديل">
                               <Pencil className="size-5" />
+                            </button>
+                            <button onClick={() => handleDuplicate(inv)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="تكرار كمسودة">
+                              <Copy className="size-5" />
+                            </button>
+                            <button onClick={() => handleShare(inv)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-[#25D366] hover:bg-[#25D366]/10 transition-colors" title="مشاركة واتساب">
+                              <MessageCircle className="size-5" />
                             </button>
                             <button onClick={() => handleDownloadPDF(inv)} className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors" title="تحميل PDF">
                               <Download className="size-5" />
@@ -461,6 +523,12 @@ export default function InvoicesPage() {
                     </div>
                     
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => handleShare(inv)} className="h-10 w-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center transition-colors hover:bg-[#25D366]/10 hover:text-[#25D366]">
+                        <MessageCircle className="size-4" />
+                      </button>
+                      <button onClick={() => handleDuplicate(inv)} className="h-10 w-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center transition-colors hover:bg-emerald-50 hover:text-emerald-600">
+                        <Copy className="size-4" />
+                      </button>
                       <button onClick={() => router.push(`/invoices/new?edit=${inv.id}`)} className="h-10 w-10 rounded-xl bg-slate-50 text-slate-600 flex items-center justify-center transition-colors hover:bg-indigo-50 hover:text-indigo-600">
                         <Pencil className="size-4" />
                       </button>

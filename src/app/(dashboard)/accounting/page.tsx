@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/data";
@@ -37,6 +38,13 @@ export default function AccountingPage() {
   const { invoices, products, settings, clients, connectionStatus } = useStore();
   const currentYear = new Date().getFullYear().toString();
   const [selectedYear, setSelectedYear] = useState(currentYear);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const tabs = useMemo(() => [
+    { id: 'overview', label: 'الأرباح والخسائر' },
+    { id: 'receivables', label: 'المستحقات والأرصدة' },
+    ...(settings.taxEnabled ? [{ id: 'tax', label: 'الضريبة' }] : [])
+  ], [settings.taxEnabled]);
 
   const years = useMemo(() => {
     const yrs = new Set(invoices.map((i) => i.createdAt.slice(0, 4)));
@@ -288,6 +296,35 @@ export default function AccountingPage() {
           </div>
         </div>
 
+        {/* Animated Tabs */}
+        <div className="flex gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit overflow-x-auto hide-scrollbar border border-slate-200/50 shadow-inner">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`relative px-8 py-3 rounded-xl text-sm font-bold transition-colors whitespace-nowrap ${activeTab === tab.id ? 'text-indigo-700' : 'text-slate-500 hover:text-slate-700'}`}
+            >
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="accounting-tabs"
+                  className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/50"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{tab.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="space-y-8"
+        >
+          {activeTab === "overview" && (
+            <>
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {kpis.map((kpi, idx) => {
@@ -406,7 +443,11 @@ export default function AccountingPage() {
             </ResponsiveContainer>
           </div>
         </div>
+            </>
+          )}
 
+          {activeTab === "receivables" && (
+            <>
         {/* Accounts Receivable */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
           <div className="p-6 sm:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -475,7 +516,7 @@ export default function AccountingPage() {
             {receivables.unpaid.length > 0 ? (
               <div className="overflow-x-auto rounded-[1.5rem] border border-slate-200">
                 <table className="w-full text-right text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider">
+                  <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md border-b border-slate-200 text-slate-500 font-bold text-xs uppercase tracking-wider shadow-sm">
                     <tr>
                       <th className="px-6 py-4 rounded-tr-[1.5rem]">رقم الفاتورة</th>
                       <th className="px-6 py-4">العميل</th>
@@ -569,7 +610,11 @@ export default function AccountingPage() {
             </div>
           </div>
         )}
+            </>
+          )}
 
+          {activeTab === "tax" && (
+            <>
         {/* Tax Summary */}
         {taxSummary && (
           <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
@@ -610,6 +655,9 @@ export default function AccountingPage() {
             </div>
           </div>
         )}
+            </>
+          )}
+        </motion.div>
 
       </div>
     </div>

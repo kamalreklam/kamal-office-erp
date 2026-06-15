@@ -349,7 +349,7 @@ export async function exportInventoryReportPDF(products: any[], dateRange: Repor
   await generatePdfFromHtml(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
 }
 
-export async function exportSalesReportPDF(invoices: Invoice[], dateRange: ReportDateRange, settings: AppSettings) {
+export async function exportSalesReportPDF(invoices: Invoice[], dateRange: ReportDateRange, settings: AppSettings, options: { includeCharts?: boolean; detailedMode?: boolean } = {}) {
   const c = settings.currencySymbol || "$";
   const f = invoices.filter(i => i.createdAt >= dateRange.from && i.createdAt <= dateRange.to && i.status !== "ملغاة" && i.status !== "مسودة");
   const tr = f.filter(i => i.status === "مدفوعة").reduce((s, i) => s + i.total, 0);

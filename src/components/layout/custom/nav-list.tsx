@@ -16,6 +16,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Tooltip } from '@/components/tooltip'
 
 export interface NavItem {
   label: string
@@ -92,29 +93,54 @@ export function NavList({ collapsed = false, onNavigate, layoutId = 'nav-active'
 
               return (
                 <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onNavigate}
-                    aria-label={item.label}
-                    aria-current={active ? 'page' : undefined}
-                    className={cn(
-                      'relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card',
-                      active
-                        ? 'bg-gold-soft font-medium text-accent-foreground'
-                        : 'text-foreground/80 hover:bg-accent/60 hover:text-foreground',
-                      collapsed && 'justify-center'
-                    )}
-                  >
-                    {active && (
-                      <motion.span
-                        layoutId={layoutId}
-                        className="absolute inset-y-1 start-0 w-1 rounded-full bg-gold"
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                    <Icon className="size-4 shrink-0" />
-                    {!collapsed && <span className="truncate">{item.label}</span>}
-                  </Link>
+                  {collapsed ? (
+                    <Tooltip content={item.label} side="left">
+                      <Link
+                        href={item.href}
+                        onClick={onNavigate}
+                        aria-label={item.label}
+                        aria-current={active ? 'page' : undefined}
+                        className={cn(
+                          'relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card justify-center w-full',
+                          active
+                            ? 'bg-gold-soft font-medium text-accent-foreground'
+                            : 'text-foreground/80 hover:bg-accent/60 hover:text-foreground'
+                        )}
+                      >
+                        {active && (
+                          <motion.span
+                            layoutId={layoutId}
+                            className="absolute inset-y-1 start-0 w-1 rounded-full bg-gold"
+                            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                        <Icon className="size-4 shrink-0" />
+                      </Link>
+                    </Tooltip>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-label={item.label}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'relative flex items-center gap-3 rounded-md px-2.5 py-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-card',
+                        active
+                          ? 'bg-gold-soft font-medium text-accent-foreground'
+                          : 'text-foreground/80 hover:bg-accent/60 hover:text-foreground'
+                      )}
+                    >
+                      {active && (
+                        <motion.span
+                          layoutId={layoutId}
+                          className="absolute inset-y-1 start-0 w-1 rounded-full bg-gold"
+                          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      <Icon className="size-4 shrink-0" />
+                      <span className="truncate">{item.label}</span>
+                    </Link>
+                  )}
                 </li>
               )
             })}

@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation'
 import { Bell, Menu } from 'lucide-react'
 import { NAV_ITEMS } from './nav-list'
 import { useEffect, useState } from 'react'
+import { CommandPalette } from '@/components/command-palette'
 
 interface TopBarProps {
   onMenuClick?: () => void
@@ -46,6 +47,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
       {/* Right action group */}
       <div className="ms-auto flex items-center gap-2">
+        {/* Command Palette */}
+        <CommandPalette />
+
         {/* Notifications */}
         <button
           type="button"

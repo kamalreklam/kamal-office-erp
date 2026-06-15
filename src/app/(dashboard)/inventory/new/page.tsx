@@ -9,7 +9,7 @@ import { ArrowRight, Package, Camera, X, ChevronDown } from "lucide-react";
 
 const emptyForm = {
   name: "", category: "Printers", sku: "", description: "",
-  price: 0, costPrice: 0, stock: 0, minStock: 0, unit: "عبوة", image: "",
+  sellingPrice: 0, costPrice: 0, stock: 0, minStock: 0, unit: "عبوة", image: "",
 };
 
 function ImageUploadField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -201,8 +201,8 @@ export default function NewProductPage() {
                 type="number"
                 min="0"
                 step="0.5"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                value={formData.sellingPrice}
+                onChange={(e) => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-4 text-sm font-black text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-sm font-mono"
               />
             </div>

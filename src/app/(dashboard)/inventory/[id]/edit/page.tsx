@@ -65,7 +65,7 @@ export default function EditProductPage() {
 
   const [formData, setFormData] = useState({
     name: "", category: "Printers", sku: "", description: "",
-    price: 0, costPrice: 0, stock: 0, minStock: 0, unit: "عبوة", image: "",
+    sellingPrice: 0, costPrice: 0, stock: 0, minStock: 0, unit: "عبوة", image: "",
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -73,7 +73,7 @@ export default function EditProductPage() {
     if (product && !loaded) {
       setFormData({
         name: product.name, category: product.category, sku: product.sku,
-        description: product.description, price: product.price, costPrice: product.costPrice || 0, stock: product.stock,
+        description: product.description, sellingPrice: product.sellingPrice, costPrice: product.costPrice || 0, stock: product.stock,
         minStock: product.minStock, unit: product.unit, image: getProductImage(product.id),
       });
       setLoaded(true);
@@ -230,8 +230,8 @@ export default function EditProductPage() {
                 type="number"
                 min="0"
                 step="0.5"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                value={formData.sellingPrice}
+                onChange={(e) => setFormData({ ...formData, sellingPrice: parseFloat(e.target.value) || 0 })}
                 className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 px-4 text-sm font-black text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-sm font-mono"
               />
             </div>

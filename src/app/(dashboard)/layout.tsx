@@ -5,6 +5,7 @@ import type { ChildrenType } from '@core/types'
 import Providers from '@components/Providers'
 import ScrollToTop from '@core/components/scroll-to-top'
 import CustomLayout from '@/components/layout/custom/custom-layout'
+import { FloatingDock } from '@/components/ui/floating-dock'
 
 // Store + Toast Imports
 import { StoreProvider } from '@/lib/store'
@@ -26,6 +27,7 @@ const Layout = async (props: ChildrenType) => {
             <i className='tabler-arrow-up text-base' />
           </button>
         </ScrollToTop>
+        <FloatingDock />
         <Toaster position='bottom-left' dir='rtl' richColors closeButton />
       </StoreProvider>
     </Providers>

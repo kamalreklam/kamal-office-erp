@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
-import { type Client, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
+import { formatCurrency, type Client } from "@/lib/data";
 import { exportCSV } from "@/lib/export";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { AnimatedCounter } from "@/components/animated-counter";
+import { CopyToClipboard } from "@/components/copy-to-clipboard";
 import { MobileClients } from "@/components/mobile/mobile-clients";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { motion } from "framer-motion";
 import {
   Users,
   Search,
@@ -31,16 +34,24 @@ import {
 // Helper for generating consistent colors based on client name
 function getClientColor(name: string) {
   const colors = [
-    "bg-indigo-100 text-indigo-700 border-indigo-200",
-    "bg-emerald-100 text-emerald-700 border-emerald-200",
-    "bg-amber-100 text-amber-700 border-amber-200",
-    "bg-rose-100 text-rose-700 border-rose-200",
-    "bg-cyan-100 text-cyan-700 border-cyan-200",
-    "bg-violet-100 text-violet-700 border-violet-200",
+    "bg-gradient-to-br from-indigo-400 to-blue-600 text-white shadow-inner border-indigo-200/50",
+    "bg-gradient-to-br from-emerald-400 to-teal-600 text-white shadow-inner border-emerald-200/50",
+    "bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-inner border-amber-200/50",
+    "bg-gradient-to-br from-rose-400 to-pink-600 text-white shadow-inner border-rose-200/50",
+    "bg-gradient-to-br from-cyan-400 to-sky-600 text-white shadow-inner border-cyan-200/50",
+    "bg-gradient-to-br from-violet-400 to-purple-600 text-white shadow-inner border-violet-200/50",
   ];
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
   return colors[Math.abs(hash) % colors.length];
+}
+
+// Helper for Tier Badges
+function getClientTier(totalSpent: number) {
+  if (totalSpent >= 5000) return { label: "بلاتيني", icon: "👑", styles: "bg-gradient-to-r from-slate-800 to-slate-900 text-amber-300 border-amber-500/50 shadow-[0_0_15px_rgba(251,191,36,0.3)] ring-1 ring-amber-500/50 relative overflow-hidden after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/10 after:to-transparent after:-translate-x-full hover:after:animate-[shimmer_1.5s_infinite]" };
+  if (totalSpent >= 2000) return { label: "ذهبي", icon: "⭐", styles: "bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 border-yellow-300 shadow-md shadow-yellow-500/20" };
+  if (totalSpent >= 500) return { label: "فضي", icon: "💎", styles: "bg-gradient-to-r from-slate-200 to-slate-300 text-slate-700 border-slate-300" };
+  return null; // Regular
 }
 
 export default function ClientsPage() {
@@ -209,7 +220,7 @@ function PremiumClientsLayout() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">إجمالي العملاء</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">{clients.length}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight"><AnimatedCounter value={clients.length} /></p>
             </div>
           </div>
           <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 shadow-sm flex items-center gap-5 hover:border-emerald-200 hover:shadow-md transition-all">
@@ -218,7 +229,7 @@ function PremiumClientsLayout() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">المبيعات</p>
-              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight">{formatCurrency(totalSales)}</p>
+              <p className="text-3xl font-black text-slate-900 font-mono tracking-tight"><AnimatedCounter value={totalSales} format={formatCurrency} /></p>
             </div>
           </div>
           <div className="bg-white rounded-[2rem] p-6 border border-slate-200/60 shadow-sm flex items-center gap-5 hover:border-amber-200 hover:shadow-md transition-all">
@@ -227,7 +238,7 @@ function PremiumClientsLayout() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-1">إجمالي الفواتير</p>
-              <p className="text-3xl font-black text-slate-900 tracking-tight">{invoices.length}</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight"><AnimatedCounter value={invoices.length} /></p>
             </div>
           </div>
         </div>
@@ -295,9 +306,9 @@ function PremiumClientsLayout() {
         {/* Clients Grid/List */}
         {filtered.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-xl border border-slate-200/60 rounded-[2rem] py-24 px-6 text-center shadow-sm">
-            <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }} className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Users className="size-10 text-slate-400" />
-            </div>
+            </motion.div>
             <h3 className="text-2xl font-black text-slate-900 tracking-tight">لا يوجد عملاء</h3>
             <p className="mt-3 text-base font-medium text-slate-500 max-w-md mx-auto leading-relaxed">
               لم يتم العثور على أي عملاء يطابقون معايير البحث الخاصة بك.
@@ -314,7 +325,7 @@ function PremiumClientsLayout() {
           <div className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm overflow-hidden hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-sm">
-                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold">
+                <thead className="sticky top-0 z-10 bg-slate-50/80 backdrop-blur-md border-b border-slate-100 text-slate-500 font-bold shadow-sm">
                   <tr>
                     <th className="px-6 py-4 rounded-tr-[2rem]">العميل</th>
                     <th className="px-6 py-4">الهاتف</th>
@@ -328,21 +339,32 @@ function PremiumClientsLayout() {
                   {filtered.map((client) => {
                     const invCount = invoices.filter((i) => i.clientId === client.id).length;
                     const cStyle = getClientColor(client.name);
+                    const tier = getClientTier(client.totalSpent);
                     return (
-                      <tr key={client.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={client.id} className="hover:bg-slate-50 transition-colors cursor-pointer" onDoubleClick={() => router.push(`/clients/${client.id}/edit`)}>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg border shadow-sm shrink-0 ${cStyle}`}>
                               {client.name.charAt(0)}
                             </div>
-                            <span className="font-bold text-slate-900 block truncate max-w-[180px]">{client.name}</span>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-slate-900 truncate max-w-[180px]">{client.name}</span>
+                                {tier && (
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border flex items-center gap-1 ${tier.styles}`}>
+                                    <span>{tier.icon}</span>
+                                    <span>{tier.label}</span>
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-slate-600 font-medium font-mono" dir="ltr">
-                          {client.phone || "—"}
+                          {client.phone ? <CopyToClipboard text={client.phone}>{client.phone}</CopyToClipboard> : "—"}
                         </td>
                         <td className="px-6 py-4 text-slate-600 max-w-[200px] truncate">
-                          {client.address || "—"}
+                          {client.address ? <CopyToClipboard text={client.address}>{client.address}</CopyToClipboard> : "—"}
                         </td>
                         <td className="px-6 py-4">
                           <span className="bg-indigo-50 text-indigo-700 font-black px-3 py-1 rounded-lg">
@@ -394,9 +416,10 @@ function PremiumClientsLayout() {
               const invCount = invoices.filter((i) => i.clientId === client.id).length;
               const ordCount = orders.filter((o) => o.clientId === client.id).length;
               const cStyle = getClientColor(client.name);
+              const tier = getClientTier(client.totalSpent);
 
               return (
-                <div key={client.id} className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group">
+                <div key={client.id} className="bg-white rounded-[2rem] border border-slate-200/60 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer" onDoubleClick={() => router.push(`/clients/${client.id}/edit`)}>
                   <div className="p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl border shadow-sm shrink-0 ${cStyle}`}>
@@ -428,20 +451,28 @@ function PremiumClientsLayout() {
                     </div>
 
                     <div className="mt-5">
-                      <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">
-                        {client.name}
-                      </h3>
-                      <div className="mt-3 space-y-2">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight truncate">
+                          {client.name}
+                        </h3>
+                        {tier && (
+                          <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm ${tier.styles}`}>
+                            <span>{tier.icon}</span>
+                            {tier.label}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-2">
                         {client.phone && (
                           <div className="flex items-center gap-2 text-slate-500">
                             <Phone className="size-4 shrink-0 text-slate-400" />
-                            <span className="text-sm font-bold font-mono text-slate-600" dir="ltr">{client.phone}</span>
+                            <div className="text-sm font-bold font-mono text-slate-600" dir="ltr"><CopyToClipboard text={client.phone}>{client.phone}</CopyToClipboard></div>
                           </div>
                         )}
                         {client.address && (
                           <div className="flex items-center gap-2 text-slate-500">
                             <MapPin className="size-4 shrink-0 text-slate-400" />
-                            <span className="text-sm font-medium truncate">{client.address}</span>
+                            <div className="text-sm font-medium truncate"><CopyToClipboard text={client.address}>{client.address}</CopyToClipboard></div>
                           </div>
                         )}
                         {!client.phone && !client.address && (

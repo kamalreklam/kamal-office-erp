@@ -12,12 +12,19 @@ export default function EditClientPage() {
   const { clients, updateClient } = useStore();
   const client = clients.find((c) => c.id === id);
 
-  const [formData, setFormData] = useState({ name: "", phone: "", address: "", notes: "" });
+  const [formData, setFormData] = useState({ name: "", phone: "", address: "", notes: "", recurringBilling: false });
   const [loaded, setLoaded] = useState(false);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value.replace(/\D/g, "");
+    if (val.length > 4 && val.length <= 7) val = val.slice(0, 4) + " " + val.slice(4);
+    else if (val.length > 7) val = val.slice(0, 4) + " " + val.slice(4, 7) + " " + val.slice(7, 10);
+    setFormData({ ...formData, phone: val });
+  };
 
   useEffect(() => {
     if (client && !loaded) {
-      setFormData({ name: client.name, phone: client.phone, address: client.address, notes: client.notes || "" });
+      setFormData({ name: client.name, phone: client.phone, address: client.address, notes: client.notes || "", recurringBilling: client.recurringBilling || false });
       setLoaded(true);
     }
   }, [client, loaded]);
@@ -99,8 +106,8 @@ export default function EditClientPage() {
                     type="text"
                     placeholder="09XXXXXXXX"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-bold text-slate-800 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-sm text-right"
+                    onChange={handlePhoneChange}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-bold text-slate-800 font-mono placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-sm text-left"
                     dir="ltr"
                   />
                 </div>
@@ -136,6 +143,20 @@ export default function EditClientPage() {
                   className="w-full bg-slate-50 border border-slate-200 rounded-2xl py-3.5 pr-12 pl-4 text-sm font-bold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all shadow-sm min-h-[120px]"
                 />
               </div>
+            </div>
+            
+            <div className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100/50">
+              <div className="flex-1">
+                <h3 className="text-sm font-black text-slate-900">اشتراك دوري (فوترة شهرية)</h3>
+                <p className="text-xs font-bold text-slate-500 mt-0.5">تحديد هذا العميل لإنشاء فواتير تلقائية له بشكل شهري</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, recurringBilling: !formData.recurringBilling })}
+                className={`w-12 h-6 rounded-full transition-colors relative shrink-0 border-2 ${formData.recurringBilling ? 'bg-indigo-600 border-indigo-600' : 'bg-slate-200 border-slate-200'}`}
+              >
+                <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${formData.recurringBilling ? 'left-0.5 translate-x-0' : 'left-auto right-0.5 translate-x-0'}`} />
+              </button>
             </div>
           </div>
 

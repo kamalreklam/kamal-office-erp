@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
-import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { DateRangeExportButton, type DateRange, type ExportOptions } from "@/components/date-range-picker";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -241,10 +241,10 @@ export default function ReportsPage() {
             <DateRangeExportButton
               label="تصدير PDF"
               className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-white border border-slate-200 text-slate-700 font-bold hover:bg-slate-50 hover:border-slate-300 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2"
-              onExport={async (range: DateRange) => {
+              onExport={async (range: DateRange, options: ExportOptions) => {
                 try {
                   const { exportSalesReportPDF } = await import("@/lib/pdf");
-                  await exportSalesReportPDF(invoices, range, settings);
+                  await exportSalesReportPDF(invoices, range, settings, options);
                   toast.success("تم تصدير تقرير المبيعات بنجاح");
                 } catch {
                   toast.error("فشل تصدير التقرير");

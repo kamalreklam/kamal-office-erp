@@ -52,6 +52,10 @@ export interface AppSettings {
   primaryColor: string;
   customInvoiceHtml: string;
   productCategories: string[];
+  invoicePaperSize: "A4" | "Receipt";
+  showDiscountColumn: boolean;
+  showProductImages: boolean;
+  headerAlignment: "center" | "right";
 }
 
 const defaultSettings: AppSettings = {
@@ -70,6 +74,10 @@ const defaultSettings: AppSettings = {
   primaryColor: "#2563eb",
   customInvoiceHtml: "",
   productCategories: ["طابعة", "حبر", "تونر", "ورق", "ملحقات"],
+  invoicePaperSize: "A4",
+  showDiscountColumn: true,
+  showProductImages: false,
+  headerAlignment: "center",
 };
 
 // ==========================================

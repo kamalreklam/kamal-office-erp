@@ -43,32 +43,38 @@ export function RevenueChart({ data }: RevenueChartProps) {
         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="var(--primary-color)" stopOpacity={0.4} />
-              <stop offset="95%" stopColor="var(--primary-color)" stopOpacity={0} />
+              <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.5} />
+              <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
             </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="4" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
           </defs>
           <XAxis 
             dataKey="date" 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: '#94a3b8', fontSize: 12 }} 
+            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} 
             dy={10} 
           />
           <YAxis 
             axisLine={false} 
             tickLine={false} 
-            tick={{ fill: '#94a3b8', fontSize: 12 }} 
+            tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }} 
             tickFormatter={(value) => `${value / 1000}k`}
             dx={-10}
           />
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
           <Tooltip
+            cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
             content={({ active, payload, label }) => {
               if (active && payload && payload.length) {
                 return (
-                  <div className="bg-white/90 backdrop-blur-md border border-mist/60 shadow-xl p-3 rounded-2xl">
-                    <p className="text-slate-500 text-xs mb-1 font-bold">{label}</p>
-                    <p className="text-primary font-black font-mono text-lg">
+                  <div className="bg-slate-900/95 backdrop-blur-xl border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] p-4 rounded-2xl relative overflow-hidden transform scale-105 transition-transform duration-200">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500" />
+                    <p className="text-slate-400 text-xs mb-1.5 font-bold uppercase tracking-wider">{label}</p>
+                    <p className="text-white font-black font-mono text-2xl tracking-tight">
                       {formatCurrency(payload[0].value as number)}
                     </p>
                   </div>
@@ -80,11 +86,15 @@ export function RevenueChart({ data }: RevenueChartProps) {
           <Area
             type="monotone"
             dataKey="total"
-            stroke="var(--primary-color)"
-            strokeWidth={3}
+            stroke="#8b5cf6"
+            strokeWidth={4}
             fillOpacity={1}
             fill="url(#colorTotal)"
-            activeDot={{ r: 6, strokeWidth: 0, fill: "var(--primary-color)" }}
+            activeDot={{ r: 8, strokeWidth: 4, stroke: "#fff", fill: "#8b5cf6", style: { filter: 'drop-shadow(0 0 8px rgba(139,92,246,0.8))' } }}
+            style={{ filter: "drop-shadow(0 4px 6px rgba(139,92,246,0.3))" }}
+            isAnimationActive={true}
+            animationDuration={2000}
+            animationEasing="ease-out"
           />
         </AreaChart>
       </ResponsiveContainer>
