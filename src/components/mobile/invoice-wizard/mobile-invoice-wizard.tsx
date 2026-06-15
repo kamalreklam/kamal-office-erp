@@ -686,21 +686,15 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                             key={p.id}
                             onClick={() => addProductToCart(p)}
                             disabled={outOfStock}
-                            className={`flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
+                            className={`flex w-full items-center gap-2 rounded-[8px] px-1 py-2 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
                           >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#94a3b8]">
-                              <Package className="h-4 w-4" />
-                            </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-[#1e293b] truncate">{p.name}</p>
+                              <p className="text-[13px] font-medium text-[#1e293b] truncate" dir="ltr">{p.name}</p>
                               <p className={`text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
-                                {outOfStock ? "نفذ المخزون" : `${p.category} · المخزون: ${p.stock}`}
+                                {outOfStock ? "نفذ المخزون" : `${p.category} · ${p.stock}`}
                               </p>
                             </div>
                             {inCart && <Check className="h-4 w-4 shrink-0 text-[#2563eb]" />}
-                            <span className={`shrink-0 text-sm font-bold font-mono ${outOfStock ? "text-[#94a3b8]" : "text-[#2563eb]"}`}>
-                              {formatCurrency(p.sellingPrice)}
-                            </span>
                           </button>
                         );
                       })
