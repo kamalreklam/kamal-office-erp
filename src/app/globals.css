@@ -65,6 +65,12 @@
   }
 }
 
+/* Force Western Arabic numerals (0-9) system-wide — prevents browser from
+   switching to Eastern Arabic-Indic digits due to lang="ar" on <html> */
+* {
+  font-variant-numeric: normal !important;
+}
+
 :root {
   --border-radius: var(--mui-shape-borderRadius);
   --border-color: var(--mui-palette-divider);
