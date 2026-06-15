@@ -16,7 +16,7 @@ export function MobileInventory() {
 
   function shareWhatsApp() {
     const lines = [`📦 *تقرير المخزون — ${settings.businessName}*`, `عدد المنتجات: ${products.length}`, ""];
-    products.slice(0, 20).forEach((p) => { lines.push(`• ${p.name}: ${p.stock} ${p.unit} (${formatCurrency(p.price)})`); });
+    products.slice(0, 20).forEach((p) => { lines.push(`• ${p.name}: ${p.stock} ${p.unit} (${formatCurrency(p.sellingPrice)})`); });
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   }
   const categories = ["الكل", ...Array.from(new Set(products.map((p) => p.category))).sort()];
@@ -35,7 +35,7 @@ export function MobileInventory() {
   }, [products, debouncedSearch, activeCategory]);
 
   const lowStock = getLowStockProducts(products);
-  const totalValue = products.reduce((s, p) => s + p.price * p.stock, 0);
+  const totalValue = products.reduce((s, p) => s + p.sellingPrice * p.stock, 0);
   const totalUnits = products.reduce((s, p) => s + p.stock, 0);
 
   // Category stats for report
@@ -45,7 +45,7 @@ export function MobileInventory() {
       const stat = map.get(p.category) || { count: 0, units: 0, value: 0 };
       stat.count++;
       stat.units += p.stock;
-      stat.value += p.price * p.stock;
+      stat.value += p.sellingPrice * p.stock;
       map.set(p.category, stat);
     });
     return Array.from(map.entries()).sort((a, b) => b[1].value - a[1].value);
@@ -237,7 +237,7 @@ export function MobileInventory() {
                   </div>
                   <div className="text-left shrink-0">
                     <p style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)" }}>
-                      {formatCurrency(product.price)}
+                      {formatCurrency(product.sellingPrice)}
                     </p>
                   </div>
                 </div>
@@ -254,7 +254,7 @@ export function MobileInventory() {
                     {isLow && <span style={{ fontSize: 12, color: "var(--red-500)" }}>(حد: {product.minStock})</span>}
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)" }}>
-                    القيمة: {formatCurrency(product.price * product.stock)}
+                    القيمة: {formatCurrency(product.sellingPrice * product.stock)}
                   </span>
                   <div className="flex gap-2">
                     <button onClick={() => router.push(`/inventory/${product.id}/edit`)}

@@ -338,13 +338,13 @@ tr:nth-child(even){background:#fafbfc}
 
 export async function exportInventoryReportPDF(products: any[], dateRange: ReportDateRange, settings: AppSettings) {
   const c = settings.currencySymbol || "$";
-  const tv = products.reduce((s: number, p: any) => s + p.price * p.stock, 0);
+  const tv = products.reduce((s: number, p: any) => s + p.sellingPrice * p.stock, 0);
   const ts = products.reduce((s: number, p: any) => s + p.stock, 0);
   const ls = products.filter((p: any) => p.stock <= p.minStock);
   const html = buildReportHtml("تقرير المخزون", `${products.length} منتج`, dateRange, settings.businessName, settings.businessNameEn,
     [{ label: "المنتجات", value: String(products.length) }, { label: "المخزون", value: ts.toLocaleString("en-US") }, { label: "القيمة", value: fmt(tv, c) }, { label: "منخفض", value: String(ls.length) }],
     ["#", "المنتج", "الفئة", "السعر", "المخزون", "الوحدة", "القيمة"],
-    products.map((p: any, i: number) => [String(i + 1), p.name, p.category, fmt(p.price, c), String(p.stock), p.unit, fmt(p.price * p.stock, c)]),
+    products.map((p: any, i: number) => [String(i + 1), p.name, p.category, fmt(p.sellingPrice, c), String(p.stock), p.unit, fmt(p.sellingPrice * p.stock, c)]),
     ["", `${products.length}`, "", "", String(ts), "", fmt(tv, c)]);
   await generatePdfFromHtml(html, `تقرير_المخزون_${dateRange.from}_${dateRange.to}.pdf`);
 }

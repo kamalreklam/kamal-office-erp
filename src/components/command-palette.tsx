@@ -156,7 +156,7 @@ export function CommandPalette() {
                     <Package className="h-4 w-4" style={{ color: "var(--purple-500)" }} />
                     <span className="flex-1 truncate">{p.name}</span>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {formatCurrency(p.price)} · {p.stock} {p.unit}
+                      {formatCurrency(p.sellingPrice)} · {p.stock} {p.unit}
                     </span>
                   </CommandItem>
                 ))}

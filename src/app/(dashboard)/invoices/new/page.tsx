@@ -262,11 +262,11 @@ export default function NewInvoicePage() {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return []
     const prodList = products.filter(p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
-      .map(p => ({ id: p.id, name: p.name, price: p.sellingPrice, stock: p.stock, type: 'product' as const, product: p }))
+      .map(p => ({ id: p.id, name: p.name, sellingPrice: p.sellingPrice, stock: p.stock, type: 'product' as const, product: p }))
     const bundleList = bundles.filter(b => b.name.toLowerCase().includes(q))
       .map(b => ({
         id: b.id, name: `${b.name} (حزمة)`,
-        price: b.items.reduce((s, it) => s + (it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0) * it.quantity, 0) * (1 - b.discount / 100),
+        sellingPrice: b.items.reduce((s, it) => s + (it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0) * it.quantity, 0) * (1 - b.discount / 100),
         stock: Math.min(...b.items.map(it => { const p = products.find(pr => pr.id === it.productId); return p ? Math.floor(p.stock / it.quantity) : 0 })),
         type: 'bundle' as const, bundle: b
       }))
@@ -324,7 +324,7 @@ export default function NewInvoicePage() {
     }
   }
 
-  function quickAddItem(opt: { id: string; name: string; price: number; type: 'product' | 'bundle', product?: Product, bundle?: any }) {
+  function quickAddItem(opt: { id: string; name: string; sellingPrice: number; type: 'product' | 'bundle', product?: Product, bundle?: any }) {
     setLineItems(prev => {
       const emptyRowIdx = prev.findIndex(r => !r.productId && !r.isTemporary && !r.productName)
       const bundleDesc = opt.type === 'bundle' ? `يحتوي على: ${(opt.bundle?.items || []).map((i:any) => { const p = products.find(pr=>pr.id===i.productId); return p?`${p.name} (x${i.quantity})`:''; }).filter(Boolean).join('، ')}` : ''
@@ -334,7 +334,7 @@ export default function NewInvoicePage() {
         id: emptyRowIdx >= 0 ? prev[emptyRowIdx].id : `li-${Date.now()}`,
         productId: opt.id, productName: opt.name,
         description: desc,
-        quantity: 1, unitPrice: opt.price, total: opt.price,
+        quantity: 1, unitPrice: opt.sellingPrice, total: opt.sellingPrice,
         isBundle: opt.type === 'bundle', bundleComponents: opt.type === 'bundle' ? opt.bundle?.items : undefined,
         isTemporary: false, costPrice: opt.type === 'product' ? opt.product?.costPrice : 0,
         showDescription: !!desc
@@ -365,7 +365,7 @@ export default function NewInvoicePage() {
       return {
         id: item.id, productId: opt.id, productName: opt.name,
         description: desc,
-        quantity: item.quantity, unitPrice: opt.price, total: item.quantity * opt.price,
+        quantity: item.quantity, unitPrice: opt.sellingPrice, total: item.quantity * opt.sellingPrice,
         isBundle: opt.type === 'bundle', bundleComponents: opt.type === 'bundle' ? opt.bundle?.items : undefined,
         isTemporary: false, costPrice: opt.type === 'product' ? opt.product?.costPrice : 0,
         showDescription: !!desc
@@ -475,7 +475,7 @@ export default function NewInvoicePage() {
           e.preventDefault()
           const product = latestProductsRef.current.find(p => p.sku === barcodeBuffer)
           if (product) {
-            latestQuickAddRef.current({ id: product.id, name: product.name, price: product.price, type: 'product', product })
+            latestQuickAddRef.current({ id: product.id, name: product.name, sellingPrice: product.sellingPrice, type: 'product', product })
           } else {
             toast.error(`الباركود غير مسجل: ${barcodeBuffer}`)
           }
@@ -698,7 +698,7 @@ export default function NewInvoicePage() {
               
               <div className="flex flex-wrap items-center gap-2.5">
                 {bundles.map(b => (
-                  <button key={b.id} onClick={() => quickAddItem({ id: b.id, name: b.name, type: 'bundle', bundle: b, price: b.items.reduce((s, it) => s + (it.sellingPrice ?? products.find(p => p.id === it.productId)?.price ?? 0) * it.quantity, 0) * (1 - b.discount / 100) })} className="group relative px-4 py-2.5 rounded-2xl text-[13px] font-bold text-white transition-all active:scale-95 bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 shadow-sm shadow-purple-500/20 hover:shadow-md hover:shadow-purple-500/40 hover:-translate-y-0.5 border border-white/20 flex-grow sm:flex-grow-0 text-center">
+                  <button key={b.id} onClick={() => quickAddItem({ id: b.id, name: b.name, type: 'bundle', bundle: b, sellingPrice: b.items.reduce((s, it) => s + (it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0) * it.quantity, 0) * (1 - b.discount / 100) })} className="group relative px-4 py-2.5 rounded-2xl text-[13px] font-bold text-white transition-all active:scale-95 bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 shadow-sm shadow-purple-500/20 hover:shadow-md hover:shadow-purple-500/40 hover:-translate-y-0.5 border border-white/20 flex-grow sm:flex-grow-0 text-center">
                     <span className="flex items-center justify-center gap-1.5">
                       <Layers className="size-4 opacity-70 group-hover:opacity-100 transition-opacity" />
                       {b.name}
@@ -717,7 +717,7 @@ export default function NewInvoicePage() {
                   ];
                   const c = colors[idx % colors.length];
                   return (
-                    <button key={p.id} onClick={() => quickAddItem({ id: p.id, name: p.name, type: 'product', product: p, price: p.price })} className={`group relative px-4 py-2.5 border rounded-2xl text-[13px] font-bold shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 transition-all flex-grow sm:flex-grow-0 text-center ${c}`}>
+                    <button key={p.id} onClick={() => quickAddItem({ id: p.id, name: p.name, type: 'product', product: p, sellingPrice: p.sellingPrice })} className={`group relative px-4 py-2.5 border rounded-2xl text-[13px] font-bold shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 transition-all flex-grow sm:flex-grow-0 text-center ${c}`}>
                       <span className="flex items-center justify-center gap-1.5">
                         <Plus className="size-4 opacity-50 group-hover:opacity-100 transition-colors" />
                         {p.name}
@@ -799,7 +799,7 @@ export default function NewInvoicePage() {
                                           </div>
                                         </div>
                                         <span className={`font-mono font-black text-sm ms-2 shrink-0 ${focusedSearchIndex === oIdx ? 'text-white' : 'text-indigo-600'}`}>
-                                          {formatCurrency(opt.price)}
+                                          {formatCurrency(opt.sellingPrice)}
                                         </span>
                                       </div>
                                     ))
@@ -941,7 +941,7 @@ export default function NewInvoicePage() {
                                   </div>
                                 </div>
                                 <span className={`font-mono font-black text-sm ms-2 shrink-0 ${focusedSearchIndex === oIdx ? 'text-white' : 'text-indigo-600'}`}>
-                                  {formatCurrency(opt.price)}
+                                  {formatCurrency(opt.sellingPrice)}
                                 </span>
                               </div>
                             ))

@@ -367,7 +367,7 @@ export default function EditBundlePage() {
                         </div>
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <span className="font-black text-sm text-indigo-600 font-mono">
-                            {formatCurrency(p.price)}
+                            {formatCurrency(p.sellingPrice)}
                           </span>
                           <button
                             onClick={() => addProduct(p)}

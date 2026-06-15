@@ -144,8 +144,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           productName: product.name,
           description: product.description,
           quantity: 1,
-          unitPrice: product.price,
-          total: product.price,
+          unitPrice: product.sellingPrice,
+          total: product.sellingPrice,
         },
       ]);
     }
@@ -271,7 +271,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
   function openInkSetSheet(set: (typeof inkSets)[0]) {
     setActiveInkSet(set);
-    setInkSetPrice(String(set.items.reduce((s, p) => s + p.price, 0)));
+    setInkSetPrice(String(set.items.reduce((s, p) => s + p.sellingPrice, 0)));
     setInkSetSheetOpen(true);
   }
 
@@ -305,7 +305,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
     if (!bundle) return;
     const defaultPrice = bundle.items.reduce((s, bi) => {
       const product = products.find((p) => p.id === bi.productId);
-      return s + (product?.price || 0);
+      return s + (product?.sellingPrice || 0);
     }, 0);
     setBundleSetPrice(String(defaultPrice));
     setActiveBundleId(bundleId);
@@ -699,7 +699,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                             </div>
                             {inCart && <Check className="h-4 w-4 shrink-0 text-[#2563eb]" />}
                             <span className={`shrink-0 text-sm font-bold font-mono ${outOfStock ? "text-[#94a3b8]" : "text-[#2563eb]"}`}>
-                              {formatCurrency(p.price)}
+                              {formatCurrency(p.sellingPrice)}
                             </span>
                           </button>
                         );
@@ -871,7 +871,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
           const defaultTotal = bundle.items.reduce((s, bi) => {
             const product = products.find((p) => p.id === bi.productId);
-            return s + (product?.price || 0);
+            return s + (product?.sellingPrice || 0);
           }, 0);
 
           return (
@@ -981,7 +981,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#06b6d4] mb-1"
               />
               <p className="text-[11px] text-[#94a3b8] text-center mb-4">
-                الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
+                الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.sellingPrice, 0))}
               </p>
 
               <button
