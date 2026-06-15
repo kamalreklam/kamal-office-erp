@@ -1,0 +1,172 @@
+/*
+ * Mawj design tokens (P0.3) — derived from the live storefront (mawjgifts.com).
+ *
+ * Loaded ONLY on /v2 (see layout.tsx), so MUI/Vuexy at /ar is untouched.
+ * Values are the EXACT sRGB brand colors read from the storefront's `--c-*`
+ * variables (fidelity over format; OKLCH can be layered later without changing
+ * semantics). Semantic names follow the shadcn/ui token contract so the P0.4
+ * component kit drops in cleanly. Dark mode via the `.dark` class.
+ *
+ * Brand: light luxury — crystal/white surfaces, ink-navy text, champagne gold
+ * accent. "Mawj" = wave → the brand blues (ink / wave).
+ */
+@import 'tailwindcss';
+@plugin 'tailwindcss-logical';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* ---- Raw brand palette (exact, from storefront) ---- */
+  --brand-ink: #0c1a6c;
+  --brand-ink-deep: #08124c;
+  --brand-wave: #1e3a5f;
+  --brand-champagne: #c9a961;
+  --brand-champagne-deep: #9c7b3f;
+  --brand-crystal: #f7f5f0;
+  --brand-mist: #e8e4dc;
+  --brand-slate: #6b7280;
+  --brand-charcoal: #222222;
+
+  /* ---- Semantic tokens (shadcn contract) — LIGHT ---- */
+  --background: #f6f4ef; /* warm crystal canvas — white cards/sidebar float on it for depth */
+  --foreground: #222222;
+  --card: #ffffff;
+  --card-foreground: #222222;
+  --popover: #ffffff;
+  --popover-foreground: #222222;
+  --primary: #0c1a6c; /* ink-navy */
+  --primary-foreground: #f7f5f0; /* crystal */
+  --secondary: #f7f5f0; /* crystal surface */
+  --secondary-foreground: #0c1a6c;
+  --muted: #f7f5f0;
+  --muted-foreground: #4b5563; /* darkened from #6B7280 to pass AA (4.5:1) on crystal/mist surfaces */
+  --accent: #e8e4dc; /* mist (subtle hover surface) */
+  --accent-foreground: #0c1a6c;
+  --gold: #c9a961; /* champagne brand accent */
+  --gold-foreground: #08124c;
+  --gold-soft: color-mix(in srgb, #c9a961 14%, transparent); /* champagne tint for active/hover surfaces */
+  --destructive: #9b2c2c;
+  --destructive-foreground: #ffffff;
+  --success: #2d6a4f;
+  --warning: #b45309;
+  --border: #e8e4dc;
+  --input: #e8e4dc;
+  --ring: #0c1a6c; /* ink focus ring — gold fails 3:1 on light; gold stays the ring on dark */
+
+  /* ---- Radii (brand: pill CTAs on restrained surfaces) ---- */
+  --radius: 0.5rem;
+  --radius-pill: 9999px;
+
+  /* ---- Shadows (exact, from storefront) ---- */
+  --shadow-softer: 0 2px 12px -6px rgba(10, 15, 28, 0.06);
+  --shadow-soft: 0 4px 24px -8px rgba(10, 15, 28, 0.08);
+  --shadow-lift: 0 18px 48px -20px rgba(10, 15, 28, 0.22);
+
+  /* ---- Motion (brand signature easing + durations) ---- */
+  --ease-brand: cubic-bezier(0, 0, 0.3, 1);
+  --duration-fast: 0.1s;
+  --duration-normal: 0.25s;
+  --duration-slow: 0.5s;
+
+  /* ---- Data-viz palette ---- */
+  --chart-1: #0c1a6c;
+  --chart-2: #c9a961;
+  --chart-3: #1e3a5f;
+  --chart-4: #6b7280;
+  --chart-5: #9c7b3f;
+}
+
+.dark {
+  --background: #0b1220;
+  --foreground: #eef2f7;
+  --card: #111a2e;
+  --card-foreground: #eef2f7;
+  --popover: #111a2e;
+  --popover-foreground: #eef2f7;
+  --primary: #c9a961; /* gold leads CTAs on dark */
+  --primary-foreground: #08124c;
+  --secondary: #16233d;
+  --secondary-foreground: #eef2f7;
+  --muted: #16233d;
+  --muted-foreground: #9fb3c8;
+  --accent: #1e3a5f;
+  --accent-foreground: #eef2f7;
+  --gold: #c9a961;
+  --gold-foreground: #08124c;
+  --gold-soft: color-mix(in srgb, #c9a961 22%, transparent);
+  --destructive: #e26d6d;
+  --destructive-foreground: #0b1220;
+  --success: #4cae8a;
+  --warning: #d8962a;
+  --border: rgba(238, 242, 247, 0.1);
+  --input: rgba(238, 242, 247, 0.14);
+  --ring: #c9a961;
+}
+
+/* ---- Map tokens to Tailwind color/utility namespace ----
+   `inline` so utilities emit var(--token) → live theme switching via .dark. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-gold-soft: var(--gold-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-ink-deep: var(--brand-ink-deep);
+  --color-brand-wave: var(--brand-wave);
+  --color-brand-champagne: var(--brand-champagne);
+  --color-brand-crystal: var(--brand-crystal);
+  --color-brand-mist: var(--brand-mist);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-softer: var(--shadow-softer);
+  --shadow-soft: var(--shadow-soft);
+  --shadow-lift: var(--shadow-lift);
+
+  --ease-brand: var(--ease-brand);
+
+  --font-sans: var(--font-ibm), 'Almarai', system-ui, sans-serif;
+  --font-latin: var(--font-inter), system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}

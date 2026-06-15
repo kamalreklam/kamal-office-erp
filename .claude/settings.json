@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-option-a.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-option-b.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-option-c.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-option-a-mobile.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-mobile-1.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-mobile-2.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-mobile-3.html\")",
+      "Bash(del \"d:\\\\kamal-office-erp\\\\preview-option-a.html\" \"d:\\\\kamal-office-erp\\\\preview-option-b.html\" \"d:\\\\kamal-office-erp\\\\preview-option-c.html\" \"d:\\\\kamal-office-erp\\\\preview-option-a-mobile.html\" \"d:\\\\kamal-office-erp\\\\preview-mobile-1.html\" \"d:\\\\kamal-office-erp\\\\preview-mobile-2.html\" \"d:\\\\kamal-office-erp\\\\preview-mobile-3.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-design-1.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-design-2.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-design-3.html\")",
+      "Bash(del \"d:\\\\kamal-office-erp\\\\preview-design-1.html\" \"d:\\\\kamal-office-erp\\\\preview-design-2.html\" \"d:\\\\kamal-office-erp\\\\preview-design-3.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-A-command-palette.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-B-clone-modify.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-C-tap-grid.html\")",
+      "Bash(del \"d:\\\\kamal-office-erp\\\\preview-A-command-palette.html\" \"d:\\\\kamal-office-erp\\\\preview-B-clone-modify.html\" \"d:\\\\kamal-office-erp\\\\preview-C-tap-grid.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-odoo-1.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-odoo-2.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-odoo-3.html\")",
+      "Bash(start \"\" \"d:\\\\kamal-office-erp\\\\preview-final.html\")",
+      "Bash(git push:*)"
+    ]
+  }
+}

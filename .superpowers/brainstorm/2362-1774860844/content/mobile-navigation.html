@@ -1,0 +1,82 @@
+<h2>Mobile Navigation Pattern</h2>
+<p class="subtitle">How should the mobile app navigate between sections?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Bottom Tab Bar (iOS/Android style)</h3>
+      <p>Fixed tabs at the bottom: Dashboard, Inventory, Invoices, Clients, More. The "More" tab opens remaining pages. Most natural for phone users — thumb-friendly, instant switching.</p>
+      <div style="margin-top:12px;background:#0d1117;border-radius:16px;padding:16px;color:#f1f5f9;font-size:13px;">
+        <div style="text-align:center;color:#64748b;padding:40px 0;">Page Content</div>
+        <div style="display:flex;justify-content:space-around;border-top:1px solid #1e293b;padding:12px 0 4px;margin-top:8px;">
+          <div style="text-align:center;font-size:11px;color:#3b82f6;">
+            <div style="font-size:18px;">🏠</div>الرئيسية
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">📦</div>المخزون
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">📄</div>الفواتير
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">👥</div>العملاء
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">⋯</div>المزيد
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Hamburger Menu + Floating Action</h3>
+      <p>Hamburger menu (☰) slides in from the right (RTL). Floating action button (+) for quick create invoice. More screen space but extra tap to navigate.</p>
+      <div style="margin-top:12px;background:#0d1117;border-radius:16px;padding:16px;color:#f1f5f9;font-size:13px;">
+        <div style="display:flex;justify-content:space-between;border-bottom:1px solid #1e293b;padding-bottom:12px;">
+          <span style="font-size:16px;">☰</span>
+          <span style="font-weight:700;">الفواتير</span>
+          <span style="font-size:16px;">🔔</span>
+        </div>
+        <div style="text-align:center;color:#64748b;padding:60px 0;">Page Content</div>
+        <div style="position:relative;">
+          <div style="position:absolute;bottom:0;left:16px;width:48px;height:48px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;box-shadow:0 4px 12px rgba(59,130,246,0.4);">+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Bottom Tab Bar + Floating Action (Hybrid)</h3>
+      <p>Bottom tabs for navigation PLUS a floating "+" button above the tab bar for quick invoice creation. Best of both worlds — fast navigation + quick actions.</p>
+      <div style="margin-top:12px;background:#0d1117;border-radius:16px;padding:16px;color:#f1f5f9;font-size:13px;">
+        <div style="text-align:center;color:#64748b;padding:30px 0;">Page Content</div>
+        <div style="position:relative;">
+          <div style="position:absolute;bottom:52px;left:50%;transform:translateX(-50%);width:52px;height:52px;background:#3b82f6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;box-shadow:0 4px 16px rgba(59,130,246,0.4);border:3px solid #0d1117;">+</div>
+        </div>
+        <div style="display:flex;justify-content:space-around;border-top:1px solid #1e293b;padding:12px 0 4px;margin-top:8px;">
+          <div style="text-align:center;font-size:11px;color:#3b82f6;">
+            <div style="font-size:18px;">🏠</div>الرئيسية
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">📦</div>المخزون
+          </div>
+          <div style="text-align:center;font-size:11px;width:40px;color:transparent;">
+            <div style="font-size:18px;">.</div>.
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">📄</div>الفواتير
+          </div>
+          <div style="text-align:center;font-size:11px;color:#64748b;">
+            <div style="font-size:18px;">👥</div>العملاء
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

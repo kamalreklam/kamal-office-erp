@@ -19,6 +19,7 @@ export interface Product {
   sku: string;
   description: string;
   price: number;
+  costPrice?: number;
   stock: number;
   minStock: number;
   unit: string;
@@ -41,6 +42,7 @@ export interface InvoiceItem {
   bundleComponents?: { productId: string; productName: string; quantity: number }[];
   isTemporary?: boolean;
   costPrice?: number;
+  sellingPrice?: number;
 }
 
 export interface Invoice {
