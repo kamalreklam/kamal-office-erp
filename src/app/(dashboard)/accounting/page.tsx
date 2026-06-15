@@ -71,7 +71,7 @@ export default function AccountingPage() {
     const cogs = paid.reduce((s, inv) => {
       const items = Array.isArray(inv.items) ? inv.items : [];
       return s + items.reduce((itemSum, item) => {
-        const costPrice = item.isTemporary ? (item.costPrice ?? 0) : (products.find(p => p.id === item.productId)?.price ?? 0);
+        const costPrice = item.isTemporary ? (item.costPrice ?? 0) : (products.find(p => p.id === item.productId)?.costPrice ?? 0);
         return itemSum + (costPrice * item.quantity);
       }, 0);
     }, 0);
