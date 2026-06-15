@@ -52,8 +52,8 @@ export default function EditBundlePage() {
       setItems(bundle.items.map(it => ({
         ...it,
         componentType: it.componentType ?? (products.find(p => p.id === it.productId) ? detectType(products.find(p => p.id === it.productId)!) : "other"),
-        costPrice: it.costPrice ?? products.find(p => p.id === it.productId)?.price ?? 0,
-        sellingPrice: it.sellingPrice ?? products.find(p => p.id === it.productId)?.price ?? 0,
+        costPrice: it.costPrice ?? products.find(p => p.id === it.productId)?.costPrice ?? 0,
+        sellingPrice: it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0,
       })));
       setLoaded(true);
     }
@@ -90,7 +90,7 @@ export default function EditBundlePage() {
     } else {
       setItems(prev => [...prev, {
         productId: product.id, productName: product.name, quantity: 1,
-        componentType: detectType(product), costPrice: product.price, sellingPrice: product.price,
+        componentType: detectType(product), costPrice: product.costPrice, sellingPrice: product.sellingPrice,
       }]);
     }
   }

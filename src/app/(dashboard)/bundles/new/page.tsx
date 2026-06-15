@@ -66,7 +66,7 @@ export default function NewBundlePage() {
     setDescription(familyProducts[0]?.name.replace(/ - (Black|Cyan|Magenta|Yellow|Light Cyan|Light Magenta)$/, "") || "");
     setItems(familyProducts.map(p => ({
       productId: p.id, productName: p.name, quantity: 1,
-      componentType: "ink", costPrice: p.costPrice || 0, sellingPrice: p.price,
+      componentType: "ink", costPrice: p.costPrice || 0, sellingPrice: p.sellingPrice || 0,
     })));
   }
 
@@ -77,7 +77,7 @@ export default function NewBundlePage() {
     } else {
       setItems(prev => [...prev, {
         productId: product.id, productName: product.name, quantity: 1,
-        componentType: detectType(product), costPrice: product.costPrice || 0, sellingPrice: product.price,
+        componentType: detectType(product), costPrice: product.costPrice || 0, sellingPrice: product.sellingPrice || 0,
       }]);
     }
   }
