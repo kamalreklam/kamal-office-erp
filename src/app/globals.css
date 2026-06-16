@@ -65,10 +65,12 @@
   }
 }
 
-/* Force Western Arabic numerals (0-9) system-wide — prevents browser from
-   switching to Eastern Arabic-Indic digits due to lang="ar" on <html> */
+/* Force Western Arabic numerals (0-9) system-wide.
+   IBM Plex Arabic has an OpenType "locl" feature that substitutes digit glyphs
+   with Arabic-Indic forms when lang="ar" is active. Disabling it here fixes this.
+   Arabic letter shaping is unaffected (handled by calt/init/medi/fina, not locl). */
 * {
-  font-variant-numeric: normal !important;
+  font-feature-settings: "locl" 0 !important;
 }
 
 :root {
