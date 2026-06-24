@@ -252,6 +252,7 @@ function productToRow(p: Product) {
     sku: p.sku,
     description: p.description,
     price: p.sellingPrice,
+    cost_price: p.costPrice,
     stock: p.stock,
     min_stock: p.minStock,
     unit: p.unit,
