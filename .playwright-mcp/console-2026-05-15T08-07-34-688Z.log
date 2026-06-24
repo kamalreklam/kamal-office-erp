@@ -1,0 +1,733 @@
+[     233ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     245ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     364ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     428ms] [LOG] [Fast Refresh] done in 165ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    1339ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/images/avatars/1.png:0
+[    5065ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[    5145ms] [LOG] [Fast Refresh] done in 184ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  128130ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  128517ms] [LOG] [Fast Refresh] done in 495ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  133983ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  134046ms] [LOG] [Fast Refresh] done in 151ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  139776ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  139838ms] [LOG] [Fast Refresh] done in 50ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  144331ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  144386ms] [LOG] [Fast Refresh] done in 64ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  149112ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  149178ms] [LOG] [Fast Refresh] done in 53ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  155395ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  155404ms] [LOG] [Fast Refresh] done in 79ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  164427ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  164436ms] [LOG] [Fast Refresh] done in 80ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  177999ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  178063ms] [LOG] [Fast Refresh] done in 45ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  187899ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  187957ms] [LOG] [Fast Refresh] done in 79ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  205489ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  205554ms] [LOG] [Fast Refresh] done in 61ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  227173ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  227236ms] [LOG] [Fast Refresh] done in 94ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  231966ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  232027ms] [LOG] [Fast Refresh] done in 76ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  242313ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  242334ms] [LOG] [Fast Refresh] done in 85ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  247328ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  247467ms] [LOG] [Fast Refresh] done in 89ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  252917ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  253041ms] [LOG] [Fast Refresh] done in 66ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  259002ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  259014ms] [LOG] [Fast Refresh] done in 93ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  275621ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  279472ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  279595ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  279702ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  284531ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  284537ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[  284562ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings:0
+[  284613ms] [ERROR] Refused to execute script from 'http://localhost:3000/_next/static/development/_clientMiddlewareManifest.js' because its MIME type ('application/json') is not executable, and strict MIME type checking is enabled. @ http://localhost:3000/settings:0
+[  284643ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[  284707ms] Error: ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1)
+    at Object.getCompilationErrors (file://D:\Kamal\kamal-office\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1189:59)
+    at DevBundlerService.getCompilationError (file://D:\Kamal\kamal-office\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://D:\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://D:\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://D:\Kamal\kamal-office\node_modules\next\dist\server\base-server.js:1745:26)
+[  284708ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  284711ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  284712ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  284769ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  284831ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  284893ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  284985ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285047ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285111ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285174ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285235ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285298ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285359ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285422ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285485ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285545ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285608ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285670ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285731ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285794ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285855ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285918ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  285979ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286040ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286103ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286166ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286230ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286291ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286355ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286416ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286463ms] [ERROR] ./src/app/(dashboard)/invoices/[id]/page.tsx:284:1
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  282 |     </Box>
+  283 |   );
+> 284 | }
+      | ^
+  285 |
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/[id]/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  286507ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  286662ms] [LOG] [Fast Refresh] done in 134ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  287015ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  287318ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  287347ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  290142ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/images/avatars/1.png:0
+[  294123ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  294179ms] [LOG] [Fast Refresh] done in 38ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  398735ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  398956ms] [LOG] [Fast Refresh] done in 323ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  403345ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  403659ms] [LOG] [Fast Refresh] done in 418ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  406277ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  406410ms] [LOG] [Fast Refresh] done in 239ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  461247ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  461512ms] [LOG] [Fast Refresh] done in 377ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  464015ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  464608ms] [LOG] [Fast Refresh] done in 696ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  469784ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  469986ms] [LOG] [Fast Refresh] done in 303ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  476500ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  476755ms] [LOG] [Fast Refresh] done in 364ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  477359ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  477536ms] [LOG] [Fast Refresh] done in 277ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  478883ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  479161ms] [LOG] [Fast Refresh] done in 385ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  521712ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  521775ms] [LOG] [Fast Refresh] done in 124ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  546058ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  546138ms] [LOG] [Fast Refresh] done in 150ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  560609ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  560703ms] [LOG] [Fast Refresh] done in 147ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  565671ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  565814ms] [LOG] [Fast Refresh] done in 142ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  570551ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  570677ms] [LOG] [Fast Refresh] done in 177ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  578687ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  578775ms] ReferenceError: useSettings is not defined
+    at LayoutContent (http://localhost:3000/_next/static/chunks/src_0pkwgwg._.js?id=%255Bproject%255D%252Fsrc%252F%2540layouts%252Fcomponents%252Fvertical%252FLayoutContent.tsx+%255Bapp-client%255D+%2528ecmascript%2529:24:26)
+    at Object.react_stack_bottom_frame (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:15037:24)
+    at renderWithHooks (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4620:24)
+    at updateFunctionComponent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6081:21)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6691:24)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9449:40)
+    at renderRootSync (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9433:13)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9098:47)
+    at performSyncWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10263:9)
+    at flushSyncWorkAcrossRoots_impl (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10179:316)
+    at flushSyncWork$1 (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9230:86)
+    at Object.scheduleRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:299:13)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:391:33
+    at Set.forEach (<anonymous>)
+    at Object.performReactRefresh (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:384:38)
+    at applyUpdate (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:878:31)
+    at http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:886:13
+[  578874ms] [LOG] [Fast Refresh] done in 169ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  585387ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  585464ms] [WARNING] [Fast Refresh] performing full reload because your application had an unrecoverable error @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  585467ms] [ERROR] Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template). @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  585979ms] [LOG] [Fast Refresh] done in 178ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  586083ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  586273ms] [LOG] [Fast Refresh] done in 294ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  586395ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  586422ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  588935ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/images/avatars/1.png:0

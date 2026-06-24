@@ -54,6 +54,30 @@ export function CommandPalette() {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
+        return;
+      }
+
+      // Do not trigger global hotkeys if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return;
+      }
+
+      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case "i":
+            e.preventDefault();
+            router.push("/invoices/new");
+            break;
+          case "p":
+            e.preventDefault();
+            router.push("/inventory/new");
+            break;
+          case "c":
+            e.preventDefault();
+            router.push("/clients/new");
+            break;
+        }
       }
     }
     document.addEventListener("keydown", onKeyDown);
@@ -132,7 +156,7 @@ export function CommandPalette() {
                     <Package className="h-4 w-4" style={{ color: "var(--purple-500)" }} />
                     <span className="flex-1 truncate">{p.name}</span>
                     <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                      {formatCurrency(p.price)} · {p.stock} {p.unit}
+                      {formatCurrency(p.sellingPrice)} · {p.stock} {p.unit}
                     </span>
                   </CommandItem>
                 ))}

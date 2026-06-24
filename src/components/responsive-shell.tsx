@@ -1,15 +1,8 @@
 "use client";
 
-import { useIsMobile } from "@/hooks/use-is-mobile";
-import { AppShell } from "./app-shell";
-import { MobileShell } from "./mobile/mobile-shell";
+import type { ReactNode } from "react";
 
-export function ResponsiveShell({ children }: { children: React.ReactNode }) {
-  const isMobile = useIsMobile();
-
-  if (isMobile) {
-    return <MobileShell>{children}</MobileShell>;
-  }
-
-  return <AppShell>{children}</AppShell>;
+// Thin passthrough — the shell is now provided by Vuexy's VerticalLayout.
+export function ResponsiveShell({ children }: { children: ReactNode }) {
+  return <>{children}</>;
 }

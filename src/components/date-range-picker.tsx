@@ -2,16 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Button } from "@/components/ui/button";
-import { CalendarDays, Download, X, FileText, Loader2 } from "lucide-react";
+import { CalendarDays, Download, X, FileText, Loader2, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export interface DateRange {
   from: string;
   to: string;
 }
 
+export interface ExportOptions {
+  includeCharts: boolean;
+  detailedMode: boolean;
+}
+
 interface DateRangePickerProps {
-  onExport: (range: DateRange) => Promise<void> | void;
+  onExport: (range: DateRange, options: ExportOptions) => Promise<void> | void;
   loading?: boolean;
   label?: string;
 }
@@ -48,7 +53,7 @@ function ExportDialog({
   label,
   onClose,
 }: {
-  onExport: (range: DateRange) => Promise<void> | void;
+  onExport: (range: DateRange, options: ExportOptions) => Promise<void> | void;
   label: string;
   onClose: () => void;
 }) {
@@ -56,15 +61,10 @@ function ExportDialog({
   const [range, setRange] = useState<DateRange>({ from: presets[2].from, to: presets[2].to });
   const [activePreset, setActivePreset] = useState(2);
   const [exporting, setExporting] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
+  const [options, setOptions] = useState<ExportOptions>({ includeCharts: true, detailedMode: false });
 
   const close = useCallback(() => {
-    setVisible(false);
-    setTimeout(onClose, 200);
+    onClose();
   }, [onClose]);
 
   useEffect(() => {
@@ -83,7 +83,7 @@ function ExportDialog({
   async function handleExport() {
     setExporting(true);
     try {
-      await onExport(range);
+      await onExport(range, options);
     } finally {
       setExporting(false);
       close();
@@ -93,250 +93,176 @@ function ExportDialog({
   return createPortal(
     <div
       onClick={(e) => { if (e.target === e.currentTarget) close(); }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 99999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: visible ? "rgba(0,0,0,0.5)" : "rgba(0,0,0,0)",
-        backdropFilter: visible ? "blur(8px)" : "blur(0px)",
-        transition: "all 0.2s ease",
-      }}
+      className="fixed inset-0 z-[99999] flex items-end md:items-center justify-center p-0 md:p-4 bg-black/40 backdrop-blur-sm transition-all"
     >
-      <div
+      <motion.div
+        initial={{ y: "100%", opacity: 0, scale: 0.95 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: "100%", opacity: 0, scale: 0.95 }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
         dir="rtl"
-        style={{
-          width: "min(440px, calc(100vw - 32px))",
-          borderRadius: "24px",
-          overflow: "hidden",
-          background: "var(--surface-1)",
-          border: "1px solid var(--glass-border)",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.4)",
-          transform: visible ? "scale(1) translateY(0)" : "scale(0.93) translateY(16px)",
-          opacity: visible ? 1 : 0,
-          transition: "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease",
-        }}
+        className="w-full md:w-auto md:min-w-[440px] max-w-[calc(100vw-32px)] bg-white rounded-t-3xl md:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
       >
         {/* Header */}
-        <div
-          style={{
-            padding: "24px 24px 20px",
-            background: "linear-gradient(135deg, var(--surface-2), var(--surface-3))",
-            borderBottom: "1px solid var(--border-subtle)",
-            position: "relative",
-          }}
-        >
+        <div className="relative p-6 pb-5 bg-gradient-to-br from-indigo-50 to-white border-b border-indigo-100/50">
           <button
             onClick={close}
-            style={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              width: 32,
-              height: 32,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "var(--surface-1)",
-              color: "var(--text-muted)",
-              border: "1px solid var(--border-subtle)",
-              cursor: "pointer",
-            }}
+            className="absolute top-6 left-6 w-8 h-8 flex items-center justify-center rounded-full bg-white text-slate-400 hover:text-slate-600 hover:bg-slate-100 shadow-sm transition-all border border-slate-200"
           >
-            <X style={{ width: 16, height: 16 }} />
+            <X className="w-4 h-4" />
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 16,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "var(--primary)",
-                color: "white",
-                boxShadow: "0 4px 16px rgba(37, 99, 235, 0.3)",
-              }}
-            >
-              <CalendarDays style={{ width: 24, height: 24 }} />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+              <CalendarDays className="w-6 h-6" />
             </div>
             <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+              <h3 className="text-xl font-black text-slate-800">
                 تصدير التقرير
               </h3>
-              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0" }}>
-                اختر الفترة الزمنية للتصدير
+              <p className="text-sm font-medium text-slate-500 mt-1">
+                اختر الفترة الزمنية والخيارات
               </p>
             </div>
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
+        <div className="p-6 overflow-y-auto space-y-6">
           {/* Presets */}
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 10 }}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
               فترات سريعة
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div className="grid grid-cols-2 gap-2">
               {presets.map((preset, idx) => {
                 const isActive = activePreset === idx;
                 return (
                   <button
                     key={preset.label}
                     onClick={() => selectPreset(idx)}
-                    style={{
-                      gridColumn: idx === 6 ? "1 / -1" : undefined,
-                      padding: "10px 14px",
-                      borderRadius: 12,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      textAlign: "center",
-                      transition: "all 0.15s ease",
-                      background: isActive ? "var(--primary)" : "var(--surface-2)",
-                      color: isActive ? "white" : "var(--text-secondary)",
-                      border: isActive ? "2px solid var(--primary)" : "1px solid var(--border-subtle)",
-                    }}
+                    className={`
+                      relative overflow-hidden px-3 py-2.5 rounded-xl text-sm font-bold transition-all duration-200
+                      ${idx === 6 ? "col-span-2" : ""}
+                      ${isActive 
+                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20" 
+                        : "bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-200"
+                      }
+                    `}
                   >
-                    {preset.label}
+                    {isActive && (
+                      <motion.div layoutId="activePresetBg" className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 z-0" />
+                    )}
+                    <span className="relative z-10">{preset.label}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {/* Divider */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ height: 1, flex: 1, background: "var(--border-subtle)" }} />
-            <span style={{ fontSize: 10, fontWeight: 500, color: "var(--text-muted)" }}>أو فترة مخصصة</span>
-            <div style={{ height: 1, flex: 1, background: "var(--border-subtle)" }} />
+          <div className="flex items-center gap-4">
+            <div className="h-px flex-1 bg-slate-100" />
+            <span className="text-xs font-bold text-slate-400 uppercase">أو فترة مخصصة</span>
+            <div className="h-px flex-1 bg-slate-100" />
           </div>
 
           {/* Custom dates */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-                من
-              </label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">من</label>
               <input
                 type="date"
                 value={range.from}
                 onChange={(e) => { setRange({ ...range, from: e.target.value }); setActivePreset(-1); }}
                 dir="ltr"
-                style={{
-                  width: "100%",
-                  height: 40,
-                  borderRadius: 12,
-                  border: "1px solid var(--border-default)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-primary)",
-                  padding: "0 12px",
-                  fontSize: 12,
-                  outline: "none",
-                }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl h-12 px-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all force-english-digits"
               />
             </div>
             <div>
-              <label style={{ fontSize: 10, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6 }}>
-                إلى
-              </label>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">إلى</label>
               <input
                 type="date"
                 value={range.to}
                 onChange={(e) => { setRange({ ...range, to: e.target.value }); setActivePreset(-1); }}
                 dir="ltr"
-                style={{
-                  width: "100%",
-                  height: 40,
-                  borderRadius: 12,
-                  border: "1px solid var(--border-default)",
-                  background: "var(--surface-2)",
-                  color: "var(--text-primary)",
-                  padding: "0 12px",
-                  fontSize: 12,
-                  outline: "none",
-                }}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl h-12 px-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 focus:bg-white transition-all force-english-digits"
               />
             </div>
+          </div>
+
+          {/* Extra Options */}
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${options.includeCharts ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-400'}`}>
+                {options.includeCharts && <Check className="w-4 h-4 text-white" />}
+              </div>
+              <input type="checkbox" className="hidden" checked={options.includeCharts} onChange={e => setOptions({...options, includeCharts: e.target.checked})} />
+              <span className="text-sm font-bold text-slate-700">تضمين الرسوم البيانية في التقرير</span>
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${options.detailedMode ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300 bg-white group-hover:border-indigo-400'}`}>
+                {options.detailedMode && <Check className="w-4 h-4 text-white" />}
+              </div>
+              <input type="checkbox" className="hidden" checked={options.detailedMode} onChange={e => setOptions({...options, detailedMode: e.target.checked})} />
+              <span className="text-sm font-bold text-slate-700">وضع التفاصيل (عرض كل العناصر بدلاً من الملخص)</span>
+            </label>
           </div>
         </div>
 
         {/* Footer */}
-        <div
-          style={{
-            padding: "16px 24px",
-            background: "var(--surface-2)",
-            borderTop: "1px solid var(--border-subtle)",
-          }}
-        >
+        <div className="p-6 pt-0 mt-2">
           <button
             onClick={handleExport}
             disabled={exporting}
-            style={{
-              width: "100%",
-              height: 48,
-              borderRadius: 14,
-              fontSize: 14,
-              fontWeight: 700,
-              cursor: exporting ? "not-allowed" : "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              background: exporting ? "var(--surface-3)" : "var(--primary)",
-              color: "white",
-              border: "none",
-              transition: "all 0.15s ease",
-            }}
+            className={`
+              w-full h-14 rounded-2xl text-base font-black flex items-center justify-center gap-2 transition-all shadow-md
+              ${exporting 
+                ? "bg-indigo-100 text-indigo-400 cursor-not-allowed shadow-none" 
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98]"
+              }
+            `}
           >
             {exporting ? (
               <>
-                <Loader2 style={{ width: 20, height: 20, animation: "spin 1s linear infinite" }} />
+                <Loader2 className="w-5 h-5 animate-spin" />
                 جاري التصدير...
               </>
             ) : (
               <>
-                <Download style={{ width: 20, height: 20 }} />
+                <Download className="w-5 h-5" />
                 {label}
               </>
             )}
           </button>
         </div>
-      </div>
+      </motion.div>
     </div>,
     document.body
   );
 }
 
-export function DateRangeExportButton({ onExport, label = "تصدير PDF", buttonStyle }: DateRangePickerProps & { buttonStyle?: React.CSSProperties }) {
+export function DateRangeExportButton({ onExport, label = "تصدير PDF", className, buttonStyle }: DateRangePickerProps & { className?: string; buttonStyle?: React.CSSProperties }) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {buttonStyle ? (
-        <button onClick={() => setOpen(true)} style={buttonStyle}>
-          <FileText style={{ width: 18, height: 18 }} />
-          {label}
-        </button>
-      ) : (
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
-          <FileText className="h-4 w-4" />
-          <span className="hidden sm:inline">{label}</span>
-        </Button>
-      )}
-      {open && (
-        <ExportDialog
-          onExport={onExport}
-          label={label}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      <button 
+        onClick={() => setOpen(true)} 
+        className={className || "inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 px-4 py-2 text-sm font-bold text-white hover:shadow-lg hover:shadow-slate-900/20 transition-all active:scale-95"} 
+        style={buttonStyle}
+      >
+        <FileText className="w-4 h-4 text-slate-300" />
+        <span>{label}</span>
+      </button>
+      <AnimatePresence>
+        {open && (
+          <ExportDialog
+            onExport={onExport}
+            label={label}
+            onClose={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

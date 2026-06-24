@@ -17,7 +17,7 @@ export function MobileInventory() {
 
   function shareWhatsApp() {
     const lines = [`📦 *تقرير المخزون — ${settings.businessName}*`, `عدد المنتجات: ${products.length}`, ""];
-    products.slice(0, 20).forEach((p) => { lines.push(`• ${p.name}: ${p.stock} ${p.unit} (${formatCurrency(p.price)})`); });
+    products.slice(0, 20).forEach((p) => { lines.push(`• ${p.name}: ${p.stock} ${p.unit} (${formatCurrency(p.sellingPrice)})`); });
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
   }
   const categories = ["الكل", ...Array.from(new Set(products.map((p) => p.category))).sort()];
@@ -36,7 +36,7 @@ export function MobileInventory() {
   }, [products, debouncedSearch, activeCategory]);
 
   const lowStock = getLowStockProducts(products);
-  const totalValue = products.reduce((s, p) => s + p.price * p.stock, 0);
+  const totalValue = products.reduce((s, p) => s + p.sellingPrice * p.stock, 0);
   const totalUnits = products.reduce((s, p) => s + p.stock, 0);
 
   // Category stats for report
@@ -46,7 +46,7 @@ export function MobileInventory() {
       const stat = map.get(p.category) || { count: 0, units: 0, value: 0 };
       stat.count++;
       stat.units += p.stock;
-      stat.value += p.price * p.stock;
+      stat.value += p.sellingPrice * p.stock;
       map.set(p.category, stat);
     });
     return Array.from(map.entries()).sort((a, b) => b[1].value - a[1].value);
@@ -275,11 +275,20 @@ export function MobileInventory() {
                     <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, textAlign: "right" }} className="line-clamp-2">
                       {product.name}
                     </p>
+<<<<<<< HEAD
                     {product.sku && (
                       <p style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", marginTop: 2 }}>
                         {product.sku}
                       </p>
                     )}
+=======
+                    <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{product.category}</p>
+                  </div>
+                  <div className="text-left shrink-0">
+                    <p style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)" }}>
+                      {formatCurrency(product.sellingPrice)}
+                    </p>
+>>>>>>> origin/master
                   </div>
                 </div>
 
@@ -310,6 +319,7 @@ export function MobileInventory() {
                       {product.stock} / {product.minStock} {product.unit}
                     </span>
                   </div>
+<<<<<<< HEAD
                   <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div
                       style={{
@@ -344,6 +354,15 @@ export function MobileInventory() {
                       title="مشاركة واتساب"
                     >
                       <MessageCircle style={{ width: 14, height: 14 }} />
+=======
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)" }}>
+                    القيمة: {formatCurrency(product.sellingPrice * product.stock)}
+                  </span>
+                  <div className="flex gap-2">
+                    <button onClick={() => router.push(`/inventory/${product.id}/edit`)}
+                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "var(--primary)", border: "none", cursor: "pointer" }}>
+                      <Pencil style={{ width: 15, height: 15 }} />
+>>>>>>> origin/master
                     </button>
                     <button
                       onClick={() => {

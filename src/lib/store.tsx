@@ -56,6 +56,10 @@ export interface AppSettings {
   primaryColor: string;
   customInvoiceHtml: string;
   productCategories: string[];
+  invoicePaperSize: "A4" | "Receipt";
+  showDiscountColumn: boolean;
+  showProductImages: boolean;
+  headerAlignment: "center" | "right";
 }
 
 const defaultSettings: AppSettings = {
@@ -74,6 +78,10 @@ const defaultSettings: AppSettings = {
   primaryColor: "#2563eb",
   customInvoiceHtml: "",
   productCategories: ["طابعة", "حبر", "تونر", "ورق", "ملحقات"],
+  invoicePaperSize: "A4",
+  showDiscountColumn: true,
+  showProductImages: false,
+  headerAlignment: "center",
 };
 
 // ==========================================
@@ -272,7 +280,8 @@ function productToRow(p: Product) {
     category: p.category,
     sku: p.sku,
     description: p.description,
-    price: p.price,
+    price: p.sellingPrice,
+    cost_price: p.costPrice,
     stock: p.stock,
     min_stock: p.minStock,
     unit: p.unit,
@@ -287,7 +296,8 @@ function rowToProduct(r: Record<string, unknown>): Product {
     category: (r.category || "ملحقات") as string,
     sku: (r.sku || "") as string,
     description: (r.description || "") as string,
-    price: Number(r.price) || 0,
+    costPrice: Number(r.cost_price || r.price) || 0,
+    sellingPrice: Number(r.selling_price || r.price) || 0,
     stock: Number(r.stock) || 0,
     minStock: Number(r.min_stock) || 5,
     unit: (r.unit || "قطعة") as string,
@@ -443,6 +453,10 @@ function rowToSettings(r: Record<string, unknown>): AppSettings {
     primaryColor: (r.primary_color || "#2563eb") as string,
     customInvoiceHtml: (r.custom_invoice_html || "") as string,
     productCategories: defaultSettings.productCategories,
+    invoicePaperSize: ((r.invoice_paper_size || defaultSettings.invoicePaperSize) as unknown) as "A4" | "Receipt",
+    showDiscountColumn: (r.show_discount_column ?? defaultSettings.showDiscountColumn) as boolean,
+    showProductImages: (r.show_product_images ?? defaultSettings.showProductImages) as boolean,
+    headerAlignment: ((r.header_alignment || defaultSettings.headerAlignment) as unknown) as "center" | "right",
   };
 }
 
@@ -649,7 +663,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (productData.category !== undefined) row.category = productData.category;
       if (productData.sku !== undefined) row.sku = productData.sku;
       if (productData.description !== undefined) row.description = productData.description;
-      if (productData.price !== undefined) row.price = productData.price;
+      if (productData.sellingPrice !== undefined) row.price = productData.sellingPrice;
+      if (productData.costPrice !== undefined) row.cost_price = productData.costPrice;
       if (productData.stock !== undefined) row.stock = productData.stock;
       if (productData.minStock !== undefined) row.min_stock = productData.minStock;
       if (productData.unit !== undefined) row.unit = productData.unit;
@@ -1200,13 +1215,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const existingIds = new Set(prev.map((p) => p.id));
           const newProducts = data.products
             .filter((p) => !existingIds.has(p.id))
-            .map((p) => ({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            .map((p: any): Product => ({
               id: p.id,
               name: p.name,
               category: (p.category || "ملحقات") as string,
               sku: p.sku || "",
-              description: p.nameEn || "",
-              price: p.price || 0,
+              description: p.description || p.nameEn || "",
+              costPrice: p.costPrice ?? p.cost ?? p.price ?? 0,
+              sellingPrice: p.sellingPrice ?? p.price ?? 0,
               stock: p.stock || 0,
               unit: p.unit || "قطعة",
               minStock: p.minStock || 5,

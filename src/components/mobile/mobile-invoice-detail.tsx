@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, type Invoice } from "@/lib/data";
 import { toast } from "sonner";
-import { MobileShell } from "./mobile-shell";
 
 export function MobileInvoiceDetail({ invoice }: { invoice: Invoice }) {
   const router = useRouter();
@@ -53,7 +52,7 @@ export function MobileInvoiceDetail({ invoice }: { invoice: Invoice }) {
   }
 
   return (
-    <MobileShell>
+    
       <div className="space-y-4" dir="rtl">
         {/* Back + Title */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -173,6 +172,6 @@ export function MobileInvoiceDetail({ invoice }: { invoice: Invoice }) {
           </div>
         )}
       </div>
-    </MobileShell>
+    
   );
 }

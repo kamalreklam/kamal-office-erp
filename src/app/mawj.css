@@ -1,0 +1,1225 @@
+/* ————————————————————————————————————————————————
+   Mawj CRM — design system (ported from Claude Design bundle
+   mawj-crm-10-06-2026: tokens.css + components.css).
+   Quiet luxury · Arabic-first · RTL. Self-contained; loaded only on /v2.
+   Fonts map to our self-hosted IBM Plex Sans Arabic (--font-ibm).
+   ———————————————————————————————————————————————— */
+
+.mawj-app {
+  /* brand — exact values */
+  --ink: #0c1a6c;
+  --ink-deep: #08124c;
+  --wave: #1e3a5f;
+  --gold: #c9a961;
+  --gold-deep: #9c7b3f;
+  --crystal: #f7f5f0;
+  --canvas: #f4f1ea;
+  --mist: #e8e4dc;
+  --slate: #5b6472;
+  --success: #2d6a4f;
+  --warning: #b45309;
+  --danger: #9b2c2c;
+
+  /* surfaces & tints */
+  --card: #ffffff;
+  --ink-04: rgba(12, 26, 108, 0.04);
+  --ink-06: rgba(12, 26, 108, 0.06);
+  --ink-10: rgba(12, 26, 108, 0.1);
+  --ink-16: rgba(12, 26, 108, 0.16);
+  --gold-08: rgba(201, 169, 97, 0.08);
+  --gold-14: rgba(201, 169, 97, 0.14);
+  --gold-30: rgba(201, 169, 97, 0.3);
+  --success-tint: rgba(45, 106, 79, 0.1);
+  --warning-tint: rgba(180, 83, 9, 0.1);
+  --danger-tint: rgba(155, 44, 44, 0.09);
+
+  /* elevation */
+  --shadow-card: 0 1px 2px rgba(8, 18, 76, 0.04), 0 10px 28px -16px rgba(8, 18, 76, 0.14);
+  --shadow-float: 0 2px 6px rgba(8, 18, 76, 0.06), 0 24px 56px -24px rgba(8, 18, 76, 0.28);
+  --shadow-pop: 0 8px 16px rgba(8, 18, 76, 0.08), 0 32px 80px -24px rgba(8, 18, 76, 0.35);
+
+  /* shape */
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 7px;
+
+  /* type — IBM Plex everywhere · 14px floor */
+  --font-display: var(--font-ibm), 'IBM Plex Sans Arabic', sans-serif;
+  --font-body: var(--font-ibm), 'IBM Plex Sans Arabic', sans-serif;
+  --font-num: var(--font-ibm), 'IBM Plex Sans Arabic', sans-serif;
+
+  /* density (tweakable) */
+  --pad-card: 24px;
+  --pad-cell: 16px;
+  --row-h: 60px;
+
+  background: var(--canvas);
+  color: var(--ink-deep);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  min-height: 100vh;
+}
+
+.mawj-app[data-density='compact'] {
+  --pad-card: 16px;
+  --pad-cell: 8px;
+  --row-h: 42px;
+}
+
+.mawj-app *,
+.mawj-app *::before,
+.mawj-app *::after {
+  box-sizing: border-box;
+}
+
+.mawj-app ::selection {
+  background: var(--gold-30);
+}
+
+/* scrollbars — quiet */
+.mawj-app * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(12, 26, 108, 0.18) transparent;
+}
+.mawj-app *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.mawj-app *::-webkit-scrollbar-thumb {
+  background: rgba(12, 26, 108, 0.16);
+  border-radius: 99px;
+}
+.mawj-app *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ————— typography ————— */
+.mawj-app h1,
+.mawj-app h2,
+.mawj-app h3,
+.mawj-app h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  color: var(--ink-deep);
+}
+
+.mawj-app .t-page {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+.mawj-app .t-section {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+.mawj-app .t-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--slate);
+  letter-spacing: 0.02em;
+}
+.mawj-app .t-micro {
+  font-size: 14px;
+  color: var(--slate);
+}
+.mawj-app .t-num {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.mawj-app .t-num-sans {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.mawj-app .t-gold {
+  color: var(--gold-deep);
+}
+.mawj-app .t-muted {
+  color: var(--slate);
+}
+.mawj-app .t-danger {
+  color: var(--danger);
+}
+.mawj-app .t-success {
+  color: var(--success);
+}
+
+.mawj-app a {
+  color: var(--wave);
+  text-decoration: none;
+}
+
+.mawj-app :focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.mawj-app button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  font-size: inherit;
+  padding: 0;
+}
+
+.mawj-app input,
+.mawj-app textarea,
+.mawj-app select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink-deep);
+}
+.mawj-app input::placeholder,
+.mawj-app textarea::placeholder {
+  color: rgba(91, 100, 114, 0.65);
+}
+
+/* ————— motion keyframes ————— */
+@keyframes mawj-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes mawj-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mawj-draw {
+  from {
+    stroke-dashoffset: var(--draw-len, 600);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes mawj-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes mawj-shimmer {
+  0% {
+    transform: translateX(-130%);
+  }
+  55%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+@keyframes mawj-drift {
+  to {
+    transform: translateX(150px);
+  }
+}
+@keyframes assistant-pop {
+  from {
+    transform: translateY(28px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.mawj-app .rise {
+  animation: mawj-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mawj-app .rise-1 {
+  animation-delay: 0.05s;
+}
+.mawj-app .rise-2 {
+  animation-delay: 0.12s;
+}
+.mawj-app .rise-3 {
+  animation-delay: 0.19s;
+}
+.mawj-app .rise-4 {
+  animation-delay: 0.26s;
+}
+.mawj-app .rise-5 {
+  animation-delay: 0.33s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mawj-app *,
+  .mawj-app *::before,
+  .mawj-app *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ————— app shell ————— */
+/* Shell is now a flex row — sidebar width is controlled by Tailwind classes.
+   The CSS .shell class is kept for legacy/mawj CSS sidebar variant. */
+.mawj-app .shell {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+}
+.mawj-app .shell > .sidebar {
+  width: 248px;
+  flex-shrink: 0;
+}
+.mawj-app .shell[data-collapsed='true'] > .sidebar {
+  width: 76px;
+}
+
+.mawj-app .sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  background: var(--crystal);
+  border-inline-end: 1px solid var(--mist);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 40;
+}
+
+.mawj-app .side-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 16px;
+}
+.mawj-app .side-brand .brand-mark {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--gold);
+  display: grid;
+  place-items: center;
+}
+.mawj-app .side-brand .brand-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 21px;
+  color: var(--ink-deep);
+  line-height: 1;
+  white-space: nowrap;
+}
+.mawj-app .side-brand .brand-sub {
+  font-size: 14px;
+  color: var(--slate);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.mawj-app .side-group {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--slate);
+  opacity: 0.8;
+  padding: 14px 12px 5px;
+  white-space: nowrap;
+}
+
+.mawj-app .side-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--wave);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  position: relative;
+  transition: background 0.15s ease, color 0.15s ease;
+  text-align: start;
+}
+.mawj-app .side-item svg {
+  flex: 0 0 auto;
+  opacity: 0.75;
+}
+.mawj-app .side-item:hover {
+  background: var(--ink-04);
+  color: var(--ink-deep);
+}
+.mawj-app .side-item[data-active='true'] {
+  background: var(--ink);
+  color: #fdfcf9;
+  font-weight: 600;
+  box-shadow: var(--shadow-card);
+}
+.mawj-app .side-item[data-active='true'] svg {
+  opacity: 1;
+  color: var(--gold);
+}
+.mawj-app .side-item[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  border-radius: 99px;
+  background: var(--gold);
+}
+
+.mawj-app .shell[data-collapsed='true'] .side-item {
+  justify-content: center;
+  padding: 11px 0;
+}
+.mawj-app .shell[data-collapsed='true'] .side-item span,
+.mawj-app .shell[data-collapsed='true'] .side-group,
+.mawj-app .shell[data-collapsed='true'] .brand-name,
+.mawj-app .shell[data-collapsed='true'] .brand-sub {
+  display: none;
+}
+.mawj-app .shell[data-collapsed='true'] .side-brand {
+  justify-content: center;
+}
+
+.mawj-app .side-foot {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid var(--mist);
+}
+
+/* ————— top bar ————— */
+.mawj-app .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 28px;
+  background: color-mix(in srgb, var(--canvas) 82%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--mist);
+}
+
+.mawj-app .search-pill {
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--card);
+  border: 1px solid var(--mist);
+  border-radius: 99px;
+  color: var(--slate);
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mawj-app .search-pill:hover {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-08);
+}
+.mawj-app .search-pill kbd {
+  margin-inline-start: auto;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--crystal);
+  border: 1px solid var(--mist);
+  border-radius: 6px;
+  padding: 1px 7px;
+  color: var(--slate);
+}
+
+.mawj-app .iconbtn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--wave);
+  background: var(--card);
+  border: 1px solid var(--mist);
+  position: relative;
+  transition: border-color 0.15s ease, transform 0.12s ease;
+}
+.mawj-app .iconbtn:hover {
+  border-color: var(--gold);
+}
+.mawj-app .iconbtn:active {
+  transform: scale(0.94);
+}
+.mawj-app .iconbtn .dot {
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  border: 2px solid var(--card);
+}
+
+.mawj-app .ai-launch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  background: var(--ink);
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+.mawj-app .ai-launch:hover {
+  box-shadow: var(--shadow-float);
+  transform: translateY(-1px);
+}
+
+/* ————— main content ————— */
+.mawj-app .main {
+  min-width: 0;
+}
+.mawj-app .page {
+  padding: 24px 24px 80px;
+  width: 100%;
+}
+.mawj-app .page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.mawj-app .page-head .wave-under {
+  margin-top: 10px;
+}
+
+/* ————— cards ————— */
+.mawj-app .card {
+  background: var(--card);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--pad-card);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.mawj-app .card:hover {
+  box-shadow: var(--shadow-float);
+}
+.mawj-app .card-plain {
+  box-shadow: none;
+}
+.mawj-app .card-ink {
+  background: linear-gradient(160deg, var(--ink) 0%, var(--ink-deep) 100%);
+  color: #f4f1ea;
+  border-color: var(--ink-deep);
+}
+.mawj-app .card-ink .t-label {
+  color: rgba(244, 241, 234, 0.62);
+}
+
+/* ————— buttons ————— */
+.mawj-app .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 99px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.mawj-app .btn:active {
+  transform: scale(0.97);
+}
+.mawj-app .btn-primary {
+  background: var(--ink);
+  color: #fdfcf9;
+  box-shadow: var(--shadow-card);
+}
+.mawj-app .btn-primary:hover {
+  background: var(--ink-deep);
+  box-shadow: var(--shadow-float);
+}
+.mawj-app .btn-gold {
+  background: var(--gold);
+  color: var(--ink-deep);
+  box-shadow: var(--shadow-card);
+}
+.mawj-app .btn-gold:hover {
+  background: #d4b676;
+}
+.mawj-app .btn-ghost {
+  background: var(--card);
+  color: var(--wave);
+  border-color: var(--mist);
+}
+.mawj-app .btn-ghost:hover {
+  border-color: var(--gold);
+}
+.mawj-app .btn-danger-ghost {
+  background: transparent;
+  color: var(--danger);
+  border-color: rgba(155, 44, 44, 0.25);
+}
+.mawj-app .btn-danger-ghost:hover {
+  background: var(--danger-tint);
+}
+.mawj-app .btn-sm {
+  padding: 5px 13px;
+  font-size: 14px;
+}
+
+/* ————— badges & chips ————— */
+.mawj-app .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2.5px 11px;
+  border-radius: 99px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.mawj-app .badge .bdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.mawj-app .badge-draft {
+  background: var(--ink-06);
+  color: var(--slate);
+}
+.mawj-app .badge-confirmed {
+  background: rgba(30, 58, 95, 0.1);
+  color: var(--wave);
+}
+.mawj-app .badge-delivered {
+  background: var(--success-tint);
+  color: var(--success);
+}
+.mawj-app .badge-settled {
+  background: var(--gold-14);
+  color: var(--gold-deep);
+}
+.mawj-app .badge-cancelled {
+  background: var(--danger-tint);
+  color: var(--danger);
+}
+.mawj-app .badge-warning {
+  background: var(--warning-tint);
+  color: var(--warning);
+}
+.mawj-app .badge-vip {
+  background: var(--ink);
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.mawj-app .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 13px;
+  border-radius: 99px;
+  border: 1px solid var(--mist);
+  background: var(--card);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--wave);
+  transition: all 0.15s ease;
+}
+.mawj-app .chip:hover {
+  border-color: var(--gold);
+}
+.mawj-app .chip[data-on='true'] {
+  background: var(--ink);
+  color: #fdfcf9;
+  border-color: var(--ink);
+}
+
+/* ————— tables ————— */
+.mawj-app .tablewrap {
+  overflow-x: auto;
+  margin: 0 calc(var(--pad-card) * -1);
+  padding: 0 var(--pad-card);
+}
+.mawj-app table.mtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.mawj-app .mtable th {
+  text-align: start;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--slate);
+  padding: 8px var(--pad-cell);
+  border-bottom: 1px solid var(--mist);
+  white-space: nowrap;
+}
+.mawj-app .mtable td {
+  padding: var(--pad-cell);
+  border-bottom: 1px solid rgba(232, 228, 220, 0.55);
+  height: var(--row-h);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.mawj-app .mtable tbody tr {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.mawj-app .mtable tbody tr:hover {
+  background: var(--gold-08);
+  box-shadow: inset -4px 0 0 0 var(--gold);
+}
+.mawj-app .mtable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ————— KPI ————— */
+.mawj-app .kpi-value {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 34px;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-deep);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.mawj-app .kpi-value .unit {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--slate);
+  margin-inline-start: 4px;
+}
+.mawj-app .delta {
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.mawj-app .delta-up {
+  color: var(--success);
+}
+.mawj-app .delta-down {
+  color: var(--danger);
+}
+.mawj-app .delta-flat {
+  color: var(--slate);
+}
+
+/* ————— wave motif ————— */
+.mawj-app .wave-under {
+  display: block;
+}
+.mawj-app .wave-divider {
+  display: block;
+  width: 100%;
+  height: 14px;
+  opacity: 0.8;
+}
+
+/* ————— forms ————— */
+.mawj-app .field input,
+.mawj-app .field select,
+.mawj-app .field textarea,
+.mawj-app input[type="text"],
+.mawj-app input[type="number"],
+.mawj-app select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid var(--mist);
+  border-radius: 12px;
+  background: var(--card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.mawj-app .field input:focus,
+.mawj-app .field select:focus,
+.mawj-app .field textarea:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-08);
+}
+.mawj-app .field label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* ————— AI surfaces ————— */
+.mawj-app .ai-card {
+  position: relative;
+  background: linear-gradient(155deg, #fffdf8 0%, var(--crystal) 100%);
+  border: 1px solid var(--gold-30);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+  padding: var(--pad-card);
+  overflow: hidden;
+}
+.mawj-app .ai-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 42%, rgba(201, 169, 97, 0.1) 50%, transparent 58%);
+  transform: translateX(-130%);
+  animation: mawj-shimmer 7s ease-in-out infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mawj-app .ai-card::after {
+    animation: none;
+  }
+}
+.mawj-app.calm-motion .ai-card::after {
+  animation: none;
+}
+.mawj-app.calm-motion .ambient-wave path {
+  animation: none !important;
+}
+.mawj-app .ambient-wave path {
+  animation: mawj-drift 16s linear infinite;
+}
+.mawj-app .ambient-wave path:last-child {
+  animation-duration: 23s;
+  animation-direction: reverse;
+}
+.mawj-app .ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold-deep);
+}
+.mawj-app .insight-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--gold-08), transparent 70%);
+  border: 1px solid var(--gold-30);
+  font-size: 14px;
+}
+
+/* ————— overlays: palette & assistant ————— */
+.mawj-app .overlay-dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 18, 76, 0.32);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 90;
+  animation: mawj-fade 0.2s ease both;
+}
+.mawj-app .palette {
+  position: fixed;
+  top: 14vh;
+  inset-inline: 0;
+  margin: 0 auto;
+  width: min(620px, calc(100vw - 32px));
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: var(--shadow-pop);
+  border: 1px solid var(--mist);
+  z-index: 100;
+  overflow: hidden;
+  animation: mawj-rise 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mawj-app .palette input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 18px 22px;
+  font-size: 16px;
+  background: transparent;
+}
+.mawj-app .palette-list {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 6px;
+  border-top: 1px solid var(--mist);
+}
+.mawj-app .palette-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--ink-deep);
+  text-align: start;
+}
+.mawj-app .palette-item[data-sel='true'] {
+  background: var(--ink);
+  color: #fdfcf9;
+}
+.mawj-app .palette-item[data-sel='true'] svg {
+  color: var(--gold);
+}
+.mawj-app .palette-item .hint {
+  margin-inline-start: auto;
+  font-size: 14px;
+  color: var(--slate);
+}
+.mawj-app .palette-item[data-sel='true'] .hint {
+  color: rgba(244, 241, 234, 0.6);
+}
+
+.mawj-app .assistant {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  right: auto;
+  top: auto;
+  width: min(410px, calc(100vw - 32px));
+  height: min(620px, calc(100vh - 48px));
+  background: var(--card);
+  border: 1px solid var(--mist);
+  border-radius: 22px;
+  box-shadow: var(--shadow-pop);
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: assistant-pop 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.mawj-app .bubble-user {
+  background: var(--ink);
+  color: #fdfcf9;
+  border-radius: 16px 16px 16px 5px;
+  padding: 10px 16px;
+  max-width: 85%;
+  margin-inline-start: auto;
+  font-size: 14px;
+}
+.mawj-app .bubble-ai {
+  background: var(--crystal);
+  border: 1px solid var(--mist);
+  border-radius: 16px 16px 5px 16px;
+  padding: 12px 16px;
+  max-width: 92%;
+  font-size: 14px;
+}
+
+/* ————— orders pipeline board ————— */
+.mawj-app .board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(230px, 1fr));
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.mawj-app .board-col {
+  background: var(--crystal);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-width: 230px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mawj-app .board-card {
+  background: var(--card);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  text-align: start;
+  width: 100%;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.mawj-app .board-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+  border-color: var(--gold-30);
+}
+
+/* ————— bulk action bar ————— */
+.mawj-app .bulkbar {
+  position: fixed;
+  bottom: 26px;
+  inset-inline: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--ink-deep);
+  color: var(--crystal);
+  padding: 10px 18px;
+  border-radius: 99px;
+  box-shadow: var(--shadow-pop);
+  z-index: 80;
+  animation: mawj-rise 0.3s ease both;
+}
+.mawj-app .bulkbar .btn {
+  padding: 6px 14px;
+}
+
+/* ————— misc ————— */
+.mawj-app .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--crystal);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+.mawj-app .avatar-gold {
+  background: var(--gold-14);
+  color: var(--gold-deep);
+  border: 1px solid var(--gold-30);
+}
+.mawj-app .hr {
+  border: none;
+  border-top: 1px solid var(--mist);
+  margin: 14px 0;
+}
+.mawj-app .skeleton-img {
+  background: repeating-linear-gradient(45deg, var(--crystal), var(--crystal) 8px, #efece4 8px, #efece4 16px);
+  border: 1px solid var(--mist);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  color: var(--slate);
+  font-family: monospace;
+  font-size: 14px;
+}
+.mawj-app .stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.mawj-app .toast {
+  position: fixed;
+  bottom: 26px;
+  inset-inline: 0;
+  margin: 0 auto;
+  width: fit-content;
+  max-width: calc(100vw - 40px);
+  background: var(--ink-deep);
+  color: var(--crystal);
+  padding: 11px 22px;
+  border-radius: 99px;
+  box-shadow: var(--shadow-pop);
+  font-size: 14px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: mawj-rise 0.3s ease both;
+}
+.mawj-app .toast .gold {
+  color: var(--gold);
+}
+
+/* ————— mobile ————— */
+.mawj-app .bottom-tabs {
+  display: none;
+}
+.mawj-app .mobile-menu-btn {
+  display: none;
+}
+
+@media (max-width: 920px) {
+  .mawj-app .shell {
+    flex-direction: column;
+  }
+  .mawj-app .sidebar {
+    position: fixed;
+    inset-inline-start: 0;
+    width: min(300px, 84vw);
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: none;
+  }
+  [dir='ltr'] .mawj-app .sidebar {
+    transform: translateX(-100%);
+  }
+  .mawj-app .shell[data-drawer='true'] .sidebar {
+    transform: translateX(0);
+    box-shadow: var(--shadow-pop);
+  }
+  .mawj-app .mobile-menu-btn {
+    display: grid;
+  }
+  .mawj-app .topbar {
+    padding: 10px 16px;
+  }
+  .mawj-app .search-pill kbd {
+    display: none;
+  }
+  .mawj-app .ai-launch span {
+    display: none;
+  }
+  .mawj-app .ai-launch {
+    padding: 8px 11px;
+  }
+  .mawj-app .page {
+    padding: 16px 14px 100px;
+  }
+  .mawj-app .page-head {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 16px;
+  }
+  .mawj-app .page-head > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+  }
+  .mawj-app .page-head > div:nth-child(2),
+  .mawj-app .page-head > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .mawj-app .page-head > div:nth-child(2) > *,
+  .mawj-app .page-head > div:last-child > * {
+    width: 100% !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+  .mawj-app .page-head > div:nth-child(2) span.hidden.sm\:inline,
+  .mawj-app .page-head > div:last-child span.hidden.sm\:inline,
+  .mawj-app .page-head > div:nth-child(2) span.hidden.md\:inline,
+  .mawj-app .page-head > div:last-child span.hidden.md\:inline {
+    display: inline !important;
+  }
+  .mawj-app .btn {
+    min-height: 52px;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+  .mawj-app .btn-sm {
+    min-height: 44px;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+  .mawj-app .field input,
+  .mawj-app .field select,
+  .mawj-app .field textarea,
+  .mawj-app input[type="text"],
+  .mawj-app input[type="number"],
+  .mawj-app select {
+    min-height: 52px;
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 14px;
+  }
+  .mawj-app .bottom-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: fixed;
+    bottom: 0;
+    inset-inline: 0;
+    background: color-mix(in srgb, var(--card) 90%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--mist);
+    padding: 6px 8px calc(8px + env(safe-area-inset-bottom));
+    z-index: 50;
+  }
+  .mawj-app .btab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 0 4px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--slate);
+    min-height: 44px;
+  }
+  .mawj-app .btab[data-active='true'] {
+    color: var(--ink);
+  }
+  .mawj-app .btab[data-active='true'] svg {
+    color: var(--gold-deep);
+  }
+  .mawj-app .board {
+    grid-template-columns: repeat(4, 78vw);
+  }
+  .mawj-app .bulkbar {
+    bottom: 96px;
+  }
+  .mawj-app .assistant {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    width: auto;
+    height: min(78vh, 640px);
+    border-radius: 20px;
+  }
+  .mawj-app .kpi-value {
+    font-size: 29px;
+  }
+  .mawj-app .t-page {
+    font-size: 25px;
+  }
+}

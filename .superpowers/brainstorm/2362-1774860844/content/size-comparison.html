@@ -1,0 +1,90 @@
+<h2>Button & Text Size Comparison</h2>
+<p class="subtitle">These are shown at actual mobile size (375px wide). Click your preference.</p>
+
+<div class="cards" style="grid-template-columns:1fr;">
+
+  <!-- Option A: Current spec -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F0F5FF;padding:0;border-radius:12px;overflow:hidden;">
+      <div style="width:375px;max-width:100%;margin:0 auto;padding:16px;direction:rtl;font-family:system-ui;">
+        <!-- Header -->
+        <div style="font-size:22px;font-weight:800;color:#1e293b;margin-bottom:4px;">فاتورة جديدة</div>
+        <div style="font-size:14px;color:#64748b;margin-bottom:16px;">اختر العميل للمتابعة</div>
+        <!-- Search -->
+        <div style="background:white;border:2px solid #e2e8f0;border-radius:12px;padding:12px 16px;font-size:16px;color:#94a3b8;margin-bottom:12px;height:48px;display:flex;align-items:center;">🔍 ابحث عن عميل...</div>
+        <!-- Client card -->
+        <div style="background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:12px;display:flex;align-items:center;gap:12px;">
+          <div style="width:44px;height:44px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#2563eb;flex-shrink:0;">ن</div>
+          <div style="flex:1;">
+            <div style="font-size:16px;font-weight:700;color:#1e293b;">نزير ورد</div>
+            <div style="font-size:13px;color:#64748b;">0905465301000</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#2563eb;">$2,450</div>
+        </div>
+        <!-- Button -->
+        <div style="background:#2563eb;color:white;border-radius:16px;padding:0;height:52px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;">متابعة ←</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Current Spec</h3>
+      <p>52px buttons · 48px inputs · 16px body · 22px titles</p>
+    </div>
+  </div>
+
+  <!-- Option B: Bigger -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F0F5FF;padding:0;border-radius:12px;overflow:hidden;">
+      <div style="width:375px;max-width:100%;margin:0 auto;padding:16px;direction:rtl;font-family:system-ui;">
+        <!-- Header -->
+        <div style="font-size:26px;font-weight:800;color:#1e293b;margin-bottom:4px;">فاتورة جديدة</div>
+        <div style="font-size:16px;color:#64748b;margin-bottom:16px;">اختر العميل للمتابعة</div>
+        <!-- Search -->
+        <div style="background:white;border:2px solid #e2e8f0;border-radius:14px;padding:14px 18px;font-size:18px;color:#94a3b8;margin-bottom:14px;height:52px;display:flex;align-items:center;">🔍 ابحث عن عميل...</div>
+        <!-- Client card -->
+        <div style="background:white;border-radius:14px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:14px;display:flex;align-items:center;gap:14px;">
+          <div style="width:52px;height:52px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#2563eb;flex-shrink:0;">ن</div>
+          <div style="flex:1;">
+            <div style="font-size:18px;font-weight:700;color:#1e293b;">نزير ورد</div>
+            <div style="font-size:15px;color:#64748b;">0905465301000</div>
+          </div>
+          <div style="font-size:16px;font-weight:700;color:#2563eb;">$2,450</div>
+        </div>
+        <!-- Button -->
+        <div style="background:#2563eb;color:white;border-radius:16px;padding:0;height:56px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;">متابعة ←</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Bigger</h3>
+      <p>56px buttons · 52px inputs · 18px body · 26px titles</p>
+    </div>
+  </div>
+
+  <!-- Option C: Maximum -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F0F5FF;padding:0;border-radius:12px;overflow:hidden;">
+      <div style="width:375px;max-width:100%;margin:0 auto;padding:16px;direction:rtl;font-family:system-ui;">
+        <!-- Header -->
+        <div style="font-size:30px;font-weight:800;color:#1e293b;margin-bottom:6px;">فاتورة جديدة</div>
+        <div style="font-size:18px;color:#64748b;margin-bottom:18px;">اختر العميل للمتابعة</div>
+        <!-- Search -->
+        <div style="background:white;border:2px solid #e2e8f0;border-radius:16px;padding:16px 20px;font-size:20px;color:#94a3b8;margin-bottom:16px;height:56px;display:flex;align-items:center;">🔍 ابحث عن عميل...</div>
+        <!-- Client card -->
+        <div style="background:white;border-radius:16px;padding:18px;box-shadow:0 2px 8px rgba(0,0,0,0.06);margin-bottom:16px;display:flex;align-items:center;gap:16px;">
+          <div style="width:56px;height:56px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#2563eb;flex-shrink:0;">ن</div>
+          <div style="flex:1;">
+            <div style="font-size:20px;font-weight:700;color:#1e293b;">نزير ورد</div>
+            <div style="font-size:16px;color:#64748b;">0905465301000</div>
+          </div>
+          <div style="font-size:18px;font-weight:700;color:#2563eb;">$2,450</div>
+        </div>
+        <!-- Button -->
+        <div style="background:#2563eb;color:white;border-radius:18px;padding:0;height:60px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;">متابعة ←</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Maximum</h3>
+      <p>60px buttons · 56px inputs · 20px body · 30px titles</p>
+    </div>
+  </div>
+
+</div>
