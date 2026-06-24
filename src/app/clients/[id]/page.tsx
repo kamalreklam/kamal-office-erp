@@ -4,13 +4,15 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight, Users, Phone, MapPin, DollarSign, FileText,
-  Clock, Loader2, PackageCheck, CheckCircle2, Pencil, Download,
+  Clock, Loader2, PackageCheck, CheckCircle2, Pencil, Download, MessageCircle, ImageIcon,
 } from "lucide-react";
+import { shareAsImage, formatClientWhatsAppText, shareViaWhatsApp } from "@/lib/share";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor, getOrderStatusColor } from "@/lib/data";
+import type { Payment } from "@/lib/store";
 import { toast } from "sonner";
 
 const avatarColors = [
@@ -43,7 +45,7 @@ function getOrderIcon(status: string) {
 export default function ClientDetailPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const { clients, invoices, orders, settings } = useStore();
+  const { clients, invoices, orders, settings, getInvoicePayments } = useStore();
 
   const client = clients.find((c) => c.id === id);
 
@@ -95,6 +97,21 @@ export default function ClientDetailPage() {
     }
   }
 
+  function shareWhatsApp() {
+    if (!client) return;
+    const text = formatClientWhatsAppText(client, clientInvoices, settings);
+    shareViaWhatsApp(text);
+  }
+
+  function shareImage() {
+    if (!client) return;
+    toast.promise(shareAsImage('client-detail-card-capture', `حساب_${client.name}`), {
+      loading: 'جاري تصدير الحساب كصورة...',
+      success: 'تم التصدير كصورة بنجاح',
+      error: 'فشل تصدير الصورة'
+    });
+  }
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <div className="mx-auto max-w-3xl px-4 py-8">
@@ -111,14 +128,14 @@ export default function ClientDetailPage() {
 
         <div className="space-y-5">
           {/* Client Info Card */}
-          <Card className="border border-[var(--glass-border)] shadow-sm">
+          <Card id="client-detail-card-capture" className="border border-[var(--glass-border)] shadow-sm bg-white">
             <CardContent className="p-6">
-              <div className="flex items-start gap-5">
+              <div className="flex flex-col md:flex-row items-start gap-5">
                 <div className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-2xl font-bold ${getAvatarColor(client.id)}`}>
                   {client.name.charAt(0)}
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 w-full">
+                  <div className="flex flex-col md:flex-row items-start justify-between gap-4">
                     <div>
                       <h2 className="text-xl font-bold text-foreground">{client.name}</h2>
                       <div className="mt-2 flex flex-wrap gap-3 text-sm text-muted-foreground">
@@ -139,13 +156,21 @@ export default function ClientDetailPage() {
                         <p className="mt-2 text-sm text-muted-foreground">{client.notes}</p>
                       )}
                     </div>
-                    <div className="flex shrink-0 gap-2">
-                      <Button variant="outline" size="sm" className="gap-1.5" onClick={exportSheet}>
-                        <Download className="h-4 w-4" />
-                        تصدير
+                    <div className="flex flex-wrap shrink-0 gap-1.5 no-capture w-full md:w-auto mt-2 md:mt-0">
+                      <Button variant="outline" size="sm" className="gap-1 px-2.5 h-8 text-xs font-bold" onClick={exportSheet}>
+                        <Download className="h-3.5 w-3.5" />
+                        PDF
                       </Button>
-                      <Button size="sm" className="gap-1.5" onClick={() => router.push(`/clients/${client.id}/edit`)}>
-                        <Pencil className="h-4 w-4" />
+                      <Button variant="outline" size="sm" className="gap-1 px-2.5 h-8 text-xs font-bold text-green-700 border-green-200 hover:bg-green-50/20" onClick={shareWhatsApp}>
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        واتساب
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-1 px-2.5 h-8 text-xs font-bold text-cyan-700 border-cyan-200 hover:bg-cyan-50/20" onClick={shareImage}>
+                        <ImageIcon className="h-3.5 w-3.5" />
+                        صورة
+                      </Button>
+                      <Button size="sm" className="gap-1 px-2.5 h-8 text-xs font-bold" onClick={() => router.push(`/clients/${client.id}/edit`)}>
+                        <Pencil className="h-3.5 w-3.5" />
                         تعديل
                       </Button>
                     </div>
@@ -170,6 +195,74 @@ export default function ClientDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Statement of Account */}
+          {clientInvoices.length > 0 && (() => {
+            const rows = clientInvoices.map((inv) => {
+              const invPayments: Payment[] = getInvoicePayments(inv.id);
+              const paid = invPayments.reduce((s, p) => s + p.amount, 0);
+              const remaining = inv.total - paid;
+              return { inv, paid, remaining };
+            });
+            const totalTotal = rows.reduce((s, r) => s + r.inv.total, 0);
+            const totalPaid = rows.reduce((s, r) => s + r.paid, 0);
+            const totalRemaining = rows.reduce((s, r) => s + r.remaining, 0);
+            return (
+              <div>
+                <div className="mb-3 flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-muted-foreground">كشف الحساب</h3>
+                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs font-bold" onClick={() => window.print()}>
+                    🖨 طباعة الكشف
+                  </Button>
+                </div>
+                <Card className="border border-[var(--glass-border)] shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[13px]">
+                      <thead>
+                        <tr className="bg-muted/40 border-b border-[var(--glass-border)]">
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">رقم الفاتورة</th>
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">التاريخ</th>
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">الإجمالي</th>
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">المدفوع</th>
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">المتبقي</th>
+                          <th className="px-4 py-2.5 text-right font-bold text-muted-foreground">الحالة</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map(({ inv, paid, remaining }) => (
+                          <tr key={inv.id} className="border-b border-[var(--glass-border)] hover:bg-muted/20">
+                            <td className="px-4 py-2.5 font-mono font-bold text-primary">{inv.invoiceNumber}</td>
+                            <td className="px-4 py-2.5 text-muted-foreground">{inv.createdAt.slice(0, 10)}</td>
+                            <td className="px-4 py-2.5 font-mono font-bold">{formatCurrency(inv.total, settings.currencySymbol)}</td>
+                            <td className="px-4 py-2.5 font-mono text-emerald-700 font-bold">{formatCurrency(paid, settings.currencySymbol)}</td>
+                            <td className={`px-4 py-2.5 font-mono font-bold ${remaining > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                              {formatCurrency(remaining, settings.currencySymbol)}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-bold ${getStatusColor(inv.status)}`}>
+                                {inv.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-muted/40 font-bold border-t-2 border-[var(--glass-border)]">
+                          <td className="px-4 py-2.5 font-black" colSpan={2}>الإجمالي</td>
+                          <td className="px-4 py-2.5 font-mono font-black">{formatCurrency(totalTotal, settings.currencySymbol)}</td>
+                          <td className="px-4 py-2.5 font-mono font-black text-emerald-700">{formatCurrency(totalPaid, settings.currencySymbol)}</td>
+                          <td className={`px-4 py-2.5 font-mono font-black ${totalRemaining > 0 ? "text-amber-600" : "text-emerald-600"}`}>
+                            {formatCurrency(totalRemaining, settings.currencySymbol)}
+                          </td>
+                          <td />
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </Card>
+              </div>
+            );
+          })()}
 
           {/* Timeline */}
           <div>

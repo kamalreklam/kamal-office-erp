@@ -15,6 +15,7 @@ import {
   Calculator,
   Settings,
   X,
+  Truck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -26,6 +27,7 @@ const tabs = [
 ];
 
 const morePages = [
+  { href: "/suppliers", label: "الموردون", icon: Truck },
   { href: "/orders", label: "تتبع الطلبات", icon: ClipboardList },
   { href: "/bundles", label: "مجموعات المنتجات", icon: Layers },
   { href: "/reports", label: "التقارير", icon: BarChart3 },

@@ -17,6 +17,7 @@ import {
   Printer,
   X,
   ChevronLeft,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStore } from "@/lib/store";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/inventory", label: "المخزون", icon: Package },
   { href: "/invoices", label: "الفواتير", icon: FileText },
   { href: "/clients", label: "العملاء", icon: Users },
+  { href: "/suppliers", label: "الموردون", icon: Truck },
   { href: "/orders", label: "تتبع الطلبات", icon: ClipboardList },
   { href: "/bundles", label: "مجموعات المنتجات", icon: Layers },
   { href: "/reports", label: "التقارير", icon: BarChart3 },
@@ -181,7 +183,7 @@ export function AppSidebar({ open, onClose, collapsed, onToggleCollapse }: AppSi
                 title={collapsed ? item.label : undefined}
                 className={cn(
                   "group mt-1 flex items-center gap-3 rounded-md px-3 py-[9px]",
-                  "text-[13.5px] font-medium transition-colors duration-150",
+                  "text-[14px] font-medium transition-colors duration-150",
                   collapsed && "lg:justify-center lg:px-0",
                   isActive
                     ? "text-[var(--primary)]"
@@ -190,7 +192,7 @@ export function AppSidebar({ open, onClose, collapsed, onToggleCollapse }: AppSi
                 style={
                   isActive
                     ? {
-                        background: "rgba(115,103,240,0.12)",
+                        background: "var(--brand-soft)",
                         color: "var(--primary)",
                       }
                     : { color: "var(--text-secondary)" }

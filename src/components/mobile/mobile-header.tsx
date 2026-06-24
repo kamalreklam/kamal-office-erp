@@ -14,6 +14,7 @@ const titles: Record<string, string> = {
   "/invoices": "الفواتير",
   "/invoices/new": "فاتورة جديدة",
   "/clients": "العملاء",
+  "/suppliers": "الموردون",
   "/orders": "الطلبات",
   "/bundles": "المجموعات",
   "/reports": "التقارير",
@@ -49,23 +50,6 @@ export function MobileHeader() {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Theme toggle */}
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="flex h-10 w-10 items-center justify-center rounded-xl"
-            style={{ color: "var(--text-muted)" }}
-          >
-            {theme === "dark" ? (
-              <motion.div initial={{ rotate: -90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3 }}>
-                <Sun className="h-5 w-5" />
-              </motion.div>
-            ) : (
-              <motion.div initial={{ rotate: 90, scale: 0 }} animate={{ rotate: 0, scale: 1 }} transition={{ duration: 0.3 }}>
-                <Moon className="h-5 w-5" />
-              </motion.div>
-            )}
-          </button>
-
           {/* Notifications */}
           <button
             className="relative flex h-10 w-10 items-center justify-center rounded-xl"

@@ -26,6 +26,26 @@ export interface Product {
 }
 
 export type InvoiceStatus = "مسودة" | "مدفوعة" | "مدفوعة جزئياً" | "غير مدفوعة" | "ملغاة";
+export type PaymentMethod = "نقدي" | "حوالة" | "شيك" | "بطاقة";
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: PaymentMethod;
+  notes: string;
+  createdAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  notes: string;
+  totalOwed: number;
+  createdAt: string;
+}
 export type OrderStatus = "قيد الانتظار" | "قيد التنفيذ" | "جاهز للاستلام" | "مكتمل";
 
 export interface InvoiceItem {
@@ -57,6 +77,7 @@ export interface Invoice {
   total: number;
   status: InvoiceStatus;
   notes: string;
+  internalNotes?: string;
   createdAt: string;
 }
 

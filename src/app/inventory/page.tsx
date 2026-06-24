@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
@@ -16,13 +16,14 @@ import {
 } from "@/components/ui/select";
 import {
   Search, Package, AlertTriangle, Plus, Pencil, Trash2, MessageCircle,
-  ArrowUpDown, Download, History, LayoutGrid, List,
+  ArrowUpDown, Download, History, LayoutGrid, List, ImageIcon, Upload,
 } from "lucide-react";
 import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { type Product, getLowStockProducts, formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
 import { exportCSV } from "@/lib/export";
+import { shareAsImage, formatProductWhatsAppText, shareViaWhatsApp } from "@/lib/share";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
 import { TablePageSkeleton } from "@/components/skeletons";
 import { FadeInView } from "@/components/fade-in-view";
@@ -48,7 +49,7 @@ export default function InventoryPage() {
 
 function DesktopInventory() {
   const router = useRouter();
-  const { products, invoices, updateProduct, deleteProduct, getProductImage, settings, connectionStatus } = useStore();
+  const { products, invoices, addProduct, updateProduct, deleteProduct, getProductImage, settings } = useStore();
   const categories = ["الكل", ...Array.from(new Set(products.map(p => p.category))).sort()];
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -57,7 +58,9 @@ function DesktopInventory() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
+  const [csvPreview, setCsvPreview] = useState<{ name: string; category: string; price: number; costPrice: number; stock: number; minStock: number; unit: string; action: "جديد" | "تحديث"; existingId?: string }[]>([]);
+  const [csvModalOpen, setCsvModalOpen] = useState(false);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     const list = products.filter((p) => {
@@ -81,7 +84,6 @@ function DesktopInventory() {
   }, [products, debouncedSearch, activeCategory, sortBy]);
 
   const paged = filtered; // Show all items without pagination
-
   const lowStock = getLowStockProducts(products);
 
   function confirmDelete(product: Product) {
@@ -95,6 +97,55 @@ function DesktopInventory() {
     toast.success("تم حذف المنتج");
     setDeleteDialogOpen(false);
     setDeletingProduct(null);
+  }
+
+  function handleCsvFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split(/\r?\n/).filter((l) => l.trim() !== "");
+      if (lines.length < 2) { toast.error("الملف فارغ أو لا يحتوي على بيانات"); return; }
+      const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+      const nameIdx = headers.indexOf("اسم المنتج") !== -1 ? headers.indexOf("اسم المنتج") : headers.indexOf("name");
+      const catIdx = headers.indexOf("الفئة") !== -1 ? headers.indexOf("الفئة") : headers.indexOf("category");
+      const priceIdx = headers.indexOf("سعر البيع") !== -1 ? headers.indexOf("سعر البيع") : headers.indexOf("sellingprice");
+      const costIdx = headers.indexOf("سعر التكلفة") !== -1 ? headers.indexOf("سعر التكلفة") : headers.indexOf("costprice");
+      const stockIdx = headers.indexOf("المخزون") !== -1 ? headers.indexOf("المخزون") : headers.indexOf("stock");
+      const minIdx = headers.indexOf("الحد الأدنى") !== -1 ? headers.indexOf("الحد الأدنى") : headers.indexOf("minstock");
+      const unitIdx = headers.indexOf("الوحدة") !== -1 ? headers.indexOf("الوحدة") : headers.indexOf("unit");
+      if (nameIdx === -1) { toast.error("لم يتم العثور على عمود اسم المنتج"); return; }
+      const rows = lines.slice(1).map((line) => {
+        const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
+        const name = cols[nameIdx] || "";
+        const category = catIdx !== -1 ? cols[catIdx] || "عام" : "عام";
+        const price = priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0 : 0;
+        const costPrice = costIdx !== -1 ? parseFloat(cols[costIdx]) || 0 : 0;
+        const stock = stockIdx !== -1 ? parseInt(cols[stockIdx]) || 0 : 0;
+        const minStock = minIdx !== -1 ? parseInt(cols[minIdx]) || 0 : 0;
+        const unit = unitIdx !== -1 ? cols[unitIdx] || "قطعة" : "قطعة";
+        const existing = products.find((p) => p.name.trim() === name.trim());
+        return { name, category, price, costPrice, stock, minStock, unit, action: (existing ? "تحديث" : "جديد") as "جديد" | "تحديث", existingId: existing?.id };
+      }).filter((r) => r.name !== "");
+      if (rows.length === 0) { toast.error("لا توجد صفوف صالحة في الملف"); return; }
+      setCsvPreview(rows);
+      setCsvModalOpen(true);
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  function confirmCsvImport() {
+    let count = 0;
+    csvPreview.forEach((row) => {
+      if (row.action === "تحديث" && row.existingId) {
+        updateProduct(row.existingId, { price: row.price, stock: row.stock, category: row.category });
+      } else {
+        addProduct({ name: row.name, category: row.category, sku: "", description: "", price: row.price, stock: row.stock, minStock: 0, unit: row.unit || "قطعة" });
+      }
+      count++;
+    });
+    setCsvModalOpen(false);
+    setCsvPreview([]);
+    toast.success(`تم استيراد ${count} منتج`);
   }
 
   function shareWhatsApp() {
@@ -146,59 +197,75 @@ function DesktopInventory() {
 
   return (
     <ResponsiveShell>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="animate-fade-in-up text-center hidden lg:block">
-          <h1 className="text-2xl font-extrabold text-foreground sm:text-3xl">المخزون</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
-            إدارة ومتابعة جميع المنتجات ({products.length} منتج)
-          </p>
-          <div className="mt-4 flex justify-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-              exportCSV("inventory", ["الاسم", "الكود", "الفئة", "السعر", "المخزون", "الوحدة", "الحد الأدنى"],
-                filtered.map((p) => [p.name, p.sku, p.category, String(p.price), String(p.stock), p.unit, String(p.minStock)])
-              );
-              toast.success("تم تصدير المخزون");
-            }}>
-              <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">تصدير CSV</span>
-            </Button>
-            <DateRangeExportButton
-              label="تصدير تقرير PDF"
-              onExport={async (range: DateRange) => {
-                try {
-                  const { exportInventoryReportPDF } = await import("@/lib/pdf");
-                  await exportInventoryReportPDF(filtered, range, settings);
-                  toast.success("تم تصدير تقرير المخزون");
-                } catch {
-                  toast.error("فشل تصدير التقرير");
-                }
-              }}
-            />
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
-              <MessageCircle className="h-5 w-5 text-green-600" />
-              <span className="hidden sm:inline">مشاركة واتساب</span>
-            </Button>
-            <Button size="sm" className="gap-1.5" onClick={() => router.push("/inventory/new")}>
-              <Plus className="h-5 w-5" />
-              إضافة منتج
-            </Button>
+      <div className="space-y-6">
+        
+        {/* Banner Header Widget */}
+        <div className="relative overflow-hidden rounded-[28px] bg-white border border-[var(--glass-border)] p-6 shadow-sm hidden lg:block">
+          {/* Subtle CMYK theme glows in background */}
+          <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-cyan-400/10 blur-[60px] pointer-events-none" />
+          <div className="absolute left-10 -bottom-20 h-40 w-40 rounded-full bg-pink-400/10 blur-[60px] pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-3.5 py-1 text-xs font-bold text-indigo-700 border border-indigo-100">
+                📦 مستودع الأحبار والأصناف
+              </span>
+              <h1 className="text-2xl font-black text-[var(--text-primary)] mt-3">المخزون العام</h1>
+              <p className="text-[13px] text-[var(--text-muted)] mt-1 font-medium">مراقبة مستويات المنتجات، تنبيهات الكميات المنخفضة، وإدارة أسعار البيع والشراء</p>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="outline" size="sm" className="gap-1.5 h-10 px-4 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" onClick={() => csvInputRef.current?.click()}>
+                <Upload className="h-4 w-4" />
+                <span>استيراد CSV</span>
+              </Button>
+              <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsvFile(f); e.target.value = ""; }} />
+              <Button variant="outline" size="sm" className="gap-1.5 h-10 px-4 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" onClick={() => {
+                exportCSV("inventory", ["الاسم", "الكود", "الفئة", "السعر", "المخزون", "الوحدة", "الحد الأدنى"],
+                  filtered.map((p) => [p.name, p.sku, p.category, String(p.price), String(p.stock), p.unit, String(p.minStock)])
+                );
+                toast.success("تم تصدير المخزون");
+              }}>
+                <Download className="h-4 w-4" />
+                <span>تصدير CSV</span>
+              </Button>
+              <DateRangeExportButton
+                label="تصدير تقرير PDF"
+                onExport={async (range: DateRange) => {
+                  try {
+                    const { exportInventoryReportPDF } = await import("@/lib/pdf");
+                    await exportInventoryReportPDF(filtered, range, settings);
+                    toast.success("تم تصدير المخزون");
+                  } catch {
+                    toast.error("فشل تصدير التقرير");
+                  }
+                }}
+              />
+              <Button variant="outline" size="sm" className="gap-1.5 h-10 px-4 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" onClick={shareWhatsApp}>
+                <MessageCircle className="h-4.5 w-4.5 text-emerald-600" />
+                <span>مشاركة واتساب</span>
+              </Button>
+              <Button size="sm" className="gap-1.5 h-10 px-5 rounded-xl text-[13px] font-bold animate-pulse" onClick={() => router.push("/inventory/new")}>
+                <Plus className="h-4.5 w-4.5" />
+                <span>إضافة منتج</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {/* Low stock banner */}
         {lowStock.length > 0 && (
-          <Card className="border border-[var(--glass-border)] border-amber-200 bg-gradient-to-l from-amber-50/80 to-orange-50/40">
-            <CardContent className="flex flex-col gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <div className="relative overflow-hidden rounded-[24px] border border-amber-200 bg-gradient-to-r from-amber-50/90 to-amber-50/20 p-5 shadow-sm">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-100 border border-amber-200 shadow-sm text-amber-700">
+                  <AlertTriangle className="h-6 w-6 animate-bounce" />
                 </div>
                 <div>
-                  <p className="text-base font-bold text-amber-800">
-                    {lowStock.length} منتجات بمخزون منخفض
-                  </p>
-                  <p className="text-sm text-amber-600">
+                  <h3 className="text-[14px] font-black text-amber-900">
+                    تنبيه: يوجد {lowStock.length} منتجات بمخزون منخفض!
+                  </h3>
+                  <p className="text-xs font-bold text-amber-700 mt-0.5">
                     {lowStock.slice(0, 3).map((p) => p.name).join("، ")}
                     {lowStock.length > 3 && ` و ${lowStock.length - 3} آخرين`}
                   </p>
@@ -207,34 +274,34 @@ function DesktopInventory() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-100"
+                className="gap-1.5 h-9 rounded-xl border-amber-200 bg-white hover:bg-amber-50 text-amber-800 text-xs font-bold shrink-0 shadow-sm"
                 onClick={shareLowStockWhatsApp}
               >
-                <MessageCircle className="h-4 w-4" />
-                إرسال تنبيه
+                <MessageCircle className="h-4.5 w-4.5 text-emerald-600" />
+                <span>إرسال تنبيه واتساب</span>
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Search & Sort */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute right-3.5 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="بحث بالاسم، الكود، أو الوصف..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pr-9"
+              className="pr-10 rounded-xl h-11 border-[var(--border-default)] focus:border-[var(--brand-primary)] bg-white shadow-sm text-xs"
             />
           </div>
           <Select value={sortBy} onValueChange={(v) => v && setSortBy(v)}>
-            <SelectTrigger className="w-[160px] gap-1.5">
-              <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            <SelectTrigger className="w-[170px] h-11 rounded-xl border-[var(--border-default)] bg-white text-xs font-bold shadow-sm">
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground ml-1" />
               <SelectValue placeholder="ترتيب" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="default">الافتراضي</SelectItem>
+              <SelectItem value="default">الترتيب الافتراضي</SelectItem>
               <SelectItem value="name">الاسم (أ-ي)</SelectItem>
               <SelectItem value="price-asc">السعر: الأقل</SelectItem>
               <SelectItem value="price-desc">السعر: الأعلى</SelectItem>
@@ -242,24 +309,24 @@ function DesktopInventory() {
               <SelectItem value="stock-desc">المخزون: الأعلى</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex rounded-xl border border-[var(--glass-border)] overflow-hidden">
+          <div className="flex rounded-xl border border-[var(--border-default)] overflow-hidden bg-white p-0.5 shadow-sm">
             <button
               onClick={() => setViewMode("grid")}
-              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-[var(--surface-2)]"}`}
             >
-              <LayoutGrid className="h-4 w-4" />
+              <LayoutGrid className="h-4.5 w-4.5" />
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`flex h-10 w-10 items-center justify-center transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-[var(--surface-2)]"}`}
             >
-              <List className="h-4 w-4" />
+              <List className="h-4.5 w-4.5" />
             </button>
           </div>
         </div>
 
         {/* Category tabs */}
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5 pt-1">
           {categories.map((cat) => {
             const isActive = activeCategory === cat;
             const count = cat === "الكل"
@@ -269,15 +336,15 @@ function DesktopInventory() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold transition-all border ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-[var(--surface-1)] text-muted-foreground border border-[var(--glass-border)] hover:bg-[var(--surface-2)]"
+                    ? "bg-primary text-white border-primary shadow-sm"
+                    : "bg-white text-[var(--text-secondary)] border-[var(--glass-border)] hover:bg-gray-50"
                 }`}
               >
-                {cat}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${
-                  isActive ? "bg-[var(--surface-1)]/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                <span>{cat}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] ${
+                  isActive ? "bg-white/20 text-white" : "bg-gray-100 text-[var(--text-muted)]"
                 }`}>
                   {count}
                 </span>
@@ -288,46 +355,75 @@ function DesktopInventory() {
 
         {/* Product Display */}
         {filtered.length === 0 ? (
-          <Card className="border border-[var(--glass-border)] shadow-sm">
-            <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
-              <Package className="mb-3 h-10 w-10 opacity-30" />
-              <p className="text-base">لا توجد منتجات مطابقة</p>
-            </CardContent>
-          </Card>
+          <div className="m3-card relative overflow-hidden bg-white border border-[var(--glass-border)] rounded-[24px] p-16 text-center">
+            <Package className="mx-auto mb-4 h-14 w-14 text-gray-300 opacity-60" />
+            <p className="text-sm font-bold text-[var(--text-muted)]">لا توجد منتجات مطابقة للبحث الحالي.</p>
+          </div>
         ) : viewMode === "list" ? (
           /* ===== LIST VIEW ===== */
           <FadeInView>
-          <Card className="border border-[var(--glass-border)] shadow-sm overflow-hidden">
+          <div className="m3-card relative overflow-hidden bg-white shadow-sm border border-[var(--glass-border)] rounded-[24px] p-0 hover:shadow-md transition-all duration-300">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-right border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-[var(--glass-border)] bg-[var(--surface-2)]">
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">#</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">المنتج</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الفئة</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">السعر</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">المخزون</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">القيمة</th>
-                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">الحالة</th>
-                    <th className="px-4 py-3 text-center font-semibold text-muted-foreground">إجراءات</th>
+                  <tr className="border-b border-[var(--border-default)] bg-[var(--surface-2)] text-[12px] font-bold text-[var(--text-muted)]">
+                    <th className="p-4 w-10">#</th>
+                    <th className="p-4">المنتج</th>
+                    <th className="p-4">التوافق</th>
+                    <th className="p-4">الفئة</th>
+                    <th className="p-4">السعر</th>
+                    <th className="p-4 w-[160px]">المخزون والحد الأدنى</th>
+                    <th className="p-4">إجمالي القيمة</th>
+                    <th className="p-4 text-center">الحالة</th>
+                    <th className="p-4 text-center">إجراءات</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100 text-[13px]">
                   {paged.map((product, idx) => {
+                    const isOutOfStock = product.stock === 0;
                     const isLow = product.stock <= product.minStock;
+                    const statusText = isOutOfStock ? "نفذ المخزون" : isLow ? "مخزون منخفض" : "متوفر";
+                    const statusColorClass = isOutOfStock
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : isLow
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+                    // Custom compatibility parser
+                    const text = `${product.name} ${product.description || ""}`.toLowerCase();
+                    const compats = [];
+                    if (text.includes("epson") || text.includes("ep ")) compats.push("Epson");
+                    if (text.includes("canon") || text.includes("cn ") || text.includes("pixma") || text.includes("maxify")) compats.push("Canon");
+                    if (text.includes("hp")) compats.push("HP");
+                    if (text.includes("l8050")) compats.push("L8050");
+                    if (text.includes("c5790") || text.includes("c5890")) compats.push("C5790/C5890");
+                    if (text.includes("c21000")) compats.push("C21000");
+                    if (compats.length === 0) compats.push("عام");
+
                     return (
-                      <tr key={product.id} className={`border-b border-border/40 transition-colors hover:bg-[var(--surface-2)] ${isLow ? "bg-red-50/50" : ""}`}>
-                        <td className="px-4 py-3 text-muted-foreground text-xs">{idx + 1}</td>
-                        <td className="px-4 py-3">
-                          <div>
-                            <p className="font-semibold text-foreground">{product.name}</p>
-                            {product.sku && <p className="font-mono text-xs text-muted-foreground mt-0.5">{product.sku}</p>}
+                      <tr key={product.id} className={`hover:bg-[var(--surface-2)]/40 transition-colors ${isOutOfStock ? "bg-red-50/10" : isLow ? "bg-amber-50/10" : ""}`}>
+                        <td className="p-4 text-muted-foreground font-mono">{idx + 1}</td>
+                        <td className="p-4">
+                          <div className="max-w-[280px]">
+                            <p className="font-bold text-[var(--text-primary)] leading-tight">{product.name}</p>
+                            {product.sku && <p className="font-mono text-[10px] text-[var(--text-muted)] mt-1">{product.sku}</p>}
                           </div>
                         </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                        <td className="p-4">
+                          <div className="flex flex-wrap gap-1">
+                            {compats.map((c) => (
+                              <span key={c} className="inline-flex items-center rounded-full bg-cyan-50/50 text-cyan-700 border border-cyan-100 px-2 py-0.5 text-[10px] font-bold">
+                                {c}
+                              </span>
+                            ))}
+                          </div>
                         </td>
-                        <td className="px-4 py-3 font-semibold text-primary">
+                        <td className="p-4">
+                          <span className="inline-flex items-center rounded-full bg-indigo-50/40 text-indigo-700 border border-indigo-100/50 px-2.5 py-0.5 text-[10px] font-bold">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="p-4 font-bold text-[var(--brand-primary)]">
                           <InlineEdit
                             value={product.price}
                             type="currency"
@@ -335,51 +431,62 @@ function DesktopInventory() {
                             onSave={(v) => updateProduct(product.id, { price: v })}
                           />
                         </td>
-                        <td className="px-4 py-3">
-                          <span className={isLow ? "text-red-600" : "text-foreground"}>
-                            <InlineEdit
-                              value={product.stock}
-                              onSave={(v) => updateProduct(product.id, { stock: v })}
-                              className={`font-semibold ${isLow ? "text-red-600" : ""}`}
-                            />
-                          </span>
-                          <span className="text-xs text-muted-foreground mr-1">{product.unit}</span>
+                        <td className="p-4">
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between items-center text-xs">
+                              <span className={`font-bold font-mono ${isLow ? "text-red-600 font-black" : "text-[var(--text-primary)]"}`}>
+                                {product.stock} {product.unit}
+                              </span>
+                              <span className="text-[var(--text-muted)] text-[10px] font-medium">الحد: {product.minStock}</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-300 ${
+                                  isOutOfStock ? "bg-red-500" : isLow ? "bg-amber-500" : "bg-emerald-500"
+                                }`}
+                                style={{ width: `${Math.min(100, (product.stock / Math.max(product.minStock * 3, 10)) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
                         </td>
-                        <td className="px-4 py-3 font-medium text-muted-foreground">
+                        <td className="p-4 font-bold text-[var(--text-secondary)] font-mono">
                           {formatCurrency(product.price * product.stock)}
                         </td>
-                        <td className="px-4 py-3">
-                          {isLow ? (
-                            <Badge variant="destructive" className="gap-1 text-xs">
-                              <AlertTriangle className="h-3 w-3" />
-                              منخفض
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="status-badge status-badge--success text-xs">
-                              متوفر
-                            </Badge>
-                          )}
+                        <td className="p-4 text-center">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-full border ${statusColorClass}`}>
+                            {isOutOfStock || isLow ? <AlertTriangle className="h-3 w-3" /> : null}
+                            {statusText}
+                          </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1">
+                        <td className="p-4">
+                          <div className="flex items-center justify-center gap-1.5">
                             <Link
                               href={`/inventory/${product.id}/history`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-blue-50 hover:text-blue-600"
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-indigo-50 hover:text-indigo-600 border border-transparent hover:border-indigo-100"
                               title="سجل المبيعات"
                             >
-                              <History className="h-3.5 w-3.5" />
+                              <History className="h-4 w-4" />
                             </Link>
+                            <button
+                              onClick={() => {
+                                shareViaWhatsApp(formatProductWhatsAppText(product, settings));
+                              }}
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-green-600 transition-colors hover:bg-green-50 hover:border-green-100 border border-transparent"
+                              title="مشاركة واتساب"
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </button>
                             <Link
                               href={`/inventory/${product.id}/edit`}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground"
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-indigo-600 transition-colors hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100"
                             >
-                              <Pencil className="h-3.5 w-3.5" />
+                              <Pencil className="h-4 w-4" />
                             </Link>
                             <button
                               onClick={() => confirmDelete(product)}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
+                              className="flex h-8 w-8 items-center justify-center rounded-xl text-[var(--text-muted)] transition-colors hover:bg-red-50 hover:text-red-600 border border-transparent hover:border-red-100"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
                         </td>
@@ -388,17 +495,18 @@ function DesktopInventory() {
                   })}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[var(--surface-2)] border-t border-[var(--glass-border)]">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-muted-foreground">
-                      الإجمالي ({filtered.length} منتج)
+                  <tr className="bg-[var(--surface-2)] border-t border-[var(--border-default)] font-bold text-[13px]">
+                    <td colSpan={3} className="p-4 text-muted-foreground">
+                      إجمالي الفرز الحالي ({filtered.length} منتج)
                     </td>
-                    <td className="px-4 py-3 text-sm font-bold text-primary">
+                    <td />
+                    <td className="p-4 text-[var(--brand-primary)] font-mono">
                       {formatCurrency(filtered.reduce((s, p) => s + p.price, 0))}
                     </td>
-                    <td className="px-4 py-3 text-sm font-bold">
-                      {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString("en-US")}
+                    <td className="p-4 font-mono">
+                      {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString("en-US")} وحدة
                     </td>
-                    <td className="px-4 py-3 text-sm font-bold text-primary">
+                    <td className="p-4 text-[var(--brand-primary)] font-mono">
                       {formatCurrency(filtered.reduce((s, p) => s + p.price * p.stock, 0))}
                     </td>
                     <td colSpan={2} />
@@ -406,98 +514,158 @@ function DesktopInventory() {
                 </tfoot>
               </table>
             </div>
-          </Card>
+          </div>
           </FadeInView>
         ) : (
           /* ===== GRID VIEW ===== */
-          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {paged.map((product) => {
+              const isOutOfStock = product.stock === 0;
               const isLow = product.stock <= product.minStock;
               const img = getProductImage(product.id);
+              const statusText = isOutOfStock ? "نفذ المخزون" : isLow ? "مخزون منخفض" : "متوفر";
+              const statusColorClass = isOutOfStock
+                ? "bg-red-50 text-red-700 border-red-200"
+                : isLow
+                ? "bg-amber-50 text-amber-700 border-amber-200"
+                : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+              // Compatibility Tags Parser
+              const text = `${product.name} ${product.description || ""}`.toLowerCase();
+              const compats = [];
+              if (text.includes("epson") || text.includes("ep ")) compats.push("Epson");
+              if (text.includes("canon") || text.includes("cn ") || text.includes("pixma") || text.includes("maxify")) compats.push("Canon");
+              if (text.includes("hp")) compats.push("HP");
+              if (text.includes("l8050")) compats.push("L8050");
+              if (text.includes("c5790") || text.includes("c5890")) compats.push("C5790/C5890");
+              if (text.includes("c21000")) compats.push("C21000");
+              if (compats.length === 0) compats.push("عام");
+
               return (
-                <Card key={product.id} className={`group border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-lg hover:-translate-y-1 ${isLow ? "border-red-200" : ""}`}>
-                  {/* Image Header */}
-                  <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl bg-[var(--surface-2)]">
-                    {img ? (
-                      <img
-                        src={img}
-                        alt={product.name}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <Package className="h-16 w-16 text-muted-foreground/20" />
-                      </div>
-                    )}
-                    {/* Status badge overlay */}
-                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                      {isLow ? (
-                        <Badge variant="destructive" className="gap-0.5 text-[10px] px-1.5 py-0.5 shadow-sm sm:gap-1 sm:text-xs sm:px-2.5 sm:py-0.5">
-                          <AlertTriangle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                          منخفض
-                        </Badge>
+                <div id={`product-card-${product.id}`} key={product.id} className="m3-card relative flex flex-col justify-between overflow-hidden bg-white shadow-sm border border-[var(--glass-border)] rounded-[24px] p-5 hover:shadow-md transition-all duration-300">
+                  <div>
+                    {/* Status and Category badges */}
+                    <div className="flex justify-between items-center gap-2 mb-3">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-full border ${statusColorClass}`}>
+                        {statusText}
+                      </span>
+                      <span className="text-[10px] font-bold bg-indigo-50/50 text-indigo-700 px-2 py-0.5 rounded-full">
+                        {product.category}
+                      </span>
+                    </div>
+
+                    {/* Image Header */}
+                    <div className="relative aspect-[3/2] w-full overflow-hidden rounded-xl bg-[var(--surface-2)] border border-gray-100 mb-4 flex items-center justify-center">
+                      {img ? (
+                        <img
+                          src={img}
+                          alt={product.name}
+                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                        />
                       ) : (
-                        <Badge variant="outline" className="status-badge status-badge--success text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm sm:text-xs sm:px-2.5 sm:py-0.5">
-                          متوفر
-                        </Badge>
+                        <div className="flex h-full w-full items-center justify-center">
+                          <Package className="h-10 w-10 text-muted-foreground/25" />
+                        </div>
                       )}
                     </div>
-                    {/* Category badge */}
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 shadow-sm backdrop-blur-sm bg-[var(--surface-1)]/80 sm:text-xs sm:px-2.5 sm:py-0.5">{product.category}</Badge>
+
+                    {/* Product Info */}
+                    <div className="mb-4">
+                      <h3 className="text-sm font-bold text-[var(--text-primary)] leading-snug mb-1 line-clamp-2 min-h-[40px]">{product.name}</h3>
+                      {product.sku && (
+                        <p className="font-mono text-[10px] text-[var(--text-muted)] bg-gray-50 px-2.5 py-0.5 rounded inline-block">
+                          {product.sku}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Compatibility tags */}
+                    <div className="flex flex-wrap gap-1 mb-4">
+                      {compats.map((c) => (
+                        <span key={c} className="text-[9px] py-0.5 px-2 bg-cyan-50/50 text-cyan-700 border border-cyan-100 rounded-full font-bold">
+                          {c}
+                        </span>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Card Body */}
-                  <CardContent className="p-3 sm:p-5">
-                    <div className="mb-2 sm:mb-3">
-                      <h3 className="text-sm font-bold text-foreground leading-snug sm:text-base">{product.name}</h3>
-                      {product.description && (
-                        <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1 sm:mt-1 sm:text-sm sm:line-clamp-2">{product.description}</p>
-                      )}
-                      <p className="mt-1 font-mono text-[10px] text-muted-foreground sm:mt-1.5 sm:text-xs">{product.sku}</p>
+                  <div>
+                    {/* Stock level bar */}
+                    <div className="space-y-1.5 mb-4">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-[var(--text-muted)] font-medium">مستوى المخزون:</span>
+                        <span className={`font-black font-mono ${isLow ? "text-red-600" : "text-[var(--text-primary)]"}`}>
+                          {product.stock} / {product.minStock} {product.unit}
+                        </span>
+                      </div>
+                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 ${
+                            isOutOfStock ? "bg-red-500" : isLow ? "bg-amber-500" : "bg-emerald-500"
+                          }`}
+                          style={{ width: `${Math.min(100, (product.stock / Math.max(product.minStock * 3, 10)) * 100)}%` }}
+                        />
+                      </div>
                     </div>
 
-                    {/* Price & Stock */}
-                    <div className="flex items-center justify-between border-t border-[var(--glass-border)] pt-2 sm:pt-3">
+                    {/* Price & Stock info */}
+                    <div className="flex items-center justify-between border-t border-gray-50 pt-3">
                       <div>
-                        <p className="text-[10px] text-muted-foreground sm:text-xs">السعر</p>
-                        <p className="text-sm font-extrabold text-primary sm:text-lg">{formatCurrency(product.price)}</p>
+                        <p className="text-[10px] text-[var(--text-muted)] mb-0.5 font-medium">السعر</p>
+                        <p className="text-base font-extrabold text-[var(--brand-primary)] font-mono">{formatCurrency(product.price)}</p>
                       </div>
                       <div className="text-left">
-                        <p className="text-[10px] text-muted-foreground sm:text-xs">المخزون</p>
-                        <p className={`text-sm font-extrabold sm:text-lg ${isLow ? "text-red-600" : "text-foreground"}`}>
-                          {product.stock} <span className="text-xs font-medium text-muted-foreground sm:text-sm">{product.unit}</span>
-                        </p>
+                        <p className="text-[10px] text-[var(--text-muted)] mb-0.5 font-medium">إجمالي القيمة</p>
+                        <p className="text-xs font-bold text-[var(--text-secondary)] font-mono">{formatCurrency(product.price * product.stock)}</p>
                       </div>
                     </div>
 
                     {/* Actions */}
-                    <div className="mt-2 flex gap-1 border-t border-[var(--glass-border)] pt-2 sm:mt-3 sm:gap-2 sm:pt-3">
+                    <div className="mt-4 flex gap-1.5 border-t border-gray-50 pt-3 flex-wrap">
                       <Link
                         href={`/inventory/${product.id}/history`}
-                        className="flex items-center justify-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-blue-600 transition-colors hover:bg-blue-50 sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-indigo-600 bg-indigo-50/50 hover:bg-indigo-50 transition-colors keep-capture"
                         title="سجل المبيعات"
                       >
-                        <History className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <History className="h-4.5 w-4.5" />
                       </Link>
+                      <button
+                        onClick={() => shareViaWhatsApp(formatProductWhatsAppText(product, settings))}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-green-600 bg-green-50/50 hover:bg-green-50 transition-colors keep-capture"
+                        title="مشاركة واتساب"
+                      >
+                        <MessageCircle className="h-4.5 w-4.5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          toast.promise(shareAsImage(`product-card-${product.id}`, `منتج_${product.name}`), {
+                            loading: 'جاري تصدير صورة المنتج...',
+                            success: 'تم التصدير بنجاح',
+                            error: 'فشل التصدير'
+                          });
+                        }}
+                        className="flex h-10 w-10 items-center justify-center rounded-xl text-cyan-600 bg-cyan-50/50 hover:bg-cyan-50 transition-colors keep-capture"
+                        title="حفظ كصورة"
+                      >
+                        <ImageIcon className="h-4.5 w-4.5" />
+                      </button>
                       <Link
                         href={`/inventory/${product.id}/edit`}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)] hover:text-foreground sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 px-3 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 transition-colors keep-capture"
                       >
-                        <Pencil className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <Pencil className="h-3.5 w-3.5" />
                         تعديل
                       </Link>
                       <button
                         onClick={() => confirmDelete(product)}
-                        className="flex flex-1 items-center justify-center gap-1 rounded-xl py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600 sm:gap-1.5 sm:py-2.5 sm:text-sm"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-xs font-bold text-red-600 bg-red-50/50 hover:bg-red-50 hover:text-red-700 transition-colors"
                       >
-                        <Trash2 className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                         حذف
                       </button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -521,6 +689,48 @@ function DesktopInventory() {
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
             <Button variant="destructive" onClick={handleDelete}>حذف</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Preview Modal */}
+      <Dialog open={csvModalOpen} onOpenChange={setCsvModalOpen}>
+        <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>معاينة استيراد CSV</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">{csvPreview.length} منتج سيتم معالجته</p>
+          <div className="max-h-80 overflow-y-auto rounded-xl border border-[var(--border-default)]">
+            <table className="w-full text-right text-xs">
+              <thead className="sticky top-0 bg-[var(--surface-2)]">
+                <tr className="border-b border-[var(--border-default)] font-bold text-[var(--text-muted)]">
+                  <th className="p-3">الاسم</th>
+                  <th className="p-3">الفئة</th>
+                  <th className="p-3">سعر البيع</th>
+                  <th className="p-3">المخزون</th>
+                  <th className="p-3 text-center">الإجراء</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {csvPreview.map((row, i) => (
+                  <tr key={i} className="hover:bg-[var(--surface-2)]/40">
+                    <td className="p-3 font-medium">{row.name}</td>
+                    <td className="p-3 text-[var(--text-muted)]">{row.category}</td>
+                    <td className="p-3 font-mono">{row.price}</td>
+                    <td className="p-3 font-mono">{row.stock}</td>
+                    <td className="p-3 text-center">
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${row.action === "جديد" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                        {row.action}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCsvModalOpen(false)}>إلغاء</Button>
+            <Button onClick={confirmCsvImport}>تأكيد الاستيراد</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

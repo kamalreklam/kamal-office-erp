@@ -19,7 +19,11 @@ import {
   type Order,
   type InvoiceStatus,
   type OrderStatus,
+  type Payment,
+  type PaymentMethod,
 } from "./data";
+
+export type { Payment, PaymentMethod };
 import { supabase } from "./supabase";
 import { toast } from "sonner";
 
@@ -158,6 +162,19 @@ export interface OdooImportData {
 }
 
 // ==========================================
+// Supplier Interface
+// ==========================================
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  notes: string;
+  totalOwed: number;
+  createdAt: string;
+}
+
+// ==========================================
 // Store Interface
 // ==========================================
 interface StoreContextType {
@@ -167,12 +184,24 @@ interface StoreContextType {
   invoices: Invoice[];
   orders: Order[];
   bundles: ProductBundle[];
+  suppliers: Supplier[];
   settings: AppSettings;
 
   // Client CRUD
   addClient: (client: Omit<Client, "id" | "createdAt" | "totalSpent">) => Client;
   updateClient: (id: string, data: Partial<Client>) => void;
   deleteClient: (id: string) => void;
+
+  // Payment CRUD
+  payments: Payment[];
+  addPayment: (payment: Omit<Payment, "id" | "createdAt">) => Payment;
+  deletePayment: (id: string, invoiceId: string) => void;
+  getInvoicePayments: (invoiceId: string) => Payment[];
+
+  // Supplier CRUD
+  addSupplier: (supplier: Omit<Supplier, "id" | "createdAt" | "totalOwed">) => Supplier;
+  updateSupplier: (id: string, data: Partial<Supplier>) => void;
+  deleteSupplier: (id: string) => void;
 
   // Product CRUD
   addProduct: (product: Omit<Product, "id" | "createdAt"> & { image?: string }) => Product;
@@ -439,6 +468,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bundles, setBundles] = useState<ProductBundle[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [productImages, setProductImages] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState(false);
@@ -495,6 +526,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           const lsInvoices = loadFromStorage("kamal_invoices", defaultInvoices);
           const lsOrders = loadFromStorage("kamal_orders", defaultOrders);
           const lsBundles = loadFromStorage<ProductBundle[]>("kamal_bundles", []);
+          const lsSuppliers = loadFromStorage<Supplier[]>("kamal_suppliers", []);
+          const lsPayments = loadFromStorage<Payment[]>("kamal_payments", []);
           const lsSettings = loadFromStorage("kamal_settings", defaultSettings);
           const lsImages = loadFromStorage<Record<string, string>>("kamal_product_images", {});
 
@@ -503,6 +536,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setInvoices(lsInvoices);
           setOrders(lsOrders);
           setBundles(lsBundles);
+          setSuppliers(lsSuppliers);
+          setPayments(lsPayments);
           setSettings(lsSettings);
           setProductImages(lsImages);
 
@@ -539,6 +574,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setInvoices(loadFromStorage("kamal_invoices", defaultInvoices));
         setOrders(loadFromStorage("kamal_orders", defaultOrders));
         setBundles(loadFromStorage("kamal_bundles", []));
+        setSuppliers(loadFromStorage("kamal_suppliers", []));
         setSettings(loadFromStorage("kamal_settings", defaultSettings));
         setProductImages(loadFromStorage("kamal_product_images", {}));
       }
@@ -1249,6 +1285,97 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  // --- Payment CRUD (localStorage-backed) ---
+  const addPayment = useCallback(
+    (data: Omit<Payment, "id" | "createdAt">): Payment => {
+      const newPayment: Payment = {
+        ...data,
+        id: `pay_${crypto.randomUUID()}`,
+        createdAt: new Date().toISOString(),
+      };
+      setPayments((prev) => {
+        const updated = [newPayment, ...prev];
+        if (typeof window !== "undefined") localStorage.setItem("kamal_payments", JSON.stringify(updated));
+        return updated;
+      });
+      // Auto-update invoice status based on total paid
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          if (inv.id !== data.invoiceId) return inv;
+          const existing = payments.filter((p) => p.invoiceId === data.invoiceId);
+          const totalPaid = existing.reduce((s, p) => s + p.amount, 0) + data.amount;
+          let newStatus: InvoiceStatus = inv.status;
+          if (totalPaid >= inv.total) newStatus = "مدفوعة";
+          else if (totalPaid > 0) newStatus = "مدفوعة جزئياً";
+          if (newStatus === inv.status) return inv;
+          dbExec(supabase.from("invoices").update({ status: newStatus }).eq("id", inv.id));
+          return { ...inv, status: newStatus };
+        })
+      );
+      return newPayment;
+    },
+    [payments]
+  );
+
+  const deletePayment = useCallback((id: string, invoiceId: string) => {
+    setPayments((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      if (typeof window !== "undefined") localStorage.setItem("kamal_payments", JSON.stringify(updated));
+      return updated;
+    });
+    // Recalculate invoice status after deletion
+    setInvoices((prev) =>
+      prev.map((inv) => {
+        if (inv.id !== invoiceId) return inv;
+        const remaining = payments.filter((p) => p.invoiceId === invoiceId && p.id !== id);
+        const totalPaid = remaining.reduce((s, p) => s + p.amount, 0);
+        let newStatus: InvoiceStatus = totalPaid >= inv.total ? "مدفوعة" : totalPaid > 0 ? "مدفوعة جزئياً" : "غير مدفوعة";
+        dbExec(supabase.from("invoices").update({ status: newStatus }).eq("id", inv.id));
+        return { ...inv, status: newStatus };
+      })
+    );
+  }, [payments]);
+
+  const getInvoicePayments = useCallback(
+    (invoiceId: string) => payments.filter((p) => p.invoiceId === invoiceId),
+    [payments]
+  );
+
+  // --- Supplier CRUD (localStorage-backed; no Supabase table yet) ---
+  const addSupplier = useCallback(
+    (data: Omit<Supplier, "id" | "createdAt" | "totalOwed">): Supplier => {
+      const newSupplier: Supplier = {
+        ...data,
+        id: `sup_${crypto.randomUUID()}`,
+        totalOwed: 0,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setSuppliers((prev) => {
+        const updated = [newSupplier, ...prev];
+        if (typeof window !== "undefined") localStorage.setItem("kamal_suppliers", JSON.stringify(updated));
+        return updated;
+      });
+      return newSupplier;
+    },
+    []
+  );
+
+  const updateSupplier = useCallback((id: string, data: Partial<Supplier>) => {
+    setSuppliers((prev) => {
+      const updated = prev.map((s) => (s.id === id ? { ...s, ...data } : s));
+      if (typeof window !== "undefined") localStorage.setItem("kamal_suppliers", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const deleteSupplier = useCallback((id: string) => {
+    setSuppliers((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+      if (typeof window !== "undefined") localStorage.setItem("kamal_suppliers", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   // --- Settings ---
   const updateSettings = useCallback((data: Partial<AppSettings>) => {
     setSettings((prev) => {
@@ -1296,6 +1423,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         invoices,
         orders,
         bundles,
+        suppliers,
+        payments,
         settings,
         addClient,
         updateClient,
@@ -1314,6 +1443,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         addBundle,
         updateBundle,
         deleteBundle,
+        addPayment,
+        deletePayment,
+        getInvoicePayments,
+        addSupplier,
+        updateSupplier,
+        deleteSupplier,
         updateSettings,
         importOdooData,
         nextInvoiceNumber,
