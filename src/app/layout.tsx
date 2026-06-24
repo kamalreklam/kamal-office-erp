@@ -6,6 +6,7 @@ import "./v2.css";
 import "./mawj.css";
 import "@/assets/iconify-icons/generated-icons.css";
 import { Toaster } from "sonner";
+import { StoreProvider } from "@/lib/store";
 
 const ibmPlexArabic = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
@@ -54,7 +55,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased mesh-bg">
         <InitColorSchemeScript attribute="data" defaultMode="light" />
-        {children}
+        <StoreProvider>
+          {children}
+        </StoreProvider>
         <Toaster position="top-center" richColors theme="light" />
       </body>
     </html>
