@@ -137,23 +137,35 @@ function DesktopBundles() {
   return (
     <ResponsiveShell>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="animate-fade-in-up">
-          <div className="flex items-start justify-between gap-4">
+        {/* Banner header widget */}
+        <div className="relative overflow-hidden rounded-3xl bg-[var(--surface-1)] border border-[var(--border-default)] p-6 shadow-sm">
+          {/* Cyan/Magenta CMYK flows in background */}
+          <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-cyan-400/10 blur-[60px]" />
+          <div className="absolute left-10 -bottom-20 h-40 w-40 rounded-full bg-pink-400/10 blur-[60px]" />
+          
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-extrabold text-foreground">المجموعات</h1>
-              <p className="mt-1 text-sm text-muted-foreground">مجموعات منتجات جاهزة — طابعات، أحبار، خزانات</p>
+              <h1 className="text-2xl font-black text-[var(--text-primary)] leading-tight">المجموعات</h1>
+              <p className="text-[13px] text-[var(--text-muted)] mt-1.5 font-medium">مجموعات منتجات جاهزة للتعبئة أو الشحن المباشر للعميل</p>
               {bundles.length > 0 && (
-                <div className="mt-3 flex items-center gap-4 text-sm">
-                  <span><span className="text-xl font-extrabold text-foreground">{bundles.length}</span> <span className="text-muted-foreground">مجموعة</span></span>
-                  <span className="h-4 w-px bg-border" />
-                  <span className="text-muted-foreground">إجمالي القيمة: <span className="font-bold text-primary">{formatCurrency(totalValue)}</span></span>
+                <div className="mt-3.5 flex items-center gap-4 text-xs font-bold text-[var(--text-secondary)]">
+                  <span>
+                    عدد المجموعات: <span className="text-sm font-black text-[var(--text-primary)] font-mono">{bundles.length}</span>
+                  </span>
+                  <span className="h-3 w-px bg-[var(--border-default)]" />
+                  <span>
+                    إجمالي القيمة: <span className="text-sm font-black text-[var(--brand-primary)] font-mono">{formatCurrency(totalValue)}</span>
+                  </span>
                 </div>
               )}
             </div>
-            <Button className="gap-1.5 shrink-0" onClick={() => router.push("/bundles/new")}>
-              <Plus className="h-4 w-4" />
-              مجموعة جديدة
+            
+            <Button 
+              className="gap-1.5 h-9 rounded-xl bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white font-bold text-[13px]" 
+              onClick={() => router.push("/bundles/new")}
+            >
+              <Plus className="h-4.5 w-4.5" />
+              <span>مجموعة جديدة</span>
             </Button>
           </div>
         </div>
@@ -161,28 +173,34 @@ function DesktopBundles() {
         {/* Search */}
         {bundles.length > 0 && (
           <div className="relative max-w-sm">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="ابحث عن مجموعة..." className="pr-9" />
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
+            <Input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)} 
+              placeholder="ابحث عن مجموعة بالاسم..." 
+              className="pr-9 h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] text-[14px]" 
+            />
           </div>
         )}
 
         {/* Empty state */}
         {bundles.length === 0 ? (
-          <Card className="border border-[var(--glass-border)] shadow-sm">
-            <CardContent className="flex flex-col items-center py-20 text-muted-foreground">
-              <Layers className="mb-3 h-14 w-14 opacity-30" />
-              <p className="text-lg font-semibold">لا توجد مجموعات بعد</p>
-              <p className="mt-2 text-sm text-center max-w-xs">أنشئ مجموعة تضم طابعة وأحبار وخزانات لإضافتها دفعة واحدة للفواتير</p>
-              <Button className="mt-5 gap-1.5" onClick={() => router.push("/bundles/new")}>
-                <Plus className="h-4 w-4" />
-                إنشاء أول مجموعة
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="m3-card bg-[var(--surface-1)] flex flex-col items-center py-20 text-center">
+            <Layers className="mb-4 h-14 w-14 text-[var(--text-muted)] opacity-30" />
+            <p className="text-lg font-black text-[var(--text-primary)]">لا توجد مجموعات بعد</p>
+            <p className="mt-2 text-[13px] text-[var(--text-muted)] max-w-xs leading-relaxed">أنشئ مجموعة تضم طابعات ومحابر متوافقة لتسهيل إدراجها داخل الفاتورة بنقرة واحدة</p>
+            <Button 
+              className="mt-5 gap-1.5 rounded-xl bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white font-bold" 
+              onClick={() => router.push("/bundles/new")}
+            >
+              <Plus className="h-4 w-4" />
+              <span>إنشاء أول مجموعة</span>
+            </Button>
+          </div>
         ) : filtered.length === 0 ? (
-          <p className="py-12 text-center text-muted-foreground">لا توجد نتائج لـ &quot;{search}&quot;</p>
+          <p className="py-12 text-center text-[var(--text-muted)] font-medium">لا توجد نتائج مطابقة لـ &quot;{search}&quot;</p>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 stagger-children">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(bundle => {
               const resolved = resolveItems(bundle.items, products);
               const broken = isBroken(bundle);
@@ -200,100 +218,126 @@ function DesktopBundles() {
                 .filter(g => g.items.length > 0);
 
               return (
-                <Card key={bundle.id} className={`border shadow-sm transition-all hover:shadow-md ${broken ? "border-amber-400/60" : "border-[var(--glass-border)]"}`}>
-                  <CardContent className="p-5">
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm ${hasPrinter ? "bg-slate-700" : "bg-gradient-to-br from-cyan-500 via-pink-500 to-yellow-500"}`}>
-                          {hasPrinter ? <Printer className="h-5 w-5" /> : <Droplets className="h-5 w-5" />}
+                <div 
+                  key={bundle.id} 
+                  className={`m3-card relative overflow-hidden bg-[var(--surface-1)] p-5 hover-lift transition-all duration-300 border ${
+                    broken ? "border-amber-400" : "border-[var(--border-default)]"
+                  }`}
+                >
+                  {/* Accent gradient top line */}
+                  <div 
+                    className="absolute top-0 right-0 left-0 h-1.5"
+                    style={{ background: hasPrinter ? "linear-gradient(90deg, #1E293B, #475569)" : "linear-gradient(90deg, #0EA5E9, #DB2777, #EAB308)" }}
+                  />
+
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-2 pt-1">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white shadow-sm ${
+                        hasPrinter ? "bg-slate-800" : "bg-gradient-to-br from-cyan-500 via-pink-500 to-yellow-500"
+                      }`}>
+                        {hasPrinter ? <Printer className="h-5 w-5" /> : <Droplets className="h-5 w-5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <h3 className="text-[14px] font-black text-[var(--text-primary)] truncate">{bundle.name}</h3>
+                          {broken && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 text-[9px] font-bold">
+                              <AlertTriangle className="h-2.5 w-2.5" />
+                              غير مكتمل
+                            </span>
+                          )}
                         </div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <h3 className="text-sm font-bold text-foreground">{bundle.name}</h3>
-                            {broken && (
-                              <Badge variant="outline" className="gap-1 border-amber-400 text-amber-600 text-[10px] shrink-0">
-                                <AlertTriangle className="h-2.5 w-2.5" />
-                                منتج محذوف
-                              </Badge>
-                            )}
+                        {bundle.description && (
+                          <p className="text-[11px] text-[var(--text-muted)] line-clamp-1 mt-0.5 font-medium">{bundle.description}</p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex shrink-0 gap-0.5">
+                      <button 
+                        onClick={() => router.push(`/bundles/${bundle.id}/edit`)} 
+                        className="rounded-xl p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] transition-colors active:scale-95" 
+                        title="تعديل"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button 
+                        onClick={() => confirmDelete(bundle)} 
+                        className="rounded-xl p-1.5 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 transition-colors active:scale-95" 
+                        title="حذف"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Component list */}
+                  <div className="mt-4 space-y-1.5">
+                    {groups.map(group => (
+                      <div key={group.type} className="space-y-1">
+                        {multiType && (
+                          <div className="flex items-center gap-2 py-1">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">{group.label}</span>
+                            <div className="h-px flex-1 bg-[var(--border-default)]" />
                           </div>
-                          {bundle.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{bundle.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 gap-0.5">
-                        <button onClick={() => router.push(`/bundles/${bundle.id}/edit`)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--surface-2)]" title="تعديل">
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button onClick={() => confirmDelete(bundle)} className="rounded-lg p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950" title="حذف">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Component list */}
-                    <div className="mt-4 space-y-0.5">
-                      {groups.map(group => (
-                        <div key={group.type}>
-                          {multiType && (
-                            <div className="flex items-center gap-2 py-1.5">
-                              <div className="h-px flex-1 bg-border/50" />
-                              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{group.label}</span>
-                              <div className="h-px flex-1 bg-border/50" />
-                            </div>
-                          )}
-                          {group.items.map((c, idx) => {
-                            const cs = colorStyles[c.colorKey];
-                            const price = itemSell(c, c.product);
-                            const isDeleted = !c.product;
-                            return (
-                              <div
-                                key={idx}
-                                className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 ${isDeleted ? "opacity-40" : ""}`}
-                                style={cs ? { backgroundColor: isDark ? cs.dark : cs.light } : { backgroundColor: isDark ? "rgba(120,120,120,0.08)" : "rgba(0,0,0,0.03)" }}
+                        )}
+                        {group.items.map((c, idx) => {
+                          const cs = colorStyles[c.colorKey];
+                          const price = itemSell(c, c.product);
+                          const isDeleted = !c.product;
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12px] transition-colors ${
+                                isDeleted ? "bg-red-50/50 border border-red-100" : "bg-[var(--surface-2)] border border-[var(--border-default)]"
+                              }`}
+                            >
+                              <ItemIcon type={c.type} colorKey={c.colorKey} />
+                              <span
+                                className={`flex-1 font-bold truncate ${isDeleted ? "line-through text-red-500" : "text-[var(--text-primary)]"}`}
+                                style={cs && !isDeleted ? { color: isDark ? cs.textDark : cs.textLight } : undefined}
                               >
-                                <ItemIcon type={c.type} colorKey={c.colorKey} />
-                                <span
-                                  className={`flex-1 text-xs font-medium truncate ${isDeleted ? "line-through text-red-500" : ""}`}
-                                  style={cs && !isDeleted ? { color: isDark ? cs.textDark : cs.textLight } : undefined}
-                                >
-                                  {isDeleted ? `${c.productName} (محذوف)` : (c.product?.name || c.productName)}
-                                </span>
-                                <span className="text-[11px] text-muted-foreground shrink-0">×{c.quantity}</span>
-                                <span
-                                  className="text-xs font-bold shrink-0"
-                                  style={cs && !isDeleted ? { color: isDark ? cs.textDark : cs.textLight } : undefined}
-                                >
-                                  {formatCurrency(price)}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
+                                {isDeleted ? `${c.productName} (محذوف)` : (c.product?.name || c.productName)}
+                              </span>
+                              <span className="text-[11px] font-mono text-[var(--text-muted)] shrink-0 font-bold">×{c.quantity}</span>
+                              <span
+                                className="font-mono font-black shrink-0"
+                                style={cs && !isDeleted ? { color: isDark ? cs.textDark : cs.textLight } : undefined}
+                              >
+                                {formatCurrency(price)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
 
-                    {/* Footer */}
-                    <div className="mt-3 flex items-center justify-between border-t border-[var(--glass-border)] pt-3">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">{resolved.length} منتجات</Badge>
-                        {bundle.discount > 0 && (
-                          <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">خصم {bundle.discount}%</Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {hasMarginData && (
-                          <span className={`text-[11px] font-bold ${margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                            {margin.toFixed(1)}%
-                          </span>
-                        )}
-                        <span className="text-sm font-bold text-primary">{formatCurrency(totalSell)} / طقم</span>
-                      </div>
+                  {/* Card Footer */}
+                  <div className="mt-4 flex items-center justify-between border-t border-[var(--border-default)] pt-3.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center bg-[var(--surface-2)] text-[var(--text-secondary)] font-bold px-2 py-0.5 rounded-lg text-[11px] border border-[var(--border-default)]">
+                        {resolved.length} منتجات
+                      </span>
+                      {bundle.discount > 0 && (
+                        <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-lg text-[11px] border border-emerald-100">
+                          خصم {bundle.discount}%
+                        </span>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-2">
+                      {hasMarginData && (
+                        <span className={`text-[11px] font-black font-mono ${margin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                          {margin.toFixed(1)}% هامش
+                        </span>
+                      )}
+                      <span className="text-[14px] font-black text-[var(--brand-primary)] font-mono">
+                        {formatCurrency(totalSell)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -301,12 +345,12 @@ function DesktopBundles() {
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm" dir="rtl">
-          <DialogHeader><DialogTitle className="text-red-600">حذف المجموعة</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingBundle?.name}&quot;؟</p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
-            <Button variant="destructive" onClick={handleDelete}>حذف</Button>
+        <DialogContent className="max-w-sm rounded-3xl" dir="rtl">
+          <DialogHeader><DialogTitle className="text-red-600 font-black text-[16px]">حذف المجموعة</DialogTitle></DialogHeader>
+          <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed mt-2">هل أنت متأكد من حذف المجموعة &quot;{deletingBundle?.name}&quot;؟ لا يمكن التراجع عن هذا الإجراء.</p>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" className="rounded-xl h-10 border-[var(--border-default)] text-[14px]" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
+            <Button variant="destructive" className="rounded-xl h-10 bg-red-600 hover:bg-red-700 text-white text-[14px]" onClick={handleDelete}>تأكيد الحذف</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -19,11 +19,12 @@ import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import {
   DollarSign, TrendingUp, TrendingDown, AlertTriangle, Clock,
-  FileText, Download, Calculator, Receipt, Wallet, CreditCard, MessageCircle,
+  FileText, Download, Calculator, Receipt, Wallet, CreditCard, MessageCircle, Pencil, ImageIcon,
 } from "lucide-react";
 import { exportCSV } from "@/lib/export";
 import { toast } from "sonner";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
+import { shareAsImage } from "@/lib/share";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line,
 } from "recharts";
@@ -99,42 +100,44 @@ function DesktopAccounting() {
         daysOverdue: daysBetween(i.createdAt, today),
         agingBucket: (() => {
           const days = daysBetween(i.createdAt, today);
-          if (days <= 30) return "0-30 يوم";
-          if (days <= 60) return "31-60 يوم";
-          if (days <= 90) return "61-90 يوم";
-          return "+90 يوم";
+          if (days <= 30) return "0-30 يوماً";
+          if (days <= 60) return "31-60 يوماً";
+          if (days <= 90) return "61-90 يوماً";
+          return "أكثر من 90 يوماً";
         })(),
-      }))
-      .sort((a, b) => b.daysOverdue - a.daysOverdue);
+      }));
 
     const totalReceivable = unpaid.reduce((s, i) => s + i.total, 0);
-    const aging = {
-      "0-30 يوم": unpaid.filter((i) => i.daysOverdue <= 30).reduce((s, i) => s + i.total, 0),
-      "31-60 يوم": unpaid.filter((i) => i.daysOverdue > 30 && i.daysOverdue <= 60).reduce((s, i) => s + i.total, 0),
-      "61-90 يوم": unpaid.filter((i) => i.daysOverdue > 60 && i.daysOverdue <= 90).reduce((s, i) => s + i.total, 0),
-      "+90 يوم": unpaid.filter((i) => i.daysOverdue > 90).reduce((s, i) => s + i.total, 0),
-    };
 
-    return { unpaid, totalReceivable, aging };
+    const bucketSums = unpaid.reduce(
+      (acc, inv) => {
+        acc[inv.agingBucket] = (acc[inv.agingBucket] || 0) + inv.total;
+        return acc;
+      },
+      { "0-30 يوماً": 0, "31-60 يوماً": 0, "61-90 يوماً": 0, "أكثر من 90 يوماً": 0 } as Record<string, number>
+    );
+
+    return { unpaid, totalReceivable, bucketSums };
   }, [invoices, today]);
 
   // =============================================
-  // CLIENT BALANCES
+  // REVENUE BY CLIENT
   // =============================================
-  const clientBalances = useMemo(() => {
-    const map = new Map<string, { name: string; paid: number; unpaid: number; total: number }>();
-    invoices.forEach((inv) => {
-      if (inv.status === "ملغاة" || inv.status === "مسودة") return;
-      const existing = map.get(inv.clientId) || { name: inv.clientName, paid: 0, unpaid: 0, total: 0 };
-      existing.total += inv.total;
-      if (inv.status === "مدفوعة") existing.paid += inv.total;
-      if (inv.status === "غير مدفوعة") existing.unpaid += inv.total;
-      map.set(inv.clientId, existing);
-    });
+  const clientRevenue = useMemo(() => {
+    const map = new Map<string, { name: string; totalSpent: number }>();
+    yearInvoices
+      .filter((i) => i.status === "مدفوعة")
+      .forEach((inv) => {
+        const existing = map.get(inv.clientId) || { name: inv.clientName, totalSpent: 0 };
+        map.set(inv.clientId, {
+          name: inv.clientName,
+          totalSpent: existing.totalSpent + inv.total,
+        });
+      });
     return Array.from(map.values())
-      .filter((c) => c.unpaid > 0)
-      .sort((a, b) => b.unpaid - a.unpaid);
-  }, [invoices]);
+      .sort((a, b) => b.totalSpent - a.totalSpent)
+      .slice(0, 10);
+  }, [yearInvoices]);
 
   // =============================================
   // MONTHLY FINANCIAL METRICS
@@ -166,20 +169,57 @@ function DesktopAccounting() {
     }));
   }, [yearInvoices, selectedYear, settings]);
 
-  // =============================================
-  // TAX SUMMARY
-  // =============================================
+  const clientBalances = useMemo(() => {
+    const balancesMap = new Map<string, { id: string; name: string; paid: number; unpaid: number }>();
+    yearInvoices.forEach((inv) => {
+      const existing = balancesMap.get(inv.clientId) || { id: inv.clientId, name: inv.clientName, paid: 0, unpaid: 0 };
+      if (inv.status === "مدفوعة") {
+        existing.paid += inv.total;
+      } else if (inv.status === "غير مدفوعة" || inv.status === "مدفوعة جزئياً") {
+        existing.unpaid += inv.total;
+      }
+      balancesMap.set(inv.clientId, existing);
+    });
+    return Array.from(balancesMap.values())
+      .filter((c) => c.unpaid > 0)
+      .sort((a, b) => b.unpaid - a.unpaid);
+  }, [yearInvoices]);
+
   const taxSummary = useMemo(() => {
     if (!settings.taxEnabled) return null;
     const taxableInvoices = yearInvoices.filter((i) => i.status === "مدفوعة");
-    const totalTax = taxableInvoices.reduce((s, i) => s + (i.taxAmount ?? 0), 0);
-    const totalTaxable = taxableInvoices.reduce((s, i) => s + i.total - (i.taxAmount ?? 0), 0);
-    const monthlyTax = monthlyMetrics.map((m) => ({ month: m.month, tax: m.tax }));
-    return { totalTaxable, totalTax, rate: settings.taxRate, monthlyTax };
-  }, [yearInvoices, settings, monthlyMetrics]);
+    const totalTaxable = taxableInvoices.reduce((sum, i) => sum + i.subtotal, 0);
+    const totalTax = taxableInvoices.reduce((sum, i) => sum + (i.taxAmount ?? 0), 0);
+    
+    // Monthly tax
+    const monthlyTaxMap = new Map<string, number>();
+    for (let m = 1; m <= 12; m++) {
+      const key = `${selectedYear}-${String(m).padStart(2, "0")}`;
+      monthlyTaxMap.set(key, 0);
+    }
+    taxableInvoices.forEach((inv) => {
+      const key = inv.createdAt.slice(0, 7);
+      const entry = monthlyTaxMap.get(key);
+      if (entry !== undefined) {
+        monthlyTaxMap.set(key, entry + (inv.taxAmount ?? 0));
+      }
+    });
+
+    const monthlyTax = Array.from(monthlyTaxMap.entries()).map(([key, val]) => ({
+      month: getMonthLabel(key + "-01"),
+      tax: Math.round(val * 100) / 100,
+    }));
+
+    return {
+      rate: settings.taxRate,
+      totalTaxable,
+      totalTax,
+      monthlyTax,
+    };
+  }, [yearInvoices, selectedYear, settings]);
 
   // Aging chart data
-  const agingChartData = Object.entries(receivables.aging).map(([bucket, amount]) => ({
+  const agingChartData = Object.entries(receivables.bucketSums).map(([bucket, amount]) => ({
     bucket,
     amount: Math.round(amount * 100) / 100,
   }));
@@ -192,41 +232,52 @@ function DesktopAccounting() {
   }
 
   function handleExportPnL() {
-    exportCSV("profit-loss", ["البند", "المبلغ"], [
-      ["إجمالي الإيرادات (قبل الخصم)", String(pnl.grossRevenue)],
-      ["إجمالي الخصومات", String(pnl.totalDiscount)],
-      ["صافي الإيرادات", String(pnl.netRevenue)],
-      ["تكلفة البضاعة المباعة", String(pnl.cogs)],
-      ["إجمالي الربح", String(pnl.grossProfit)],
-      ["هامش الربح %", `${pnl.profitMargin.toFixed(1)}%`],
-      ...(settings.taxEnabled ? [["الضريبة المستحقة", String(pnl.taxAmount)]] : []),
-      ...(settings.taxEnabled ? [["صافي الربح بعد الضريبة", String(pnl.grossProfit - pnl.taxAmount)]] : []),
-    ]);
-    toast.success("تم تصدير قائمة الأرباح");
+    exportCSV(
+      `حساب_الأرباح_والخسائر_${selectedYear}`,
+      ["البند المحاسبي", "المبلغ"],
+      [
+        ["إجمالي المبيعات", String(pnl.grossRevenue)],
+        ["الخصومات", `-${pnl.totalDiscount}`],
+        ["صافي المبيعات المحصلة", String(pnl.netRevenue)],
+        ["تكلفة البضاعة المباعة (COGS)", `-${pnl.cogs}`],
+        ["الأرباح التشغيلية الصافية", String(pnl.grossProfit)],
+        ["هامش الربح", `${pnl.profitMargin.toFixed(2)}%`],
+      ]
+    );
+    toast.success("تم تصدير الحساب كـ CSV");
   }
 
   const kpis = [
-    { label: "صافي الإيرادات", value: formatCurrency(pnl.netRevenue), icon: DollarSign, color: "text-emerald-600 bg-emerald-50" },
-    { label: "إجمالي الربح", value: formatCurrency(pnl.grossProfit), icon: TrendingUp, color: "text-green-600 bg-green-50" },
-    { label: "هامش الربح", value: `${pnl.profitMargin.toFixed(1)}%`, icon: Calculator, color: "text-violet-600 bg-violet-50" },
-    { label: "المستحقات المتأخرة", value: formatCurrency(receivables.totalReceivable), icon: Clock, color: "text-amber-600 bg-amber-50" },
-    { label: "تكلفة البضاعة", value: formatCurrency(pnl.cogs), icon: Receipt, color: "text-sky-600 bg-sky-50" },
-    { label: "الخصومات", value: formatCurrency(pnl.totalDiscount), icon: TrendingDown, color: "text-red-600 bg-red-50" },
+    {
+      label: "الأرباح الصافية",
+      value: formatCurrency(pnl.grossProfit),
+      icon: DollarSign,
+      color: "bg-emerald-50 text-emerald-600 border border-emerald-100",
+    },
+    {
+      label: "إجمالي المبيعات",
+      value: formatCurrency(pnl.netRevenue),
+      icon: TrendingUp,
+      color: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+    },
+    {
+      label: "المستحقات المعلقة",
+      value: formatCurrency(receivables.totalReceivable),
+      icon: Clock,
+      color: "bg-amber-50 text-amber-600 border border-amber-100",
+    },
   ];
 
   function shareWhatsApp() {
     const lines = [
-      `💰 *التقرير المحاسبي - ${settings.businessName}*`,
-      `📅 التاريخ: ${new Date().toLocaleDateString("en-GB")}`,
-      `📆 السنة: ${selectedYear}`,
-      "",
-      `📊 *قائمة الأرباح والخسائر:*`,
-      `  • إجمالي الإيرادات: ${settings.currencySymbol}${pnl.grossRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      `  • الخصومات: -${settings.currencySymbol}${pnl.totalDiscount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      `  • صافي الإيرادات: ${settings.currencySymbol}${pnl.netRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      `  • تكلفة البضاعة: -${settings.currencySymbol}${pnl.cogs.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      `  • ✅ إجمالي الربح: ${settings.currencySymbol}${pnl.grossProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-      `  • 📈 هامش الربح: ${pnl.profitMargin.toFixed(1)}%`,
+      `*${settings.businessName}*`,
+      `📊 *الملخص والتقرير المالي السنوي (${selectedYear})*`,
+      `----------------------------------------`,
+      `⚙️ *قائمة الأرباح والخسائر:*`,
+      `  • صافي المبيعات: ${settings.currencySymbol}${pnl.netRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • التكلفة التقديرية (COGS): ${settings.currencySymbol}${pnl.cogs.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • الأرباح الصافية: ${settings.currencySymbol}${pnl.grossProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      `  • هامش الربح الإجمالي: ${pnl.profitMargin.toFixed(1)}%`,
     ];
     if (settings.taxEnabled) {
       lines.push(`  • الضريبة (${settings.taxRate}%): ${settings.currencySymbol}${pnl.taxAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
@@ -248,354 +299,371 @@ function DesktopAccounting() {
 
   return (
     <ResponsiveShell>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="animate-fade-in-up lg:text-center">
-          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">المحاسبة</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">
-            قائمة الأرباح والخسائر · المستحقات · الضرائب
-          </p>
-          <div className="mt-4 flex justify-center gap-2">
-            <DateRangeExportButton
-              label="تصدير تقرير PDF"
-              onExport={async (range: DateRange) => {
-                try {
-                  const { exportAccountingReportPDF } = await import("@/lib/pdf");
-                  await exportAccountingReportPDF(invoices, range, settings);
-                  toast.success("تم تصدير التقرير المحاسبي");
-                } catch {
-                  toast.error("فشل تصدير التقرير");
-                }
-              }}
-            />
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareWhatsApp}>
-              <MessageCircle className="h-5 w-5 text-green-600" />
-              <span className="hidden sm:inline">مشاركة واتساب</span>
-            </Button>
-            <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y} value={y}>{y}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <div className="space-y-6">
+        {/* Banner header widget */}
+        <div className="relative overflow-hidden rounded-3xl bg-[var(--surface-1)] border border-[var(--border-default)] p-6 shadow-sm">
+          {/* Subtle CMYK theme glows in background */}
+          <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-cyan-400/10 blur-[60px]" />
+          <div className="absolute left-10 -bottom-20 h-40 w-40 rounded-full bg-pink-400/10 blur-[60px]" />
+          
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-[var(--text-primary)] leading-tight">المحاسبة</h1>
+              <p className="text-[13px] text-[var(--text-muted)] mt-1.5 font-medium">قائمة الأرباح والخسائر والمستحقات والضرائب المترتبة</p>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              <DateRangeExportButton
+                label="تصدير تقرير PDF"
+                onExport={async (range: DateRange) => {
+                  try {
+                    const { exportAccountingReportPDF } = await import("@/lib/pdf");
+                    await exportAccountingReportPDF(invoices, range, settings);
+                    toast.success("تم تصدير التقرير المحاسبي");
+                  } catch {
+                    toast.error("فشل تصدير التقرير");
+                  }
+                }}
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 h-9 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" 
+                onClick={() => {
+                  toast.promise(shareAsImage('pnl-statement-card', `تقرير_الأرباح_والخسائر_${selectedYear}`), {
+                    loading: 'جاري تصدير التقرير كصورة...',
+                    success: 'تم تصدير الصورة بنجاح',
+                    error: 'فشل تصدير الصورة'
+                  });
+                }}
+              >
+                <ImageIcon className="h-4.5 w-4.5 text-cyan-600" />
+                <span>حفظ كصورة</span>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 h-9 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" 
+                onClick={shareWhatsApp}
+              >
+                <MessageCircle className="h-4.5 w-4.5 text-emerald-600" />
+                <span>مشاركة واتساب</span>
+              </Button>
+              <Link href="/invoices">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1.5 h-9 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold text-indigo-700" 
+                >
+                  <Pencil className="h-4.5 w-4.5" />
+                  <span>تعديل الفواتير</span>
+                </Button>
+              </Link>
+              <Select value={selectedYear} onValueChange={(v) => v && setSelectedYear(v)}>
+                <SelectTrigger className="w-[120px] h-9 rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] text-[13px] font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((y) => (
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 stagger-list">
+        {/* KPI Cards Grid */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           {kpis.map((kpi) => (
-            <Card key={kpi.label} className="border border-[var(--glass-border)] shadow-sm hover-lift">
-              <CardContent className="flex flex-col items-center p-4 sm:p-6">
-                <div className={`flex h-11 w-11 items-center justify-center rounded-2xl sm:h-12 sm:w-12 ${kpi.color}`}>
-                  <kpi.icon className="h-5 w-5 sm:h-6 sm:w-6" />
-                </div>
-                <p className="mt-2.5 text-xs font-medium text-muted-foreground sm:text-sm">{kpi.label}</p>
-                <p className="mt-1 text-lg font-extrabold text-foreground sm:text-xl">{kpi.value}</p>
-              </CardContent>
-            </Card>
+            <div 
+              key={kpi.label} 
+              className="m3-card bg-[var(--surface-1)] p-5 flex flex-col items-center hover-lift transition-all duration-300"
+            >
+              <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${kpi.color} shadow-sm`}>
+                <kpi.icon className="h-6 w-6" />
+              </div>
+              <p className="mt-3 text-[12px] font-bold text-[var(--text-muted)]">{kpi.label}</p>
+              <p className="mt-1 text-lg font-black text-[var(--text-primary)] font-mono">{kpi.value}</p>
+            </div>
           ))}
         </div>
 
         {/* P&L Statement */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-bold text-foreground">قائمة الأرباح والخسائر — {selectedYear}</h2>
-              </div>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportPnL}>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">تصدير</span>
-              </Button>
+        <div id="pnl-statement-card" className="m3-card bg-[var(--surface-1)] p-6">
+          <div className="flex items-center justify-between mb-5 border-b border-[var(--border-default)] pb-4">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-[var(--brand-primary)]" />
+              <h2 className="text-[15px] font-black text-[var(--text-primary)]">قائمة الأرباح والخسائر — {selectedYear}</h2>
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] p-4">
-                <span className="text-sm font-medium text-foreground">إجمالي الإيرادات (قبل الخصم)</span>
-                <span className="text-lg font-bold text-foreground">{formatCurrency(pnl.grossRevenue)}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl p-4">
-                <span className="text-sm text-muted-foreground">(-) إجمالي الخصومات</span>
-                <span className="text-base font-medium text-red-600">-{formatCurrency(pnl.totalDiscount)}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-primary/5 p-4 border border-primary/10">
-                <span className="text-sm font-bold text-primary">صافي الإيرادات</span>
-                <span className="text-lg font-extrabold text-primary">{formatCurrency(pnl.netRevenue)}</span>
-              </div>
-
-              {/* COGS & Profit */}
-              <div className="my-2 h-px bg-border" />
-              <div className="flex items-center justify-between rounded-xl p-4">
-                <span className="text-sm text-muted-foreground">(-) تكلفة البضاعة المباعة</span>
-                <span className="text-base font-medium text-red-600">-{formatCurrency(pnl.cogs)}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-4 border border-emerald-100">
-                <span className="text-sm font-bold text-emerald-700">إجمالي الربح</span>
-                <span className="text-lg font-extrabold text-emerald-700">{formatCurrency(pnl.grossProfit)}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-xl bg-emerald-50/50 p-4">
-                <span className="text-sm font-medium text-emerald-600">هامش الربح</span>
-                <span className="text-lg font-extrabold text-emerald-600">{pnl.profitMargin.toFixed(1)}%</span>
-              </div>
-
-              {settings.taxEnabled && (
-                <>
-                  <div className="my-2 h-px bg-border" />
-                  <div className="flex items-center justify-between rounded-xl p-4">
-                    <span className="text-sm text-muted-foreground">(-) الضريبة ({settings.taxRate}%)</span>
-                    <span className="text-base font-medium text-red-600">-{formatCurrency(pnl.taxAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between rounded-xl bg-emerald-50 p-4 border border-emerald-100">
-                    <span className="text-sm font-bold text-emerald-700">صافي الربح بعد الضريبة</span>
-                    <span className="text-lg font-extrabold text-emerald-700">{formatCurrency(pnl.grossProfit - pnl.taxAmount)}</span>
-                  </div>
-                </>
-              )}
-              <div className="mt-2 text-xs text-muted-foreground text-center">
-                بناءً على {pnl.invoiceCount} فاتورة مدفوعة في {selectedYear}
-              </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 h-8.5 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[12px] font-bold" 
+              onClick={handleExportPnL}
+            >
+              <Download className="h-4 w-4" />
+              <span>تصدير CSV</span>
+            </Button>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-4 py-3 border border-[var(--border-default)]">
+              <span className="text-[13px] font-bold text-[var(--text-secondary)]">إجمالي الإيرادات (قبل الخصم)</span>
+              <span className="text-[15px] font-black text-[var(--text-primary)] font-mono">{formatCurrency(pnl.grossRevenue)}</span>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex items-center justify-between px-4 py-2 text-[13px]">
+              <span className="text-[var(--text-muted)] font-medium">(-) إجمالي الخصومات</span>
+              <span className="font-bold text-red-600 font-mono">-{formatCurrency(pnl.totalDiscount)}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-indigo-50/40 px-4 py-3 border border-indigo-100">
+              <span className="text-[13px] font-bold text-[var(--brand-primary)]">صافي الإيرادات</span>
+              <span className="text-[16px] font-black text-[var(--brand-primary)] font-mono">{formatCurrency(pnl.netRevenue)}</span>
+            </div>
+
+            <div className="my-2 h-px bg-[var(--border-default)]" />
+            <div className="flex items-center justify-between px-4 py-2 text-[13px]">
+              <span className="text-[var(--text-muted)] font-medium">(-) تكلفة البضاعة المباعة (المواد الأولية والأحبار)</span>
+              <span className="font-bold text-red-600 font-mono">-{formatCurrency(pnl.cogs)}</span>
+            </div>
+            
+            <div className="flex items-center justify-between rounded-xl bg-emerald-50/50 px-4 py-3 border border-emerald-100">
+              <span className="text-[13px] font-bold text-emerald-700">إجمالي الربح</span>
+              <span className="text-[16px] font-black text-emerald-700 font-mono">{formatCurrency(pnl.grossProfit)}</span>
+            </div>
+            <div className="flex items-center justify-between px-4 py-2 text-[13px]">
+              <span className="text-[var(--text-secondary)] font-medium">هامش الربح التشغيلي</span>
+              <span className="font-black text-emerald-600 font-mono">{pnl.profitMargin.toFixed(1)}%</span>
+            </div>
+
+            {settings.taxEnabled && (
+              <>
+                <div className="my-2 h-px bg-[var(--border-default)]" />
+                <div className="flex items-center justify-between px-4 py-2 text-[13px]">
+                  <span className="text-[var(--text-muted)] font-medium">(-) الضريبة المستحقة ({settings.taxRate}%)</span>
+                  <span className="font-bold text-red-600 font-mono">-{formatCurrency(pnl.taxAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between rounded-xl bg-emerald-50/70 px-4 py-3 border border-emerald-200">
+                  <span className="text-[13px] font-bold text-emerald-800">صافي الربح بعد الضريبة</span>
+                  <span className="text-[16px] font-black text-emerald-800 font-mono">{formatCurrency(pnl.grossProfit - pnl.taxAmount)}</span>
+                </div>
+              </>
+            )}
+            <div className="mt-3 text-[11px] text-[var(--text-muted)] text-center font-medium">
+              تم الاحتساب بناءً على {pnl.invoiceCount} فاتورة مدفوعة ومصدرة في {selectedYear}
+            </div>
+          </div>
+        </div>
 
         {/* Monthly Revenue Trend */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardContent className="p-6">
-            <h2 className="mb-6 text-lg font-bold text-foreground">الإيرادات والخصومات الشهرية</h2>
-            <div className="h-[300px]" dir="ltr">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyMetrics} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(value, name) => {
-                      const labels: Record<string, string> = { revenue: "الإيرادات", discount: "الخصومات", tax: "الضريبة" };
-                      return [formatCurrency(Number(value)), labels[String(name)] || String(name)];
-                    }}
-                    contentStyle={{ fontFamily: "Almarai", direction: "rtl" }}
-                  />
-                  <Line type="monotone" dataKey="revenue" stroke="oklch(0.60 0.16 235)" strokeWidth={2.5} dot={{ r: 4 }} name="revenue" />
-                  <Line type="monotone" dataKey="discount" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="discount" />
-                  {settings.taxEnabled && (
-                    <Line type="monotone" dataKey="tax" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="tax" />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="m3-card bg-[var(--surface-1)] p-6">
+          <h2 className="text-[15px] font-black text-[var(--text-primary)] mb-5">الإيرادات والخصومات الشهرية</h2>
+          <div className="h-[300px]" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyMetrics} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: "bold" }} />
+                <YAxis tick={{ fontSize: 11, fontWeight: "bold" }} />
+                <Tooltip
+                  formatter={(value, name) => {
+                    const labels: Record<string, string> = { revenue: "الإيرادات", discount: "الخصومات", tax: "الضريبة" };
+                    return [formatCurrency(Number(value)), labels[String(name)] || String(name)];
+                  }}
+                  contentStyle={{ fontFamily: "IBM Plex Sans Arabic", direction: "rtl", borderRadius: "12px" }}
+                />
+                <Line type="monotone" dataKey="revenue" stroke="#4F46E5" strokeWidth={2.5} dot={{ r: 4 }} name="revenue" />
+                <Line type="monotone" dataKey="discount" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} name="discount" />
+                {settings.taxEnabled && (
+                  <Line type="monotone" dataKey="tax" stroke="#8b5cf6" strokeWidth={2} dot={{ r: 3 }} name="tax" />
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
 
         {/* Accounts Receivable */}
-        <Card className="border border-[var(--glass-border)] shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-amber-600" />
-                <h2 className="text-lg font-bold text-foreground">المستحقات (فواتير غير مدفوعة)</h2>
-                <Badge variant="outline" className="status-badge--warning">
-                  {receivables.unpaid.length} فاتورة
-                </Badge>
-              </div>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={handleExportReceivables}>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">تصدير</span>
-              </Button>
+        <div className="m3-card bg-[var(--surface-1)] p-6">
+          <div className="flex items-center justify-between mb-5 border-b border-[var(--border-default)] pb-4">
+            <div className="flex items-center gap-2.5">
+              <CreditCard className="h-5 w-5 text-amber-600" />
+              <h2 className="text-[15px] font-black text-[var(--text-primary)]">المستحقات (فواتير غير مدفوعة)</h2>
+              <span className="inline-flex items-center justify-center rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 text-[10px] font-black font-mono">
+                {receivables.unpaid.length} فاتورة معلقة
+              </span>
             </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1.5 h-8.5 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[12px] font-bold" 
+              onClick={handleExportReceivables}
+            >
+              <Download className="h-4 w-4" />
+              <span>تصدير المستحقات</span>
+            </Button>
+          </div>
 
-            {/* Aging Summary */}
-            <div className="grid gap-3 sm:grid-cols-4 mb-6">
-              {Object.entries(receivables.aging).map(([bucket, amount]) => (
-                <div key={bucket} className={`rounded-xl p-4 text-center ${
-                  bucket === "+90 يوم" ? "bg-red-50 border border-red-100" :
-                  bucket === "61-90 يوم" ? "bg-amber-50 border border-amber-100" :
-                  "bg-muted/40 border border-[var(--glass-border)]"
-                }`}>
-                  <p className="text-xs text-muted-foreground">{bucket}</p>
-                  <p className={`mt-1 text-lg font-bold ${
-                    bucket === "+90 يوم" ? "text-red-700" :
-                    bucket === "61-90 يوم" ? "text-amber-700" : "text-foreground"
-                  }`}>{formatCurrency(amount)}</p>
-                </div>
-              ))}
+          {/* Aging Summary Grid */}
+          <div className="grid gap-3 sm:grid-cols-4 mb-6">
+            {Object.entries(receivables.bucketSums).map(([bucket, amount]) => (
+              <div 
+                key={bucket} 
+                className={`rounded-2xl p-4 text-center border ${
+                  bucket === "أكثر من 90 يوماً" ? "bg-red-50/60 border-red-100 text-red-800" :
+                  bucket === "61-90 يوماً" ? "bg-amber-50/60 border-amber-100 text-amber-800" :
+                  "bg-[var(--surface-2)] border-[var(--border-default)] text-[var(--text-primary)]"
+                }`}
+              >
+                <p className="text-[11px] font-bold text-[var(--text-muted)]">{bucket}</p>
+                <p className="mt-1 text-base font-black font-mono">{formatCurrency(amount)}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Aging Bar Chart */}
+          {receivables.unpaid.length > 0 && (
+            <div className="h-[200px] mb-6 border-b border-[var(--border-default)] pb-4" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={agingChartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="bucket" tick={{ fontSize: 11, fontWeight: "bold" }} />
+                  <YAxis tick={{ fontSize: 11, fontWeight: "bold" }} />
+                  <Tooltip formatter={(value) => [formatCurrency(Number(value)), "المبلغ"]} />
+                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                    {agingChartData.map((entry, i) => {
+                      const colors = ["#4F46E5", "#EAB308", "#EF4444", "#DC2626"];
+                      return <rect key={i} fill={colors[i]} />;
+                    })}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          )}
 
-            {/* Aging Bar Chart */}
-            {receivables.unpaid.length > 0 && (
-              <div className="h-[200px] mb-6" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={agingChartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="bucket" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), "المبلغ"]} />
-                    <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                      {agingChartData.map((entry, i) => {
-                        const colors = ["oklch(0.60 0.16 235)", "#f59e0b", "#ef4444", "#dc2626"];
-                        return <rect key={i} fill={colors[i]} />;
-                      })}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {/* Receivables Table */}
-            {receivables.unpaid.length > 0 ? (
-              <div className="hidden md:block">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-[var(--surface-2)]">
-                      <TableHead className="text-right font-bold">رقم الفاتورة</TableHead>
-                      <TableHead className="text-right font-bold">العميل</TableHead>
-                      <TableHead className="text-right font-bold">التاريخ</TableHead>
-                      <TableHead className="text-right font-bold">المبلغ</TableHead>
-                      <TableHead className="text-right font-bold">أيام التأخر</TableHead>
-                      <TableHead className="text-right font-bold">الفترة</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {receivables.unpaid.slice(0, 20).map((inv) => (
-                      <TableRow key={inv.id} className="transition-colors hover:bg-[var(--surface-2)]/30">
-                        <TableCell>
-                          <Link href={`/invoices/${inv.id}`} className="font-medium text-primary hover:underline">
-                            {inv.invoiceNumber}
-                          </Link>
-                        </TableCell>
-                        <TableCell>{inv.clientName}</TableCell>
-                        <TableCell className="text-muted-foreground">{inv.createdAt}</TableCell>
-                        <TableCell className="font-bold">{formatCurrency(inv.total)}</TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${inv.daysOverdue > 90 ? "text-red-600" : inv.daysOverdue > 60 ? "text-amber-600" : "text-foreground"}`}>
-                            {inv.daysOverdue} يوم
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={`text-xs ${
-                            inv.agingBucket === "+90 يوم" ? "status-badge--danger" :
-                            inv.agingBucket === "61-90 يوم" ? "status-badge--warning" :
-                            "bg-slate-50 text-slate-600 border-slate-200"
-                          }`}>
-                            {inv.agingBucket}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {receivables.unpaid.length > 20 && (
-                  <p className="mt-3 text-center text-sm text-muted-foreground">
-                    +{receivables.unpaid.length - 20} فواتير أخرى
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="py-10 text-center text-muted-foreground">
-                <DollarSign className="mx-auto mb-3 h-10 w-10 opacity-20" />
-                <p>لا توجد فواتير غير مدفوعة</p>
-              </div>
-            )}
-
-            {/* Mobile Receivables */}
-            <div className="flex flex-col gap-3 md:hidden">
-              {receivables.unpaid.slice(0, 10).map((inv) => (
-                <Link key={inv.id} href={`/invoices/${inv.id}`} className="block">
-                  <div className="rounded-xl border border-[var(--glass-border)] p-4 hover:bg-[var(--surface-2)]/30 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-bold text-foreground">{inv.invoiceNumber}</p>
-                        <p className="text-sm text-muted-foreground">{inv.clientName}</p>
-                      </div>
-                      <Badge variant="outline" className={`text-xs ${
-                        inv.agingBucket === "+90 يوم" ? "status-badge--danger" : "status-badge--warning"
-                      }`}>
-                        {inv.daysOverdue} يوم
-                      </Badge>
-                    </div>
-                    <div className="mt-2 flex justify-between text-sm">
-                      <span className="text-muted-foreground">{inv.createdAt}</span>
-                      <span className="font-bold">{formatCurrency(inv.total)}</span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+          {/* Receivables Table */}
+          {receivables.unpaid.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-right border-collapse">
+                <thead>
+                  <tr className="bg-[var(--surface-2)] border-b border-[var(--border-default)] text-[12px] font-bold text-[var(--text-muted)]">
+                    <th className="p-3">رقم الفاتورة</th>
+                    <th className="p-3">العميل</th>
+                    <th className="p-3">التاريخ</th>
+                    <th className="p-3">المبلغ</th>
+                    <th className="p-3">أيام التأخر</th>
+                    <th className="p-3">الفترة</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-default)] text-[13px]">
+                  {receivables.unpaid.slice(0, 15).map((inv) => (
+                    <tr key={inv.id} className="hover:bg-[var(--surface-2)]/30 transition-colors">
+                      <td className="p-3">
+                        <Link href={`/invoices/${inv.id}`} className="font-bold text-[var(--brand-primary)] hover:underline">
+                          {inv.invoiceNumber}
+                        </Link>
+                      </td>
+                      <td className="p-3 font-medium text-[var(--text-primary)]">{inv.clientName}</td>
+                      <td className="p-3 text-[var(--text-muted)] font-mono">{inv.createdAt}</td>
+                      <td className="p-3 font-black font-mono text-[var(--text-primary)]">{formatCurrency(inv.total)}</td>
+                      <td className="p-3">
+                        <span className={`font-bold ${inv.daysOverdue > 90 ? "text-red-600" : inv.daysOverdue > 60 ? "text-amber-600" : "text-[var(--text-primary)]"}`}>
+                          {inv.daysOverdue} يوم
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          inv.agingBucket === "+90 يوم" ? "bg-red-50 text-red-700" :
+                          inv.agingBucket === "61-90 يوم" ? "bg-amber-50 text-amber-700" :
+                          "bg-slate-100 text-slate-700"
+                        }`}>
+                          {inv.agingBucket}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {receivables.unpaid.length > 15 && (
+                <p className="mt-3.5 text-center text-xs text-[var(--text-muted)] font-medium">
+                  +{receivables.unpaid.length - 15} فواتير معلقة أخرى
+                </p>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          ) : (
+            <div className="py-10 text-center text-[var(--text-muted)]">
+              <DollarSign className="mx-auto mb-3 h-10 w-10 opacity-20" />
+              <p className="text-sm font-medium">ممتاز! لا توجد فواتير معلقة الدفع حالياً</p>
+            </div>
+          )}
+        </div>
 
         {/* Client Balances */}
         {clientBalances.length > 0 && (
-          <Card className="border border-[var(--glass-border)] shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
-                <h2 className="text-lg font-bold text-foreground">أرصدة العملاء المستحقة</h2>
-              </div>
-              <div className="space-y-3">
-                {clientBalances.slice(0, 10).map((c, i) => {
-                  const maxVal = clientBalances[0].unpaid;
-                  return (
-                    <div key={i}>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-foreground">{c.name}</span>
-                        <div className="flex gap-4 text-sm">
-                          <span className="text-muted-foreground">مدفوع: {formatCurrency(c.paid)}</span>
-                          <span className="font-bold text-amber-600">مستحق: {formatCurrency(c.unpaid)}</span>
-                        </div>
-                      </div>
-                      <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-amber-500 transition-all"
-                          style={{ width: `${(c.unpaid / maxVal) * 100}%` }}
-                        />
+          <div className="m3-card bg-[var(--surface-1)] p-6">
+            <div className="flex items-center gap-2 mb-5">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <h2 className="text-[15px] font-black text-[var(--text-primary)]">أرصدة العملاء المستحقة</h2>
+            </div>
+            
+            <div className="space-y-4">
+              {clientBalances.slice(0, 8).map((c, i) => {
+                const maxVal = clientBalances[0].unpaid;
+                return (
+                  <div key={i} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[13px]">
+                      <span className="font-bold text-[var(--text-primary)]">{c.name}</span>
+                      <div className="flex gap-4 font-mono font-bold">
+                        <span className="text-[var(--text-muted)]">مدفوع: {formatCurrency(c.paid)}</span>
+                        <span className="text-amber-600">مستحق: {formatCurrency(c.unpaid)}</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-2)] border border-[var(--border-default)]">
+                      <div
+                        className="h-full rounded-full bg-amber-500 transition-all duration-500"
+                        style={{ width: `${(c.unpaid / maxVal) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Tax Summary */}
         {taxSummary && (
-          <Card className="border border-[var(--glass-border)] shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-6">
-                <Calculator className="h-5 w-5 text-violet-600" />
-                <h2 className="text-lg font-bold text-foreground">ملخص الضريبة — {selectedYear}</h2>
+          <div className="m3-card bg-[var(--surface-1)] p-6">
+            <div className="flex items-center gap-2 mb-5 border-b border-[var(--border-default)] pb-4">
+              <Calculator className="h-5 w-5 text-violet-600" />
+              <h2 className="text-[15px] font-black text-[var(--text-primary)]">ملخص الضرائب — {selectedYear}</h2>
+            </div>
+            
+            <div className="grid gap-4 sm:grid-cols-3 mb-6">
+              <div className="rounded-2xl bg-[var(--surface-2)] p-4 text-center border border-[var(--border-default)]">
+                <p className="text-[11px] font-bold text-[var(--text-muted)]">نسبة الضريبة الافتراضية</p>
+                <p className="mt-1 text-2xl font-black text-[var(--text-primary)] font-mono">{taxSummary.rate}%</p>
               </div>
-              <div className="grid gap-4 sm:grid-cols-3 mb-6">
-                <div className="rounded-xl bg-[var(--surface-2)] p-4 text-center border border-[var(--glass-border)]">
-                  <p className="text-xs text-muted-foreground">نسبة الضريبة</p>
-                  <p className="mt-1 text-2xl font-extrabold text-foreground">{taxSummary.rate}%</p>
-                </div>
-                <div className="rounded-xl bg-[var(--surface-2)] p-4 text-center border border-[var(--glass-border)]">
-                  <p className="text-xs text-muted-foreground">الإيرادات الخاضعة للضريبة</p>
-                  <p className="mt-1 text-lg font-bold text-foreground">{formatCurrency(taxSummary.totalTaxable)}</p>
-                </div>
-                <div className="rounded-xl bg-violet-50 p-4 text-center border border-violet-100">
-                  <p className="text-xs text-muted-foreground">إجمالي الضريبة المستحقة</p>
-                  <p className="mt-1 text-lg font-extrabold text-violet-700">{formatCurrency(taxSummary.totalTax)}</p>
-                </div>
+              <div className="rounded-2xl bg-[var(--surface-2)] p-4 text-center border border-[var(--border-default)]">
+                <p className="text-[11px] font-bold text-[var(--text-muted)]">الإيرادات الخاضعة للضريبة</p>
+                <p className="mt-1 text-lg font-black text-[var(--text-primary)] font-mono">{formatCurrency(taxSummary.totalTaxable)}</p>
               </div>
-              <div className="h-[220px]" dir="ltr">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={taxSummary.monthlyTax} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip formatter={(value) => [formatCurrency(Number(value)), "الضريبة"]} />
-                    <Bar dataKey="tax" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="rounded-2xl bg-violet-50/50 p-4 text-center border border-violet-100">
+                <p className="text-[11px] font-bold text-violet-700">إجمالي الضريبة المستحقة</p>
+                <p className="mt-1 text-lg font-black text-violet-700 font-mono">{formatCurrency(taxSummary.totalTax)}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            
+            <div className="h-[220px]" dir="ltr">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={taxSummary.monthlyTax} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fontWeight: "bold" }} />
+                  <YAxis tick={{ fontSize: 11, fontWeight: "bold" }} />
+                  <Tooltip formatter={(value) => [formatCurrency(Number(value)), "الضريبة"]} />
+                  <Bar dataKey="tax" fill="#8B5CF6" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         )}
       </div>
     </ResponsiveShell>

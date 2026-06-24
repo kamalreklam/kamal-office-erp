@@ -102,60 +102,135 @@ function DesktopOrders() {
     const Icon = config.icon;
     const statusIdx = statusOptions.indexOf(order.status);
     return (
-      <Card key={order.id} className={`border border-[var(--glass-border)] shadow-sm transition-all hover:shadow-md ${compact ? "" : ""}`}>
-        <CardContent className={compact ? "p-4" : "p-6"}>
-          <div className={compact ? "space-y-3" : "flex items-start gap-5"}>
-            {!compact && (
-              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.bg}`}>
-                <Icon className="h-6 w-6" />
+      <div 
+        key={order.id} 
+        className="m3-card relative overflow-hidden bg-[var(--surface-1)] p-5 hover-lift transition-all duration-300"
+      >
+        {/* Colorful status accent top bar */}
+        <div 
+          className="absolute top-0 right-0 left-0 h-1.5"
+          style={{ background: order.status === "قيد الانتظار" ? "#EAB308" : order.status === "قيد التنفيذ" ? "#0EA5E9" : order.status === "جاهز للاستلام" ? "#22C55E" : "#8B5CF6" }}
+        />
+        
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              {!compact && (
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${config.bg} shadow-sm`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-mono font-black text-[15px] tracking-wider text-[var(--text-primary)]">
+                    {order.trackingId}
+                  </span>
+                  <button 
+                    onClick={() => copyTrackingId(order.trackingId)} 
+                    className="rounded-lg p-1 text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors"
+                    title="نسخ رقم التتبع"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${getOrderStatusColor(order.status)}`}>
+                    {order.status}
+                  </span>
+                </div>
+                <p className="mt-1 font-bold text-[14px] text-[var(--text-primary)]">{order.clientName}</p>
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={`font-mono font-bold ${compact ? "text-sm" : "text-base"}`}>{order.trackingId}</span>
-                <button onClick={() => copyTrackingId(order.trackingId)} className="rounded p-1 text-muted-foreground hover:bg-[var(--surface-2)]">
-                  <Copy className="h-3.5 w-3.5" />
-                </button>
-                {!compact && (
-                  <Badge variant="outline" className={`gap-1 text-xs ${getOrderStatusColor(order.status)}`}>{order.status}</Badge>
-                )}
-              </div>
-              <p className={`mt-1.5 font-medium text-foreground ${compact ? "text-sm" : "text-base"}`}>{order.clientName}</p>
-              <p className={`mt-0.5 text-muted-foreground leading-relaxed ${compact ? "text-xs line-clamp-2" : "text-sm"}`}>{order.description}</p>
-              <p className={`mt-2 text-muted-foreground ${compact ? "text-[10px]" : "text-xs"}`}>
-                {order.updatedAt}
-              </p>
+            </div>
+            
+            <div className="flex gap-1 shrink-0">
+              <button 
+                onClick={() => router.push(`/orders/${order.id}/edit`)} 
+                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)] transition-colors active:scale-95"
+                title="تعديل"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => shareOrderWhatsApp(order)} 
+                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-emerald-50 hover:text-emerald-600 transition-colors active:scale-95"
+                title="واتساب"
+              >
+                <MessageCircle className="h-4 w-4" />
+              </button>
+              <button 
+                onClick={() => confirmDelete(order)} 
+                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-600 transition-colors active:scale-95"
+                title="حذف"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           </div>
-          {/* Actions */}
-          <div className={`flex items-center gap-1 ${compact ? "mt-3 border-t border-[var(--glass-border)] pt-3" : "mt-4 border-t border-[var(--glass-border)] pt-4"}`}>
-            {/* Move status buttons */}
-            {statusIdx < statusOptions.length - 1 && (
-              <button
-                onClick={() => moveOrder(order, "next")}
-                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
-              >
-                <ChevronLeft className="h-3 w-3" />
-                {statusOptions[statusIdx + 1]}
-              </button>
-            )}
-            {statusIdx > 0 && (
-              <button
-                onClick={() => moveOrder(order, "prev")}
-                className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-[var(--surface-2)]"
-              >
-                {statusOptions[statusIdx - 1]}
-                <ChevronRight className="h-3 w-3" />
-              </button>
-            )}
-            <div className="mr-auto flex gap-0.5">
-              <button onClick={() => router.push(`/orders/${order.id}/edit`)} className="rounded-xl p-2 text-muted-foreground hover:bg-[var(--surface-2)]"><Pencil className="h-3.5 w-3.5" /></button>
-              <button onClick={() => shareOrderWhatsApp(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-green-50 hover:text-green-600"><MessageCircle className="h-3.5 w-3.5" /></button>
-              <button onClick={() => confirmDelete(order)} className="rounded-xl p-2 text-muted-foreground hover:bg-red-50 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" /></button>
+
+          <div className="text-[13px] text-[var(--text-secondary)] bg-[var(--surface-2)] p-3.5 rounded-2xl border border-[var(--border-default)] leading-relaxed">
+            {order.description}
+          </div>
+
+          {/* Progress Timeline steps */}
+          <div className="pt-2">
+            <p className="text-[11px] font-bold text-[var(--text-muted)] mb-2.5">مرحلة إنجاز الطلب</p>
+            <div className="relative flex items-center justify-between">
+              {/* Timeline Connector Line */}
+              <div className="absolute right-3 left-3 top-1/2 h-0.5 -translate-y-1/2 bg-slate-200 dark:bg-slate-700 z-0" />
+              <div 
+                className="absolute right-3 top-1/2 h-0.5 -translate-y-1/2 bg-[var(--brand-primary)] transition-all duration-500 z-0" 
+                style={{ left: `${100 - (statusIdx / (statusOptions.length - 1)) * 100}%` }}
+              />
+              
+              {statusOptions.map((st, sidx) => {
+                const isPassed = sidx <= statusIdx;
+                const isCurrent = sidx === statusIdx;
+                return (
+                  <div key={st} className="relative z-10 flex flex-col items-center">
+                    <div 
+                      className={`flex h-6.5 w-6.5 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-300 border-2 ${
+                        isCurrent ? "bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] ring-4 ring-indigo-100" :
+                        isPassed ? "bg-emerald-500 text-white border-emerald-500" :
+                        "bg-[var(--surface-1)] text-[var(--text-muted)] border-slate-300"
+                      }`}
+                      style={{ width: "24px", height: "24px" }}
+                      title={st}
+                    >
+                      {isPassed && !isCurrent ? "✓" : sidx + 1}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {/* Quick status actions */}
+          <div className="flex items-center justify-between border-t border-[var(--border-default)] pt-3.5 mt-1">
+            <span className="text-[11px] text-[var(--text-muted)] font-mono">{order.updatedAt}</span>
+            <div className="flex gap-2">
+              {statusIdx > 0 && (
+                <Button 
+                  onClick={() => moveOrder(order, "prev")}
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1 rounded-xl text-[12px] px-3 border-[var(--border-default)] hover:bg-[var(--surface-2)]"
+                >
+                  {statusOptions[statusIdx - 1]}
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              {statusIdx < statusOptions.length - 1 && (
+                <Button 
+                  onClick={() => moveOrder(order, "next")}
+                  size="sm"
+                  className="h-8 gap-1 rounded-xl text-[12px] px-3 bg-[var(--brand-soft)] hover:bg-[var(--brand-hover)]/20 text-[var(--brand-primary)] border-none"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  {statusOptions[statusIdx + 1]}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -189,61 +264,103 @@ function DesktopOrders() {
 
   return (
     <ResponsiveShell>
-      <div className="space-y-8">
-        <div className="animate-fade-in-up lg:text-center">
-          <h1 className="text-xl font-extrabold text-foreground lg:text-3xl">تتبع الطلبات</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-2 sm:text-base">متابعة طلبات الصيانة والطباعة ({orders.length} طلب)</p>
-          <div className="mt-4 flex justify-center gap-2">
-            <DateRangeExportButton
-              label="تصدير تقرير PDF"
-              onExport={async (range: DateRange) => {
-                try {
-                  const { exportOrdersReportPDF } = await import("@/lib/pdf");
-                  await exportOrdersReportPDF(orders, range, settings);
-                  toast.success("تم تصدير تقرير الطلبات");
-                } catch {
-                  toast.error("فشل تصدير التقرير");
-                }
-              }}
-            />
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={shareOrdersSummaryWhatsApp}>
-              <MessageCircle className="h-5 w-5 text-green-600" />
-              <span className="hidden sm:inline">مشاركة واتساب</span>
-            </Button>
-            {/* View toggle */}
-            <div className="flex rounded-xl border border-[var(--glass-border)] bg-[var(--surface-1)] p-1">
-              <button
-                onClick={() => setViewMode("kanban")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${viewMode === "kanban" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <LayoutGrid className="h-4 w-4" />
-                <span className="hidden sm:inline">كانبان</span>
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${viewMode === "list" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
-              >
-                <List className="h-4 w-4" />
-                <span className="hidden sm:inline">قائمة</span>
-              </button>
+      <div className="space-y-6">
+        {/* Title widget banner */}
+        <div className="relative overflow-hidden rounded-3xl bg-[var(--surface-1)] border border-[var(--border-default)] p-6 shadow-sm">
+          {/* Subtle CMYK theme glows in background */}
+          <div className="absolute -left-20 -top-20 h-40 w-40 rounded-full bg-cyan-400/10 blur-[60px]" />
+          <div className="absolute left-10 -bottom-20 h-40 w-40 rounded-full bg-pink-400/10 blur-[60px]" />
+          
+          <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-black text-[var(--text-primary)] leading-tight">تتبع الطلبات</h1>
+              <p className="text-[13px] text-[var(--text-muted)] mt-1.5 font-medium">متابعة طلبات الصيانة والطباعة في الوقت الفعلي ({orders.length} طلب)</p>
             </div>
-            <Button size="sm" className="gap-1.5" onClick={() => router.push("/orders/new")}><Plus className="h-5 w-5" />طلب جديد</Button>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              <DateRangeExportButton
+                label="تصدير تقرير PDF"
+                onExport={async (range: DateRange) => {
+                  try {
+                    const { exportOrdersReportPDF } = await import("@/lib/pdf");
+                    await exportOrdersReportPDF(orders, range, settings);
+                    toast.success("تم تصدير تقرير الطلبات");
+                  } catch {
+                    toast.error("فشل تصدير التقرير");
+                  }
+                }}
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 h-9 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)]" 
+                onClick={shareOrdersSummaryWhatsApp}
+              >
+                <MessageCircle className="h-4.5 w-4.5 text-emerald-600" />
+                <span>مشاركة واتساب</span>
+              </Button>
+              
+              <div className="flex rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] p-1 shrink-0">
+                <button
+                  onClick={() => setViewMode("kanban")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${viewMode === "kanban" ? "bg-[var(--brand-primary)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  <span>لوحة كانبان</span>
+                </button>
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${viewMode === "list" ? "bg-[var(--brand-primary)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-primary)]"}`}
+                >
+                  <List className="h-4 w-4" />
+                  <span>قائمة خطية</span>
+                </button>
+              </div>
+              
+              <Button 
+                size="sm" 
+                className="gap-1.5 h-9 rounded-xl bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white" 
+                onClick={() => router.push("/orders/new")}
+              >
+                <Plus className="h-5 w-5" />
+                <span>طلب صيانة جديد</span>
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Search & Date Filter */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* Search & Filters */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="بحث برقم التتبع، اسم العميل، أو الوصف..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-9" />
+            <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+            <Input 
+              placeholder="بحث برقم التتبع، اسم العميل، أو تفاصيل العطل..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+              className="pr-10 h-10 rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] text-[14px] focus:border-[var(--brand-primary)]" 
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[140px] text-sm" />
-            <span className="text-sm text-muted-foreground">إلى</span>
-            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[140px] text-sm" />
+          
+          <div className="flex items-center gap-2 shrink-0">
+            <CalendarDays className="h-4 w-4 text-[var(--text-muted)]" />
+            <Input 
+              type="date" 
+              value={dateFrom} 
+              onChange={(e) => setDateFrom(e.target.value)} 
+              className="h-10 w-[140px] text-sm rounded-xl border-[var(--border-default)] bg-[var(--surface-1)]" 
+            />
+            <span className="text-xs text-[var(--text-muted)]">إلى</span>
+            <Input 
+              type="date" 
+              value={dateTo} 
+              onChange={(e) => setDateTo(e.target.value)} 
+              className="h-10 w-[140px] text-sm rounded-xl border-[var(--border-default)] bg-[var(--surface-1)]" 
+            />
             {(dateFrom || dateTo) && (
-              <button onClick={() => { setDateFrom(""); setDateTo(""); }} className="rounded-lg p-1.5 text-muted-foreground hover:bg-[var(--surface-2)]">
+              <button 
+                onClick={() => { setDateFrom(""); setDateTo(""); }} 
+                className="rounded-lg p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors"
+              >
                 <X className="h-4 w-4" />
               </button>
             )}
@@ -252,30 +369,33 @@ function DesktopOrders() {
 
         {viewMode === "kanban" ? (
           /* ===== KANBAN VIEW ===== */
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             {statusOptions.map((status) => {
               const config = statusConfig[status];
               const Icon = config.icon;
               const statusOrders = ((debouncedSearch || dateFrom || dateTo) ? filtered : orders).filter((o) => o.status === status);
               return (
-                <div key={status} className="rounded-2xl bg-[var(--surface-1)]" style={{ border: `1px solid ${config.borderColor}` }}>
+                <div 
+                  key={status} 
+                  className="rounded-3xl bg-[var(--surface-1)] p-4 flex flex-col min-h-[400px] border border-[var(--border-default)] shadow-sm"
+                >
                   {/* Column header */}
-                  <div className="flex items-center gap-2.5 rounded-t-2xl px-4 py-3" style={{ background: config.headerBg }}>
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${config.bg}`}>
-                      <Icon className="h-4 w-4" />
+                  <div className="flex items-center gap-2 rounded-2xl px-3 py-2.5 mb-4 bg-[var(--surface-2)]">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${config.bg} shadow-sm`}>
+                      <Icon className="h-4.5 w-4.5" />
                     </div>
-                    <span className="text-sm font-bold text-foreground">{status}</span>
-                    <span className="mr-auto rounded-full bg-[var(--surface-1)]/80 px-2 py-0.5 text-xs font-bold text-muted-foreground shadow-sm">
+                    <span className="text-[13px] font-extrabold text-[var(--text-primary)]">{status}</span>
+                    <span className="mr-auto rounded-full bg-[var(--surface-1)] px-2.5 py-0.5 text-[11px] font-black text-[var(--text-secondary)] shadow-sm font-mono">
                       {statusOrders.length}
                     </span>
                   </div>
-                  {/* Cards */}
-                  <div className="space-y-3 p-3">
+                  
+                  {/* Cards container */}
+                  <div className="space-y-4 flex-1">
                     {statusOrders.length === 0 ? (
-                      <div className="flex flex-col items-center py-8 text-muted-foreground">
-                        <ClipboardList className="mb-2 h-8 w-8 opacity-15" />
-                        <p className="text-xs">لا توجد طلبات</p>
-                        <Button size="sm" variant="outline" className="mt-3 gap-1.5 text-xs" onClick={() => router.push("/orders/new")}><Plus className="h-3.5 w-3.5" />طلب جديد</Button>
+                      <div className="flex flex-col items-center justify-center py-12 text-center">
+                        <ClipboardList className="mb-2 h-10 w-10 text-[var(--text-muted)] opacity-20" />
+                        <p className="text-[12px] text-[var(--text-muted)]">لا توجد طلبات</p>
                       </div>
                     ) : (
                       statusOrders.map((order) => renderOrderCard(order, true))
@@ -287,41 +407,54 @@ function DesktopOrders() {
           </div>
         ) : (
           /* ===== LIST VIEW ===== */
-          <>
-            <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="space-y-4">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
               {allStatuses.map((s) => {
                 const isActive = statusFilter === s;
                 const count = s === "الكل" ? orders.length : orders.filter((o) => o.status === s).length;
                 return (
-                  <button key={s} onClick={() => setStatusFilter(s)} className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "border border-border bg-[var(--surface-1)] text-muted-foreground hover:bg-[var(--surface-2)]"}`}>
-                    {s}<span className={`mr-1 rounded-full px-1.5 py-0.5 text-xs ${isActive ? "bg-[var(--surface-1)]/20" : "bg-muted text-muted-foreground"}`}>{count}</span>
+                  <button 
+                    key={s} 
+                    onClick={() => setStatusFilter(s)} 
+                    className={`flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2.5 text-xs font-bold transition-all border ${
+                      isActive ? "bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] shadow-sm" : "border-[var(--border-default)] bg-[var(--surface-1)] text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
+                    }`}
+                  >
+                    {s}
+                    <span className={`mr-1 rounded-full px-1.5 py-0.5 text-[10px] font-mono ${isActive ? "bg-white/20 text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)]"}`}>
+                      {count}
+                    </span>
                   </button>
                 );
               })}
             </div>
 
-            <div className="space-y-4 stagger-list">
-              {filtered.length === 0 ? (
-                <Card className="border border-[var(--glass-border)] shadow-sm">
-                  <CardContent className="flex flex-col items-center py-16 text-muted-foreground">
-                    <ClipboardList className="mb-3 h-10 w-10 opacity-30" />
-                    <p className="text-base">لا توجد طلبات مطابقة</p>
-                    <Button size="sm" className="mt-4 gap-1.5" onClick={() => router.push("/orders/new")}><Plus className="h-4 w-4" />طلب جديد</Button>
-                  </CardContent>
-                </Card>
-              ) : (
-                filtered.map((order) => renderOrderCard(order, false))
-              )}
-            </div>
-          </>
+            {filtered.length === 0 ? (
+              <div className="m3-card bg-[var(--surface-1)] flex flex-col items-center py-16 text-center">
+                <ClipboardList className="mb-3 h-12 w-12 text-[var(--text-muted)] opacity-35" />
+                <p className="text-[15px] font-bold text-[var(--text-secondary)]">لا توجد طلبات مطابقة للبحث</p>
+                <Button size="sm" className="mt-4 gap-1.5 rounded-xl bg-[var(--brand-primary)] text-white" onClick={() => router.push("/orders/new")}>
+                  <Plus className="h-4.5 w-4.5" />
+                  <span>طلب صيانة جديد</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {filtered.map((order) => renderOrderCard(order, false))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="max-w-sm" dir="rtl">
-          <DialogHeader><DialogTitle className="text-red-600">حذف الطلب</DialogTitle></DialogHeader>
-          <p className="text-base text-muted-foreground">هل أنت متأكد من حذف &quot;{deletingOrder?.trackingId}&quot;؟</p>
-          <DialogFooter className="gap-2 sm:gap-0"><Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button><Button variant="destructive" onClick={handleDelete}>حذف</Button></DialogFooter>
+        <DialogContent className="max-w-sm rounded-3xl" dir="rtl">
+          <DialogHeader><DialogTitle className="text-red-600 font-extrabold text-[16px]">حذف الطلب نهائياً</DialogTitle></DialogHeader>
+          <p className="text-[14px] text-[var(--text-secondary)] leading-relaxed mt-2">هل أنت متأكد من حذف الطلب ذو رقم التتبع &quot;{deletingOrder?.trackingId}&quot;؟ لا يمكن التراجع عن هذا الإجراء.</p>
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" className="rounded-xl h-10 text-[14px] border-[var(--border-default)]" onClick={() => setDeleteDialogOpen(false)}>إلغاء</Button>
+            <Button variant="destructive" className="rounded-xl h-10 text-[14px] bg-red-600 hover:bg-red-700 text-white" onClick={handleDelete}>تأكيد الحذف</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </ResponsiveShell>

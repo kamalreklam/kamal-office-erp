@@ -3,9 +3,10 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useDebounce } from "@/lib/use-debounce";
-import { Search, Package, AlertTriangle, BarChart3, Plus, Pencil, Trash2 } from "lucide-react";
+import { Search, Package, AlertTriangle, BarChart3, Plus, Pencil, Trash2, MessageCircle, ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
+import { shareAsImage, formatProductWhatsAppText, shareViaWhatsApp } from "@/lib/share";
 import { formatCurrency, getLowStockProducts } from "@/lib/data";
 import { toast } from "sonner";
 import { DateRangeExportButton, type DateRange } from "@/components/date-range-picker";
@@ -204,66 +205,172 @@ export function MobileInventory() {
       </p>
 
       {/* Product cards */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {filtered.length === 0 ? (
-          <div className="rounded-3xl p-10 text-center" style={{ background: "var(--surface-1)" }}>
-            <Package className="mx-auto h-10 w-10 mb-3" style={{ color: "var(--text-muted)", opacity: 0.3 }} />
-            <p style={{ fontSize: 18, color: "var(--text-muted)" }}>لا توجد منتجات</p>
+          <div className="rounded-3xl p-10 text-center bg-white border border-[var(--glass-border)]">
+            <Package className="mx-auto h-12 w-12 mb-3" style={{ color: "var(--text-muted)", opacity: 0.3 }} />
+            <p style={{ fontSize: 16, color: "var(--text-muted)", fontWeight: 500 }}>لا توجد منتجات مطابقة للبحث</p>
           </div>
         ) : (
           filtered.map((product) => {
+            const isOutOfStock = product.stock === 0;
             const isLow = product.stock <= product.minStock;
+            const statusText = isOutOfStock ? "نفذ المخزون" : isLow ? "مخزون منخفض" : "متوفر";
+            const statusColor = isOutOfStock
+              ? { bg: "#fef2f2", text: "#b91c1c", border: "#fca5a5" }
+              : isLow
+              ? { bg: "#fffbeb", text: "#b45309", border: "#fde68a" }
+              : { bg: "#f0fdf4", text: "#15803d", border: "#bbf7d0" };
+
+            // Compatibility tags parser
+            const text = `${product.name} ${product.description || ""}`.toLowerCase();
+            const compats = [];
+            if (text.includes("epson") || text.includes("ep ")) compats.push("Epson");
+            if (text.includes("canon") || text.includes("cn ") || text.includes("pixma") || text.includes("maxify")) compats.push("Canon");
+            if (text.includes("hp")) compats.push("HP");
+            if (text.includes("l8050")) compats.push("L8050");
+            if (text.includes("c5790") || text.includes("c5890")) compats.push("C5790/C5890");
+            if (text.includes("c21000")) compats.push("C21000");
+            if (compats.length === 0) compats.push("عام");
+
             return (
               <div
+                id={`product-card-${product.id}`}
                 key={product.id}
-                className="rounded-2xl p-4"
+                className="rounded-2xl p-4 bg-white transition-all duration-200"
                 style={{
-                  background: "var(--surface-1)",
-                  border: isLow ? "2px solid var(--red-500)" : "1px solid var(--glass-border)",
+                  border: `1px solid ${isLow ? "#fcd34d" : "var(--glass-border)"}`,
+                  boxShadow: "var(--shadow-sm)",
                 }}
               >
+                {/* Status & Category */}
+                <div className="flex justify-between items-center mb-3">
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      backgroundColor: statusColor.bg,
+                      color: statusColor.text,
+                      border: `1px solid ${statusColor.border}`,
+                      padding: "2px 10px",
+                      borderRadius: "9999px",
+                    }}
+                  >
+                    {statusText}
+                  </span>
+                  <span style={{ fontSize: 12, color: "var(--text-muted)", backgroundColor: "#f3f4f6", padding: "2px 8px", borderRadius: "8px" }}>
+                    {product.category}
+                  </span>
+                </div>
+
+                {/* Main Product Info */}
                 <div className="flex items-start gap-3">
                   <div
-                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl"
-                    style={{ background: "var(--surface-2)", color: "var(--text-muted)" }}
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl"
+                    style={{ background: "#f9fafb", border: "1px solid #f3f4f6", color: "var(--text-muted)" }}
                   >
-                    <Package className="h-8 w-8" />
+                    <Package className="h-7 w-7 opacity-75" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, textAlign: "center" }}>
+                    <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, textAlign: "right" }} className="line-clamp-2">
                       {product.name}
                     </p>
-                    <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{product.category}</p>
-                  </div>
-                  <div className="text-left shrink-0">
-                    <p style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)" }}>
-                      {formatCurrency(product.price)}
-                    </p>
+                    {product.sku && (
+                      <p style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", marginTop: 2 }}>
+                        {product.sku}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: "1px solid var(--border-subtle)" }}>
-                  <div className="flex items-center gap-2">
-                    {isLow && <AlertTriangle className="h-4 w-4" style={{ color: "var(--red-500)" }} />}
-                    <span style={{
-                      fontSize: 15, fontWeight: 700,
-                      color: isLow ? "var(--red-500)" : "var(--text-primary)",
-                    }}>
-                      {product.stock} {product.unit}
+                {/* Compatibility badges */}
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {compats.map((c) => (
+                    <span
+                      key={c}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        backgroundColor: "#e0e7ff",
+                        color: "#4338ca",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      {c}
                     </span>
-                    {isLow && <span style={{ fontSize: 12, color: "var(--red-500)" }}>(حد: {product.minStock})</span>}
+                  ))}
+                </div>
+
+                {/* Stock Level Bar */}
+                <div className="space-y-1 mt-4">
+                  <div className="flex justify-between items-center" style={{ fontSize: 12 }}>
+                    <span style={{ color: "var(--text-muted)" }}>مستوى المخزون:</span>
+                    <span style={{ fontWeight: 700, color: isLow ? "#dc2626" : "var(--text-primary)" }}>
+                      {product.stock} / {product.minStock} {product.unit}
+                    </span>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)" }}>
-                    القيمة: {formatCurrency(product.price * product.stock)}
-                  </span>
-                  <div className="flex gap-2">
-                    <button onClick={() => router.push(`/inventory/${product.id}/edit`)}
-                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "var(--primary)", border: "none", cursor: "pointer" }}>
-                      <Pencil style={{ width: 15, height: 15 }} />
+                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${Math.min(100, (product.stock / Math.max(product.minStock * 3, 10)) * 100)}%`,
+                        backgroundColor: isOutOfStock ? "#ef4444" : isLow ? "#f59e0b" : "#10b981",
+                        borderRadius: "9999px",
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Footer price, value & actions */}
+                <div className="flex items-center justify-between mt-4 pt-3" style={{ borderTop: "1px solid #f3f4f6" }}>
+                  <div>
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>السعر</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: "var(--primary)" }}>
+                      {formatCurrency(product.price)}
+                    </span>
+                  </div>
+                  <div className="text-center">
+                    <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>إجمالي القيمة</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
+                      {formatCurrency(product.price * product.stock)}
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5 no-capture">
+                    <button
+                      onClick={() => shareViaWhatsApp(formatProductWhatsAppText(product, settings))}
+                      style={{ height: 36, width: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#f0fdf4", color: "#16a34a", border: "none", cursor: "pointer" }}
+                      title="مشاركة واتساب"
+                    >
+                      <MessageCircle style={{ width: 14, height: 14 }} />
                     </button>
-                    <button onClick={() => { deleteProduct(product.id); toast.success("تم حذف المنتج"); }}
-                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--danger-soft)", color: "var(--red-500)", border: "none", cursor: "pointer" }}>
-                      <Trash2 style={{ width: 15, height: 15 }} />
+                    <button
+                      onClick={() => {
+                        toast.promise(shareAsImage(`product-card-${product.id}`, `منتج_${product.name}`), {
+                          loading: 'جاري تصدير صورة المنتج...',
+                          success: 'تم التصدير بنجاح',
+                          error: 'فشل التصدير'
+                        });
+                      }}
+                      style={{ height: 36, width: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "#ecfeff", color: "#0891b2", border: "none", cursor: "pointer" }}
+                      title="حفظ كصورة"
+                    >
+                      <ImageIcon style={{ width: 14, height: 14 }} />
+                    </button>
+                    <button
+                      onClick={() => router.push(`/inventory/${product.id}/edit`)}
+                      style={{ height: 36, width: 36, borderRadius: 10, display: "flex", alignItems: "center", justifySelf: "center", justifyContent: "center", background: "#f3f4f6", color: "var(--text-secondary)", border: "none", cursor: "pointer" }}
+                      title="تعديل"
+                    >
+                      <Pencil style={{ width: 14, height: 14 }} />
+                    </button>
+                    <button
+                      onClick={() => { deleteProduct(product.id); toast.success("تم حذف المنتج"); }}
+                      style={{ height: 36, width: 36, borderRadius: 10, display: "flex", alignItems: "center", justifySelf: "center", justifyContent: "center", background: "#fef2f2", color: "#ef4444", border: "none", cursor: "pointer" }}
+                      title="حذف"
+                    >
+                      <Trash2 style={{ width: 14, height: 14 }} />
                     </button>
                   </div>
                 </div>

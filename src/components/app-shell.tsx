@@ -168,35 +168,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <div className="flex items-center gap-1">
                 <CommandPalette />
 
-                {/* Theme toggle */}
-                {mounted && (
-                  <button
-                    type="button"
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg transition-colors hover:bg-[var(--surface-2)]"
-                    style={{ color: "var(--text-muted)" }}
-                  >
-                    {theme === "dark" ? (
-                      <motion.div
-                        initial={{ rotate: -90, scale: 0 }}
-                        animate={{ rotate: 0, scale: 1 }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <Sun className="h-[18px] w-[18px]" />
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        initial={{ rotate: 90, scale: 0 }}
-                        animate={{ rotate: 0, scale: 1 }}
-                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <Moon className="h-[18px] w-[18px]" />
-                      </motion.div>
-                    )}
-                  </button>
-                )}
-
                 {/* Notification bell */}
                 <div ref={notifRef} className="relative">
                   <button

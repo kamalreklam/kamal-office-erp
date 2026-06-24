@@ -439,76 +439,74 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc]" dir="rtl">
-
+    <div className="min-h-screen bg-[var(--ground)] text-[14px] pb-64" dir="rtl">
       {/* ─── Sticky Header ─── */}
-      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[#e2e8f0] bg-white/80 backdrop-blur-sm px-4 py-3">
+      <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-[var(--border-default)] bg-[var(--surface-1)] px-4 py-3 shadow-sm">
         <button
           onClick={() => router.push("/invoices")}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[#94a3b8] hover:bg-[#f1f5f9] transition-colors"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors active:scale-95"
+          title="رجوع"
         >
           <ArrowRight className="h-5 w-5" />
         </button>
-        <h1 className="text-lg font-bold text-[#1e293b]">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
-        <span className="mr-auto rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-bold text-[#92400e]">مسودة</span>
+        <h1 className="text-[17px] font-bold text-[var(--text-primary)]">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
+        <span className="mr-auto rounded-full bg-amber-100 border border-amber-200 px-3 py-0.5 text-[11px] font-bold text-amber-800">مسودة</span>
       </div>
 
-      <div className="px-4 pb-48 space-y-4 pt-4">
-
+      <div className="px-4 space-y-4 pt-4">
         {/* ─── 1. CLIENT SECTION ─── */}
-        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">العميل</label>
+        <div className="m3-card bg-[var(--surface-1)]">
+          <label className="mb-2 block text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">العميل المستهدف</label>
 
           {selectedClient ? (
-            <div className="flex items-center gap-3 rounded-[10px] border-[1.5px] border-[#2563eb]/30 bg-[#2563eb]/5 px-3 py-2.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-sm font-bold text-[#2563eb]">
+            <div className="flex items-center gap-3 rounded-xl border-2 border-indigo-100 bg-indigo-50/20 px-3 py-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-bold text-[var(--brand-primary)]">
                 {selectedClient.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-[#1e293b] truncate">{selectedClient.name}</p>
-                {selectedClient.phone && <p dir="ltr" className="text-xs text-[#94a3b8] text-left">{selectedClient.phone}</p>}
+                <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{selectedClient.name}</p>
+                {selectedClient.phone && <p dir="ltr" className="text-xs text-[var(--text-muted)] text-left font-mono mt-0.5">{selectedClient.phone}</p>}
               </div>
               <button
                 onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                className="rounded-[8px] p-1.5 text-[#94a3b8] hover:text-red-500 transition-colors"
+                className="rounded-xl p-1.5 text-[var(--text-muted)] hover:bg-white hover:text-red-500 transition-colors active:scale-95 shadow-sm"
+                title="إزالة العميل"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
           ) : (
             <div ref={clientRef} className="relative">
-              <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94a3b8]" />
+              <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
               <input
                 type="text"
-                placeholder="ابحث عن عميل..."
+                placeholder="ابحث باسم العميل أو رقم الهاتف..."
                 value={clientSearch}
                 onChange={(e) => { setClientSearch(e.target.value); setShowClients(true); }}
                 onFocus={() => setShowClients(true)}
-                className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-white pr-9 pl-3 py-2.5 text-sm text-[#1e293b] outline-none focus:border-[#2563eb] transition-colors"
+                className="w-full rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] pr-10 pl-3 py-2.5 text-[14px] text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)] transition-colors"
               />
               {showClients && (
-                <div className="absolute top-full mt-1 left-0 right-0 z-20 rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden">
-                  <div className="max-h-56 overflow-y-auto p-1">
-                    {filteredClients.length === 0 ? (
-                      <p className="p-3 text-center text-sm text-[#94a3b8]">لا نتائج</p>
-                    ) : (
-                      filteredClients.slice(0, 10).map((c) => (
-                        <button
-                          key={c.id}
-                          onClick={() => selectClient(c)}
-                          className="flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors hover:bg-[#f1f5f9]"
-                        >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[10px] font-bold text-[#2563eb]">
-                            {c.name.charAt(0)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#1e293b] truncate">{c.name}</p>
-                            {c.phone && <p dir="ltr" className="text-xs text-[#94a3b8] text-left">{c.phone}</p>}
-                          </div>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                <div className="absolute top-full mt-2 left-0 right-0 z-20 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] shadow-lg overflow-hidden max-h-56 overflow-y-auto p-1">
+                  {filteredClients.length === 0 ? (
+                    <p className="p-3 text-center text-[14px] text-[var(--text-muted)]">لا يوجد عملاء مطابقين</p>
+                  ) : (
+                    filteredClients.slice(0, 10).map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => selectClient(c)}
+                        className="flex w-full items-center gap-2.5 rounded-lg p-2.5 text-right transition-colors hover:bg-[var(--surface-2)]"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[11px] font-bold text-[var(--brand-primary)]">
+                          {c.name.charAt(0)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{c.name}</p>
+                          {c.phone && <p dir="ltr" className="text-xs text-[var(--text-muted)] text-left font-mono">{c.phone}</p>}
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -516,15 +514,15 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         </div>
 
         {/* ─── 2. PRODUCTS SECTION ─── */}
-        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
+        <div className="m3-card bg-[var(--surface-1)]">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتجات</label>
+            <label className="text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">قائمة المنتجات المضافة</label>
             {cart.length > 0 && (
-              <span className="text-xs font-bold text-[#2563eb]">{cart.length} منتج</span>
+              <span className="text-xs font-bold text-[var(--brand-primary)]">({cart.length} منتج)</span>
             )}
           </div>
 
-          {/* Bundle quick-add — horizontal scroll */}
+          {/* Bundle quick-add */}
           {bundles.length > 0 && (
             <div className="mb-3">
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
@@ -532,41 +530,40 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   <button
                     key={bundle.id}
                     onClick={() => openBundleSheet(bundle.id)}
-                    className="flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#7c3aed]/40 bg-[#7c3aed]/5 px-3 py-2 text-xs font-bold text-[#7c3aed] transition-colors active:bg-[#7c3aed]/10"
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-purple-300 bg-purple-50/30 px-3 py-2 text-[12px] font-bold text-purple-700 transition-colors active:bg-purple-50"
                   >
-                    <Droplets className="h-3.5 w-3.5" />
-                    {bundle.name}
+                    🎁 {bundle.name}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Cart items — stacked cards */}
+          {/* Cart items */}
           {cart.length > 0 && (
-            <div className="space-y-2 mb-3">
+            <div className="space-y-3 mb-4">
               {cart.map((item) => (
                 <div
                   key={item.productId}
-                  className={`rounded-[10px] border-[1.5px] p-3 ${item.isTemporary ? "border-[#f59e0b]/30 bg-[#fefce8]" : item.isBundle ? "border-[#7c3aed]/30 bg-[#7c3aed]/5" : "border-[#e2e8f0] bg-white"}`}
+                  className={`rounded-xl border p-3.5 space-y-3 ${item.isTemporary ? "border-amber-200 bg-amber-50/20" : item.isBundle ? "border-indigo-200 bg-indigo-50/10" : "border-[var(--border-default)] bg-[var(--surface-1)]"}`}
                 >
-                  {/* Row 1: name + badges + delete */}
-                  <div className="flex items-start gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
+                  {/* Item header */}
+                  <div className="flex items-start gap-2 justify-between">
+                    <div className="min-w-0 flex-1">
                       {item.isTemporary ? (
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-1.5">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-amber-100 text-amber-800 border border-amber-200 text-[10px] rounded-md font-bold shrink-0 px-2 py-0.5">خارجي</span>
                             <input
                               type="text"
                               placeholder="اسم المنتج المؤقت..."
                               value={item.productName}
                               onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
-                              className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
+                              className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-1)] px-2 py-1 text-[14px] font-bold text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
                             />
-                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[10px] font-bold text-white">مؤقت</span>
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] text-[var(--text-muted)] shrink-0">التكلفة:</span>
                             <input
                               type="text" inputMode="decimal" dir="ltr"
                               placeholder="0.00"
@@ -578,78 +575,72 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                                 }
                               }}
                               onBlur={() => updateCartItem(item.productId, { _costInput: undefined })}
-                              className="w-20 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-center text-sm font-mono text-[#1e293b] outline-none focus:border-[#2563eb]"
+                              className="w-24 rounded-lg border border-[var(--border-default)] bg-[var(--surface-1)] px-2 py-1 text-center text-xs font-mono text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
                             />
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-[#1e293b] truncate">{item.productName}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{item.productName}</p>
                           {item.isBundle && (
-                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[10px] font-bold text-white">باقة</span>
+                            <span className="shrink-0 rounded-full bg-[var(--brand-primary)] px-2 py-0.5 text-[9px] font-bold text-white">طقم</span>
                           )}
                         </div>
                       )}
                       {item.isBundle && item.bundleComponents && (
-                        <p className="text-[11px] text-[#94a3b8] mt-0.5 truncate">
-                          {item.bundleComponents.map((c) => `${c.productName} x${c.quantity}`).join(" . ")}
+                        <p className="text-[11px] text-[var(--text-muted)] mt-1 truncate">
+                          {item.bundleComponents.map((c) => `${c.productName} x${c.quantity}`).join(" + ")}
                         </p>
                       )}
                     </div>
                     <button
                       onClick={() => removeFromCart(item.productId)}
-                      className="shrink-0 rounded-[8px] p-1.5 text-[#94a3b8] hover:text-red-500 transition-colors"
+                      className="shrink-0 rounded-xl p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors active:scale-95"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4.5 w-4.5" />
                     </button>
                   </div>
 
-                  {/* Row 2: qty, price, line total */}
-                  <div className="grid grid-cols-3 gap-2">
-                    {/* Quantity */}
+                  {/* Quantity & Price Controls */}
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--border-default)]">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
-                      <div className="flex items-center rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc]">
+                      <label className="block text-[11px] font-bold text-[var(--text-muted)] mb-1">الكمية</label>
+                      <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--surface-2)]">
                         <button
                           onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
-                          className="px-1.5 py-1 text-[#94a3b8] active:text-[#1e293b]"
+                          className="px-2 py-1.5 text-[var(--text-muted)]"
                         >
-                          <Minus className="h-3 w-3" />
+                          <Minus className="h-3.5 w-3.5" />
                         </button>
                         <input
-                          type="number"
-                          min={1}
+                          type="number" min={1}
                           value={item.quantity}
                           onChange={(e) => updateCartQuantity(item.productId, parseInt(e.target.value) || 1)}
-                          className="w-full min-w-0 bg-transparent text-center text-sm font-bold text-[#1e293b] outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                          className="w-full min-w-0 bg-transparent text-center text-sm font-bold font-mono text-[var(--text-primary)] outline-none"
                           dir="ltr"
                         />
                         <button
                           onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
-                          className="px-1.5 py-1 text-[#94a3b8] active:text-[#1e293b]"
+                          className="px-2 py-1.5 text-[var(--text-muted)]"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Plus className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    {/* Price */}
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">السعر</label>
+                      <label className="block text-[11px] font-bold text-[var(--text-muted)] mb-1">سعر البيع</label>
                       <input
-                        type="text"
-                        inputMode="decimal"
-                        dir="ltr"
+                        type="text" inputMode="decimal" dir="ltr"
                         value={item._priceInput ?? String(item.unitPrice)}
                         onChange={(e) => updateCartPrice(item.productId, e.target.value)}
-                        className="w-full rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-2 py-1 text-center text-sm font-bold text-[#1e293b] outline-none focus:border-[#2563eb] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        className="w-full rounded-lg border border-[var(--border-default)] bg-[var(--surface-2)] px-2 py-1.5 text-center text-sm font-bold font-mono text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
                       />
                     </div>
 
-                    {/* Line total */}
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
-                      <div className="flex h-[30px] items-center justify-center rounded-[8px] bg-[#2563eb]/5 text-sm font-bold font-mono text-[#2563eb]">
+                      <label className="block text-[11px] font-bold text-[var(--text-muted)] mb-1">الإجمالي</label>
+                      <div className="flex h-9 items-center justify-center rounded-lg bg-[var(--brand-soft)] text-sm font-bold font-mono text-[var(--brand-primary)]">
                         {formatCurrency(getLineTotal(item))}
                       </div>
                     </div>
@@ -659,74 +650,74 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
             </div>
           )}
 
-          {/* Add product — inline search */}
-          <div ref={productSearchRef} className="relative mb-2">
+          {/* Add product action block */}
+          <div ref={productSearchRef} className="relative space-y-2">
             {showProductSearch ? (
               <>
-                <Search className="absolute right-3 top-[11px] h-4 w-4 text-[#94a3b8]" />
-                <input
-                  type="text"
-                  placeholder="ابحث عن منتج..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  autoFocus
-                  className="w-full rounded-[10px] border-[1.5px] border-[#2563eb] bg-white pr-9 pl-3 py-2.5 text-sm text-[#1e293b] outline-none"
-                />
-                {/* Dropdown */}
-                <div className="absolute top-full mt-1 left-0 right-0 z-20 rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden">
-                  <div className="max-h-64 overflow-y-auto p-1">
-                    {filteredProducts.length === 0 ? (
-                      <p className="p-3 text-center text-sm text-[#94a3b8]">لا توجد منتجات</p>
-                    ) : (
-                      filteredProducts.map((p) => {
-                        const outOfStock = p.stock <= 0;
-                        const inCart = cart.some((c) => c.productId === p.id);
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => addProductToCart(p)}
-                            disabled={outOfStock}
-                            className={`flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
-                          >
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-[#f1f5f9] text-[#94a3b8]">
-                              <Package className="h-4 w-4" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-[#1e293b] truncate">{p.name}</p>
-                              <p className={`text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
-                                {outOfStock ? "نفذ المخزون" : `${p.category} · المخزون: ${p.stock}`}
-                              </p>
-                            </div>
-                            {inCart && <Check className="h-4 w-4 shrink-0 text-[#2563eb]" />}
-                            <span className={`shrink-0 text-sm font-bold font-mono ${outOfStock ? "text-[#94a3b8]" : "text-[#2563eb]"}`}>
-                              {formatCurrency(p.price)}
-                            </span>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
+                <div className="relative">
+                  <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+                  <input
+                    type="text"
+                    placeholder="ابحث باسم المنتج أو الفئة..."
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    autoFocus
+                    className="w-full rounded-xl border border-[var(--brand-primary)] bg-[var(--surface-1)] pr-10 pl-3 py-2.5 text-[14px] text-[var(--text-primary)] outline-none"
+                  />
+                </div>
+                {/* Dropdown list */}
+                <div className="absolute top-full mt-2 left-0 right-0 z-20 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] shadow-xl overflow-hidden max-h-60 overflow-y-auto p-1">
+                  {filteredProducts.length === 0 ? (
+                    <p className="p-3 text-center text-[14px] text-[var(--text-muted)]">لا يوجد منتجات مطابقة</p>
+                  ) : (
+                    filteredProducts.map((p) => {
+                      const outOfStock = p.stock <= 0;
+                      const inCart = cart.some((c) => c.productId === p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => addProductToCart(p)}
+                          disabled={outOfStock}
+                          className={`flex w-full items-center gap-3 rounded-lg p-2.5 text-right transition-colors ${outOfStock ? "opacity-45 cursor-not-allowed" : "hover:bg-[var(--surface-2)]"} ${inCart ? "bg-indigo-50/50" : ""}`}
+                        >
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)]">
+                            <Package className="h-4.5 w-4.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{p.name}</p>
+                            <p className={`text-[12px] mt-0.5 ${outOfStock ? "text-red-500 font-bold" : "text-[var(--text-muted)]"}`}>
+                              {outOfStock ? "نفذ من المستودع" : `${p.category} · متوفر: ${p.stock}`}
+                            </p>
+                          </div>
+                          {inCart && <Check className="h-4.5 w-4.5 text-[var(--brand-primary)] shrink-0" />}
+                          <span className={`shrink-0 font-bold font-mono text-[14px] ${outOfStock ? "text-[var(--text-muted)]" : "text-[var(--brand-primary)]"}`}>
+                            {formatCurrency(p.price)}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </>
             ) : (
               <button
                 onClick={() => setShowProductSearch(true)}
-                className="flex w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#2563eb]/40 bg-[#2563eb]/5 py-2.5 text-sm font-bold text-[#2563eb] transition-colors active:bg-[#2563eb]/10"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--brand-primary)] bg-[var(--brand-soft)] py-2.5 text-[14px] font-bold text-[var(--brand-primary)] transition-colors active:scale-95"
               >
                 <Plus className="h-4 w-4" />
-                إضافة منتج
+                إضافة منتج من المخزون
               </button>
             )}
           </div>
 
-          {/* Ink set buttons */}
+          {/* Quick ink sets */}
           {inkSets.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            <div className="flex gap-2 overflow-x-auto pb-1 mt-3 -mx-1 px-1">
               {inkSets.map((set) => (
                 <button
                   key={set.baseName}
                   onClick={() => openInkSetSheet(set)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-[10px] border-[1.5px] border-dashed border-[#06b6d4]/40 bg-[#06b6d4]/5 px-3 py-2 text-xs font-bold text-[#06b6d4] transition-colors active:bg-[#06b6d4]/10"
+                  className="flex shrink-0 items-center gap-1.5 rounded-xl border border-dashed border-cyan-300 bg-cyan-50/30 px-3 py-2 text-[12px] font-bold text-cyan-700 transition-colors active:bg-cyan-50"
                 >
                   <Droplets className="h-3.5 w-3.5" />
                   {set.displayName}
@@ -735,88 +726,86 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
             </div>
           )}
 
-          {/* Temporary product button */}
+          {/* Add temporary item button */}
           <button
             onClick={addTemporaryProduct}
-            className="flex w-full items-center justify-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#f59e0b]/40 bg-[#f59e0b]/5 py-2.5 text-sm font-bold text-[#f59e0b] transition-colors active:bg-[#f59e0b]/10"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-amber-300 bg-amber-50/20 py-2.5 text-[14px] font-bold text-amber-700 transition-colors active:scale-95 mt-3"
           >
             <FileText className="h-4 w-4" />
-            منتج مؤقت
+            إضافة منتج خارجي / مؤقت
           </button>
         </div>
 
         {/* ─── 3. DISCOUNT SECTION ─── */}
-        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
-          <div className="flex gap-2 mb-2">
-            <div className="flex gap-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] p-0.5">
+        <div className="m3-card bg-[var(--surface-1)]">
+          <label className="mb-2 block text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">الخصم الإضافي للفاتورة</label>
+          <div className="flex gap-2 mb-1">
+            <div className="flex gap-0.5 rounded-xl border border-[var(--border-default)] p-0.5 bg-[var(--surface-2)]">
               {(["percentage", "fixed"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => setDiscountType(t)}
-                  className={`rounded-[8px] px-3 py-1.5 text-xs font-bold transition-colors ${discountType === t ? "bg-[#2563eb] text-white" : "text-[#94a3b8]"}`}
+                  className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-colors ${discountType === t ? "bg-[var(--brand-primary)] text-white" : "text-[var(--text-muted)]"}`}
                 >
-                  {t === "percentage" ? "%" : "$"}
+                  {t === "percentage" ? "%" : settings.currencySymbol}
                 </button>
               ))}
             </div>
             <input
-              type="text"
-              inputMode="decimal"
-              dir="ltr"
+              type="text" inputMode="decimal" dir="ltr"
               value={discountValue || ""}
               placeholder="0"
               onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setDiscountValue(parseFloat(v) || 0); }}
-              className="flex-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-center text-sm font-bold font-mono text-[#1e293b] outline-none focus:border-[#2563eb]"
+              className="flex-1 rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-2 text-center text-[14px] font-bold font-mono text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)]"
             />
           </div>
           {discountAmount > 0 && (
-            <p className="text-xs font-mono font-bold text-red-500 text-left">-{formatCurrency(discountAmount)}</p>
+            <p className="text-xs font-mono font-bold text-red-500 text-left">خصم بقيمة: -{formatCurrency(discountAmount)}</p>
           )}
         </div>
 
         {/* ─── 4. TOTALS CARD ─── */}
         {cart.length > 0 && (
-          <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4 space-y-2">
-            <div className="flex justify-between">
-              <span className="text-sm text-[#94a3b8]">المجموع</span>
-              <span className="text-sm font-bold font-mono text-[#1e293b]">{formatCurrency(subtotal)}</span>
+          <div className="m3-card bg-[var(--surface-1)] space-y-2.5">
+            <div className="flex justify-between text-[14px] text-[var(--text-secondary)]">
+              <span>المجموع الفرعي</span>
+              <span className="font-bold font-mono">{formatCurrency(subtotal)}</span>
             </div>
             {discountAmount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-sm text-[#94a3b8]">الخصم</span>
-                <span className="text-sm font-bold font-mono text-red-500">-{formatCurrency(discountAmount)}</span>
+              <div className="flex justify-between text-[14px] text-red-500">
+                <span>خصم إجمالي الفاتورة</span>
+                <span className="font-bold font-mono">− {formatCurrency(discountAmount)}</span>
               </div>
             )}
-            {taxAmount > 0 && (
-              <div className="flex justify-between">
-                <span className="text-sm text-[#94a3b8]">الضريبة ({settings.taxRate}%)</span>
-                <span className="text-sm font-bold font-mono text-[#1e293b]">+{formatCurrency(taxAmount)}</span>
+            {settings.taxEnabled && taxAmount > 0 && (
+              <div className="flex justify-between text-[14px] text-[var(--text-secondary)]">
+                <span>الضريبة ({settings.taxRate}%)</span>
+                <span className="font-bold font-mono">+{formatCurrency(taxAmount)}</span>
               </div>
             )}
-            <div className="flex justify-between border-t border-[#e2e8f0] pt-2">
-              <span className="text-base font-bold text-[#1e293b]">الإجمالي</span>
-              <span className="text-xl font-bold font-mono text-[#2563eb]">{formatCurrency(total)}</span>
+            <div className="flex justify-between border-t border-[var(--border-default)] pt-2.5">
+              <span className="text-base font-extrabold text-[var(--text-primary)]">الإجمالي النهائي</span>
+              <span className="text-[20px] font-black font-mono text-[var(--brand-primary)]">{formatCurrency(total)}</span>
             </div>
           </div>
         )}
 
         {/* ─── 5. NOTES ─── */}
-        <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">ملاحظات</label>
+        <div className="m3-card bg-[var(--surface-1)]">
+          <label className="mb-2 block text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">الملاحظات العامة</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="ملاحظات اختيارية..."
+            placeholder="مثال: شروط الضمان، معلومات التوصيل..."
             rows={2}
-            className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] p-3 text-sm text-[#1e293b] outline-none resize-none focus:border-[#2563eb]"
+            className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] p-3 text-[14px] text-[var(--text-primary)] outline-none resize-none focus:border-[var(--brand-primary)]"
           />
         </div>
       </div>
 
       {/* ─── FIXED BOTTOM: Save Buttons ─── */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[#e2e8f0] bg-white/95 backdrop-blur-sm px-4 pt-3"
+        className="fixed bottom-0 left-0 right-0 z-30 border-t border-[var(--border-default)] bg-[var(--surface-1)] px-4 pt-3.5 shadow-lg"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 8px) + 12px)" }}
         dir="rtl"
       >
@@ -824,15 +813,15 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           <button
             onClick={() => handleSave("مدفوعة")}
             disabled={saving}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-emerald-500 py-2.5 text-sm font-bold text-white transition-colors active:bg-emerald-600 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 py-3 text-[14px] font-bold text-white transition-colors active:scale-98 disabled:opacity-50"
           >
             <CheckCircle2 className="h-4 w-4" />
-            مدفوعة
+            حفظ مدفوعة
           </button>
           <button
             onClick={() => handleSave("غير مدفوعة")}
             disabled={saving}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-amber-500 py-2.5 text-sm font-bold text-white transition-colors active:bg-amber-600 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 py-3 text-[14px] font-bold text-white transition-colors active:scale-98 disabled:opacity-50"
           >
             <AlertTriangle className="h-4 w-4" />
             غير مدفوعة
@@ -840,19 +829,19 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           <button
             onClick={() => handleSave("مدفوعة جزئياً")}
             disabled={saving}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[#2563eb] py-2.5 text-sm font-bold text-white transition-colors active:bg-[#1d4ed8] disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] py-3 text-[14px] font-bold text-white transition-colors active:scale-98 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            حفظ
+            حفظ معلق
           </button>
         </div>
         <button
           onClick={() => handleSave("مسودة")}
           disabled={saving}
-          className="flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-white py-2 text-sm font-bold text-[#94a3b8] transition-colors active:bg-[#f1f5f9] disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] py-2.5 text-[14px] font-bold text-[var(--text-muted)] transition-colors active:bg-[var(--surface-3)] disabled:opacity-50"
         >
           <FileText className="h-4 w-4" />
-          مسودة
+          حفظ كمسودة
         </button>
       </div>
 
@@ -884,50 +873,48 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-lg rounded-t-[20px] bg-white p-5 pb-8" dir="rtl"
+                className="w-full max-w-lg rounded-t-[24px] bg-[var(--surface-1)] p-5 pb-8 border-t border-[var(--border-default)]" dir="rtl"
               >
-                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e2e8f0]" />
-                <h3 className="text-base font-bold text-[#1e293b] mb-1 flex items-center gap-2">
-                  <Droplets className="h-5 w-5 text-[#7c3aed]" />
-                  {bundle.name}
+                <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[var(--surface-3)]" />
+                <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 flex items-center gap-2">
+                  🎁 {bundle.name}
                 </h3>
-                <p className="text-xs text-[#94a3b8] mb-3">
+                <p className="text-xs text-[var(--text-muted)] mb-4">
                   {bundle.description || `مجموعة (${bundle.items.length} منتجات)`}
                 </p>
 
-                <div className="space-y-1.5 mb-4">
+                <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                   {sortedItems.map((bi) => {
                     const cfg = colorConfig[bi.colorKey] || colorConfig.BK;
                     return (
-                      <div key={bi.productId} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
-                        <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
-                        <span className="text-sm font-medium flex-1 truncate">{bi.product?.name || bi.productName}</span>
-                        <span className={`text-[10px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
-                          {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `${bi.product.stock}`) : "—"}
+                      <div key={bi.productId} className="flex items-center gap-2.5 rounded-xl bg-[var(--surface-2)] px-3 py-2.5">
+                        <div className="h-4 w-4 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                        <span className="text-[14px] font-semibold flex-1 truncate">{bi.product?.name || bi.productName}</span>
+                        <span className={`text-xs font-bold ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[var(--text-muted)]"}`}>
+                          {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `المخزون: ${bi.product.stock}`) : "—"}
                         </span>
                       </div>
                     );
                   })}
                 </div>
 
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر المجموعة ($)</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">سعر المجموعة الإجمالي ($)</label>
                 <input
                   type="text" inputMode="decimal" dir="ltr"
                   value={bundleSetPrice}
                   onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setBundleSetPrice(v); }}
                   placeholder="0.00"
-                  className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#7c3aed] mb-1"
+                  className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-3 text-center text-lg font-bold font-mono text-[var(--text-primary)] outline-none focus:border-[var(--brand-primary)] mb-1"
                 />
-                <p className="text-[11px] text-[#94a3b8] text-center mb-4">
-                  الافتراضي = {formatCurrency(defaultTotal)}
+                <p className="text-[11px] text-[var(--text-muted)] text-center mb-4">
+                  الافتراضي (مجموع السعر الفردي) = {formatCurrency(defaultTotal)}
                 </p>
 
                 <button
                   onClick={confirmBundleAdd}
-                  className="w-full rounded-[12px] bg-[#7c3aed] py-3 text-sm font-bold text-white active:bg-[#6d28d9] transition-colors flex items-center justify-center gap-2"
+                  className="w-full rounded-xl bg-[var(--brand-primary)] py-3 text-[14px] font-bold text-white active:bg-[var(--brand-hover)] transition-colors flex items-center justify-center gap-2 shadow-md"
                 >
-                  <Droplets className="h-4 w-4" />
-                  إضافة المجموعة
+                  إضافة المجموعة للفاتورة
                 </button>
               </motion.div>
             </motion.div>
@@ -947,49 +934,49 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
               initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg rounded-t-[20px] bg-white p-5 pb-8" dir="rtl"
+              className="w-full max-w-lg rounded-t-[24px] bg-[var(--surface-1)] p-5 pb-8 border-t border-[var(--border-default)]" dir="rtl"
             >
-              <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-[#e2e8f0]" />
-              <h3 className="text-base font-bold text-[#1e293b] mb-1 flex items-center gap-2">
-                <Droplets className="h-5 w-5 text-[#06b6d4]" />
+              <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[var(--surface-3)]" />
+              <h3 className="text-base font-bold text-[var(--text-primary)] mb-1 flex items-center gap-2">
+                <Droplets className="h-5 w-5 text-cyan-500" />
                 {activeInkSet.displayName}
               </h3>
-              <p className="text-xs text-[#94a3b8] mb-3">طقم أحبار ({activeInkSet.items.length} ألوان)</p>
+              <p className="text-xs text-[var(--text-muted)] mb-4">طقم أحبار ({activeInkSet.items.length} ألوان)</p>
 
-              <div className="space-y-1.5 mb-4">
+              <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                 {activeInkSet.items.map(p => {
                   const ck = getColorKey(p.name);
                   const cfg = colorConfig[ck] || colorConfig.BK;
                   return (
-                    <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
-                      <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
-                      <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
-                      <span className={`text-[10px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
-                        {p.stock <= 0 ? "نفذ!" : `${p.stock}`}
+                    <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-[var(--surface-2)] px-3 py-2.5">
+                      <div className="h-4 w-4 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
+                      <span className="text-[14px] font-semibold flex-1 truncate">{p.name}</span>
+                      <span className={`text-xs font-bold ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[var(--text-muted)]"}`}>
+                        {p.stock <= 0 ? "نفذ!" : `المخزون: ${p.stock}`}
                       </span>
                     </div>
                   );
                 })}
               </div>
 
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر الطقم ($)</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[var(--text-muted)]">سعر طقم الأحبار ($)</label>
               <input
                 type="text" inputMode="decimal" dir="ltr"
                 value={inkSetPrice}
                 onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d*$/.test(v)) setInkSetPrice(v); }}
                 placeholder="0.00"
-                className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#06b6d4] mb-1"
+                className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-3 text-center text-lg font-bold font-mono text-[var(--text-primary)] outline-none focus:border-cyan-500 mb-1"
               />
-              <p className="text-[11px] text-[#94a3b8] text-center mb-4">
-                الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
+              <p className="text-[11px] text-[var(--text-muted)] text-center mb-4">
+                الافتراضي (مجموع السعر الفردي) = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
               </p>
 
               <button
                 onClick={confirmInkSetAdd}
-                className="w-full rounded-[12px] bg-[#06b6d4] py-3 text-sm font-bold text-white active:bg-[#0891b2] transition-colors flex items-center justify-center gap-2"
+                className="w-full rounded-xl bg-cyan-600 py-3 text-[14px] font-bold text-white active:bg-cyan-700 transition-colors flex items-center justify-center gap-2 shadow-md"
               >
                 <Droplets className="h-4 w-4" />
-                إضافة الطقم
+                إضافة الطقم للفاتورة
               </button>
             </motion.div>
           </motion.div>

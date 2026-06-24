@@ -18,18 +18,18 @@ export function MobileDashboard() {
 
   return (
     <div className="space-y-5" dir="rtl">
-      {/* Greeting */}
-      <div>
-        <p style={{ fontSize: 15, color: "var(--text-muted)" }}>مرحباً بك في</p>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }}>{settings.businessName}</h1>
+      {/* Greeting Card */}
+      <div className="relative overflow-hidden rounded-[24px] border border-[var(--glass-border)] bg-white p-5 shadow-sm">
+        <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 700 }}>مرحباً بك في نظام إدارة</p>
+        <h1 className="mt-1" style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)" }}>{settings.businessName}</h1>
       </div>
 
-      {/* Quick Actions */}
+      {/* Quick Actions Buttons */}
       <div className="flex gap-3">
         <Link href="/invoices/new" className="flex-1">
           <div
-            className="flex items-center justify-center gap-2 rounded-2xl"
-            style={{ height: 56, fontSize: 17, fontWeight: 800, background: "var(--primary)", color: "white" }}
+            className="flex items-center justify-center gap-2 rounded-2xl transition-all duration-200 active:scale-95 shadow-sm"
+            style={{ height: 52, fontSize: 15, fontWeight: 800, background: "var(--primary)", color: "white" }}
           >
             <Plus className="h-5 w-5" />
             فاتورة جديدة
@@ -37,8 +37,8 @@ export function MobileDashboard() {
         </Link>
         <Link href="/inventory" className="flex-1">
           <div
-            className="flex items-center justify-center gap-2 rounded-2xl"
-            style={{ height: 56, fontSize: 17, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)" }}
+            className="flex items-center justify-center gap-2 rounded-2xl transition-all duration-200 active:scale-95 border border-[var(--glass-border)]"
+            style={{ height: 52, fontSize: 15, fontWeight: 700, background: "white", color: "var(--primary)" }}
           >
             <BarChart3 className="h-5 w-5" />
             المخزون
@@ -47,69 +47,72 @@ export function MobileDashboard() {
       </div>
 
       {/* Invoice summary card */}
-      <div className="rounded-3xl p-6" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
+      <div className="rounded-[24px] p-5 bg-white border border-[var(--glass-border)] shadow-sm">
         <div className="flex items-center gap-2 mb-2">
-          <TrendingUp className="h-5 w-5" style={{ color: "var(--green-500)" }} />
-          <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)" }}>ملخص الفواتير</span>
+          <TrendingUp className="h-4.5 w-4.5" style={{ color: "var(--green-500)" }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>إجمالي المعاملات</span>
         </div>
-        <AnimatedCounter
-          value={invoices.length}
-          className="block"
-          style={{ fontSize: 36, fontWeight: 800, color: "var(--text-primary)" }}
-        />
-        <div className="flex gap-4 mt-2">
-          <span style={{ fontSize: 15, color: "var(--green-500)", fontWeight: 700 }}>{paidCount} مدفوعة</span>
-          <span style={{ fontSize: 15, color: "var(--amber-500)", fontWeight: 700 }}>{unpaidCount} معلقة</span>
+        <div className="flex items-baseline gap-1">
+          <AnimatedCounter
+            value={invoices.length}
+            className="block"
+            style={{ fontSize: 32, fontWeight: 900, color: "var(--text-primary)" }}
+          />
+          <span style={{ fontSize: 13, color: "var(--text-muted)" }}>فاتورة مصدرة</span>
+        </div>
+        <div className="flex gap-4 mt-3 pt-3 border-t border-gray-50">
+          <span style={{ fontSize: 13, color: "var(--green-500)", fontWeight: 700 }}>{paidCount} مدفوعة</span>
+          <span style={{ fontSize: 13, color: "var(--amber-500)", fontWeight: 700 }}>{unpaidCount} معلقة</span>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2.5">
         <Link href="/invoices">
-          <div className="rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-            <FileText className="h-6 w-6 mx-auto mb-1" style={{ color: "var(--blue-500)" }} />
-            <AnimatedCounter value={invoices.length} className="block" style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }} />
-            <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>فاتورة</p>
+          <div className="rounded-2xl p-4 text-center bg-white border border-[var(--glass-border)] shadow-sm">
+            <FileText className="h-5 w-5 mx-auto mb-1" style={{ color: "var(--blue-500)" }} />
+            <AnimatedCounter value={invoices.length} className="block" style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }} />
+            <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>الفواتير</p>
           </div>
         </Link>
         <Link href="/inventory">
-          <div className="rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-            <Package className="h-6 w-6 mx-auto mb-1" style={{ color: "var(--purple-500)" }} />
-            <AnimatedCounter value={products.length} className="block" style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }} />
-            <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>منتج</p>
+          <div className="rounded-2xl p-4 text-center bg-white border border-[var(--glass-border)] shadow-sm">
+            <Package className="h-5 w-5 mx-auto mb-1" style={{ color: "var(--purple-500)" }} />
+            <AnimatedCounter value={products.length} className="block" style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }} />
+            <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>المخزون</p>
           </div>
         </Link>
         <Link href="/clients">
-          <div className="rounded-2xl p-4 text-center" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-            <Users className="h-6 w-6 mx-auto mb-1" style={{ color: "var(--green-500)" }} />
-            <AnimatedCounter value={clients.length} className="block" style={{ fontSize: 26, fontWeight: 800, color: "var(--text-primary)" }} />
-            <p style={{ fontSize: 13, color: "var(--text-muted)", fontWeight: 600 }}>عميل</p>
+          <div className="rounded-2xl p-4 text-center bg-white border border-[var(--glass-border)] shadow-sm">
+            <Users className="h-5 w-5 mx-auto mb-1" style={{ color: "var(--green-500)" }} />
+            <AnimatedCounter value={clients.length} className="block" style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }} />
+            <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 700 }}>العملاء</p>
           </div>
         </Link>
       </div>
 
       {/* Low Stock Alerts */}
       {lowStockItems.length > 0 && (
-        <div className="rounded-3xl p-5" style={{ background: "var(--danger-soft)", border: "1px solid rgba(239,68,68,0.15)" }}>
+        <div className="rounded-[24px] p-5 bg-red-50/30 border border-red-100">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="h-5 w-5" style={{ color: "var(--red-500)" }} />
-            <span style={{ fontSize: 18, fontWeight: 800, color: "var(--red-500)" }}>مخزون منخفض</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "var(--red-500)" }}>المخزون الحرج</span>
             <span
-              className="rounded-full px-2 py-0.5"
-              style={{ fontSize: 13, fontWeight: 800, background: "var(--red-500)", color: "white" }}
+              className="rounded-full px-2.5 py-0.5 mr-auto"
+              style={{ fontSize: 11, fontWeight: 800, background: "var(--red-500)", color: "white" }}
             >
-              {lowStockItems.length}
+              {lowStockItems.length} تنبيهات
             </span>
           </div>
           <div className="space-y-2">
-            {lowStockItems.slice(0, 4).map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded-xl p-3" style={{ background: "var(--surface-1)" }}>
+            {lowStockItems.slice(0, 3).map((p) => (
+              <div key={p.id} className="flex items-center justify-between rounded-xl p-3 bg-white border border-red-100/50">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{p.name}</p>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{p.category}</p>
+                  <p className="truncate" style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", textAlign: "right" }}>{p.name}</p>
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>{p.category}</p>
                 </div>
-                <span style={{ fontSize: 16, fontWeight: 800, color: "var(--red-500)" }}>
-                  {p.stock} {p.unit}
+                <span className="font-mono" style={{ fontSize: 14, fontWeight: 800, color: "var(--red-500)" }}>
+                  {p.stock} / {p.minStock} {p.unit}
                 </span>
               </div>
             ))}
@@ -118,29 +121,36 @@ export function MobileDashboard() {
       )}
 
       {/* Recent Invoices */}
-      <div className="rounded-3xl p-5" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
-        <div className="flex items-center justify-between mb-3">
-          <span style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>آخر الفواتير</span>
-          <Link href="/invoices" style={{ fontSize: 15, fontWeight: 700, color: "var(--primary)" }}>الكل</Link>
+      <div className="rounded-[24px] p-5 bg-white border border-[var(--glass-border)] shadow-sm">
+        <div className="flex items-center justify-between mb-3.5">
+          <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text-primary)" }}>آخر العمليات الصادرة</span>
+          <Link href="/invoices" style={{ fontSize: 13, fontWeight: 700, color: "var(--primary)" }}>الكل</Link>
         </div>
         {recentInvoices.length === 0 ? (
-          <p className="py-6 text-center" style={{ fontSize: 16, color: "var(--text-muted)" }}>لا توجد فواتير</p>
+          <p className="py-6 text-center text-sm text-[var(--text-muted)]">لا توجد فواتير نشطة</p>
         ) : (
           <div className="space-y-2">
-            {recentInvoices.map((inv) => (
-              <Link key={inv.id} href={`/invoices/${inv.id}`}>
-                <div className="flex items-center justify-between rounded-xl p-3" style={{ border: "1px solid var(--border-subtle)" }}>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{inv.invoiceNumber}</p>
-                      <Badge variant="outline" className={`text-[11px] shrink-0 ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
+            {recentInvoices.map((inv) => {
+              const statusColors = inv.status === "مدفوعة"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                : inv.status === "غير مدفوعة"
+                ? "bg-amber-50 text-amber-700 border-amber-100"
+                : "bg-gray-50 text-gray-600 border-gray-100";
+              return (
+                <Link key={inv.id} href={`/invoices/${inv.id}`} className="block">
+                  <div className="flex items-center justify-between rounded-xl p-3 border border-gray-100 bg-gray-50/10 active:bg-gray-50">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <p className="truncate" style={{ fontSize: 14, fontWeight: 700, color: "var(--text-primary)", textAlign: "right" }}>{inv.invoiceNumber}</p>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusColors}`}>{inv.status}</span>
+                      </div>
+                      <p style={{ fontSize: 12, color: "var(--text-muted)", textAlign: "right" }}>{inv.clientName}</p>
                     </div>
-                    <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{inv.clientName}</p>
+                    <span className="font-mono text-sm font-black text-[var(--text-primary)]">{formatCurrency(inv.total)}</span>
                   </div>
-                  <span style={{ fontSize: 17, fontWeight: 800, color: "var(--text-primary)" }}>{formatCurrency(inv.total)}</span>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </div>

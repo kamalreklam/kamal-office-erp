@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { Calculator, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
+import { Calculator, TrendingUp, TrendingDown, AlertTriangle, ImageIcon } from "lucide-react";
+import { shareAsImage } from "@/lib/share";
 import { useStore } from "@/lib/store";
 import { formatCurrency, getStatusColor } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +25,9 @@ export function MobileAccounting() {
   return (
     <div className="space-y-4" dir="rtl">
       {/* P&L Summary */}
-      <div className="rounded-2xl p-5" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
+      <div id="mobile-accounting-card-capture" className="rounded-2xl p-5 bg-white" style={{ background: "var(--surface-1)", border: "1px solid var(--glass-border)" }}>
         <div className="flex items-center gap-2 mb-4">
-          <Calculator className="h-5 w-5" style={{ color: "var(--primary)" }} />
+          <Calculator className="h-5 w-5 text-indigo-600" />
           <span style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>الأرباح والخسائر</span>
         </div>
         <div className="space-y-3">
@@ -72,16 +73,29 @@ export function MobileAccounting() {
       </div>
 
       {/* Export actions */}
-      <div style={{ display: "flex", gap: 8 }}>
-        <DateRangeExportButton label="تصدير PDF" buttonStyle={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }} onExport={async (range: DateRange) => {
+      <div className="grid grid-cols-3 gap-2" style={{ marginTop: 8 }}>
+        <DateRangeExportButton label="PDF" buttonStyle={{ width: "100%", height: 48, borderRadius: 14, fontSize: 14, fontWeight: 700, background: "var(--surface-1)", color: "var(--primary)", border: "2px solid var(--border-default)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }} onExport={async (range: DateRange) => {
           try { const { exportAccountingReportPDF } = await import("@/lib/pdf"); await exportAccountingReportPDF(invoices, range, settings); toast.success("تم التصدير"); } catch { toast.error("فشل التصدير"); }
         }} />
+        <button
+          onClick={() => {
+            toast.promise(shareAsImage('mobile-accounting-card-capture', `تقرير_الأرباح_${new Date().getFullYear()}`), {
+              loading: 'جاري تصدير التقرير كصورة...',
+              success: 'تم تصدير الصورة بنجاح',
+              error: 'فشل تصدير الصورة'
+            });
+          }}
+          style={{ height: 48, borderRadius: 14, fontSize: 14, fontWeight: 700, background: "rgba(6, 182, 212, 0.1)", color: "#06b6d4", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+        >
+          <ImageIcon style={{ width: 16, height: 16 }} />
+          صورة
+        </button>
         <button onClick={() => {
-          const lines = [`💰 *المحاسبة — ${settings.businessName}*`, "", `الإيرادات: ${formatCurrency(totalRevenue)}`, `المحصّل: ${formatCurrency(paidTotal)}`, `المستحق: ${formatCurrency(unpaidTotal)}`];
+          const lines = [`💰 *المحاسبة — ${settings.businessName}*`, "", `إجمالي الإيرادات: ${formatCurrency(totalRevenue)}`, `المحصّل: ${formatCurrency(paidTotal)}`, `المستحق: ${formatCurrency(unpaidTotal)}`];
           if (totalTax > 0) lines.push(`الضريبة: ${formatCurrency(totalTax)}`);
           if (unpaid.length > 0) { lines.push("", "المستحقات:"); unpaid.slice(0, 5).forEach((inv) => lines.push(`• ${inv.invoiceNumber} - ${inv.clientName}: ${formatCurrency(inv.total)}`)); }
           window.open(`https://wa.me/?text=${encodeURIComponent(lines.join("\n"))}`, "_blank");
-        }} style={{ flex: 1, height: 48, borderRadius: 14, fontSize: 16, fontWeight: 700, background: "#25D366", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        }} style={{ height: 48, borderRadius: 14, fontSize: 14, fontWeight: 700, background: "#25D366", color: "white", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
           واتساب
         </button>
       </div>

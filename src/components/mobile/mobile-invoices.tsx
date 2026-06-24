@@ -4,8 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useDebounce } from "@/lib/use-debounce";
 import Link from "next/link";
-import { Search, Plus, FileText, ChevronLeft, X, Download, CheckCircle2, RotateCcw, Trash2, Eye } from "lucide-react";
+import { Search, Plus, FileText, ChevronLeft, X, Download, CheckCircle2, RotateCcw, Trash2, Eye, Pencil, ImageIcon, MessageCircle } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { shareAsImage, formatInvoiceWhatsAppText, shareViaWhatsApp } from "@/lib/share";
 import { formatCurrency, getStatusColor, type Invoice, type InvoiceStatus } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -170,7 +171,7 @@ export function MobileInvoices() {
 }
 
 function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => void }) {
-  const { settings, clients, updateInvoiceStatus, deleteInvoice } = useStore();
+  const { settings, clients, products, updateInvoiceStatus, deleteInvoice } = useStore();
   const [visible, setVisible] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -215,66 +216,98 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
         </div>
 
         <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Header */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div id="mobile-invoice-detail-card" className="bg-white p-4 rounded-2xl flex flex-col gap-4">
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>{invoice.invoiceNumber}</h2>
+                <p style={{ fontSize: 16, color: "var(--text-muted)", marginTop: 2 }}>{invoice.createdAt}</p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Badge variant="outline" className={`text-sm ${getStatusColor(invoice.status)}`}>{invoice.status}</Badge>
+                <button onClick={close} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-2)", color: "var(--text-muted)", border: "none", cursor: "pointer" }}>
+                  <X style={{ width: 18, height: 18 }} />
+                </button>
+              </div>
+            </div>
+
+            {/* Client */}
+            <div style={{ background: "var(--surface-2)", borderRadius: 16, padding: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>العميل</p>
+              <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>{invoice.clientName}</p>
+            </div>
+
+            {/* Items */}
             <div>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>{invoice.invoiceNumber}</h2>
-              <p style={{ fontSize: 16, color: "var(--text-muted)", marginTop: 2 }}>{invoice.createdAt}</p>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Badge variant="outline" className={`text-sm ${getStatusColor(invoice.status)}`}>{invoice.status}</Badge>
-              <button onClick={close} style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--surface-2)", color: "var(--text-muted)", border: "none", cursor: "pointer" }}>
-                <X style={{ width: 18, height: 18 }} />
-              </button>
-            </div>
-          </div>
-
-          {/* Client */}
-          <div style={{ background: "var(--surface-2)", borderRadius: 16, padding: 16 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)" }}>العميل</p>
-            <p style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)", marginTop: 2 }}>{invoice.clientName}</p>
-          </div>
-
-          {/* Items */}
-          <div>
-            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>المنتجات ({invoice.items.length})</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {invoice.items.map((item, idx) => (
-                <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: 12, padding: 12, border: "1px solid var(--border-subtle)" }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4 }}>{item.productName}</p>
-                    <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{item.quantity} × {formatCurrency(item.unitPrice)}</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-muted)", marginBottom: 8 }}>المنتجات ({invoice.items.length})</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {invoice.items.map((item, idx) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderRadius: 12, padding: 12, border: "1px solid var(--border-subtle)" }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4 }}>{item.productName}</p>
+                      <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{item.quantity} × {formatCurrency(item.unitPrice)}</p>
+                    </div>
+                    <span style={{ fontSize: 17, fontWeight: 800, color: "var(--primary)", flexShrink: 0, marginInlineStart: 12 }}>
+                      {formatCurrency(item.quantity * item.unitPrice)}
+                    </span>
                   </div>
-                  <span style={{ fontSize: 17, fontWeight: 800, color: "var(--primary)", flexShrink: 0, marginInlineStart: 12 }}>
-                    {formatCurrency(item.quantity * item.unitPrice)}
+                ))}
+              </div>
+            </div>
+
+            {/* Totals */}
+            <div style={{ background: "var(--surface-2)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 16, color: "var(--text-muted)" }}>المجموع</span>
+                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{formatCurrency(invoice.subtotal)}</span>
+              </div>
+              {invoice.discountAmount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الخصم</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "var(--red-500)" }}>-{formatCurrency(invoice.discountAmount)}</span>
+                </div>
+              )}
+              {invoice.taxAmount > 0 && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الضريبة</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>+{formatCurrency(invoice.taxAmount)}</span>
+                </div>
+              )}
+              <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "2px solid var(--border-default)" }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }}>الإجمالي</span>
+                <span style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)" }}>{formatCurrency(invoice.total)}</span>
+            </div>
+          </div>
+
+          {/* Cost & Profit Margin Analysis */}
+          {(() => {
+            const totalCost = invoice.items.reduce((sum, item) => {
+              const basePrice = products.find(p => p.id === item.productId)?.price ?? item.unitPrice;
+              const itemCost = item.isTemporary ? (item.costPrice ?? 0) : basePrice * 0.65;
+              return sum + (itemCost * item.quantity);
+            }, 0);
+            const totalProfit = invoice.total - totalCost;
+            const marginPercentage = invoice.total > 0 ? (totalProfit / invoice.total) * 100 : 0;
+
+            return (
+              <div style={{ background: "rgba(79, 70, 229, 0.05)", border: "1px solid rgba(79, 70, 229, 0.15)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                  <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>التكلفة التقديرية:</span>
+                  <span style={{ fontFamily: "monospace", color: "var(--text-primary)" }}>{formatCurrency(totalCost)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
+                  <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>الأرباح المتوقعة:</span>
+                  <span style={{ fontFamily: "monospace", color: "var(--green-500)", fontWeight: 800 }}>+{formatCurrency(totalProfit)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, paddingTop: 8, borderTop: "1px solid rgba(79, 70, 229, 0.1)" }}>
+                  <span style={{ color: "var(--text-secondary)", fontWeight: 700 }}>هامش الربح:</span>
+                  <span style={{ background: "var(--green-soft)", color: "var(--green-strong)", fontWeight: 800, padding: "2px 8px", borderRadius: 6, fontSize: 12 }}>
+                    {marginPercentage.toFixed(1)}%
                   </span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Totals */}
-          <div style={{ background: "var(--surface-2)", borderRadius: 16, padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 16, color: "var(--text-muted)" }}>المجموع</span>
-              <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{formatCurrency(invoice.subtotal)}</span>
-            </div>
-            {invoice.discountAmount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الخصم</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--red-500)" }}>-{formatCurrency(invoice.discountAmount)}</span>
               </div>
-            )}
-            {invoice.taxAmount > 0 && (
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 16, color: "var(--text-muted)" }}>الضريبة</span>
-                <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>+{formatCurrency(invoice.taxAmount)}</span>
-              </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 8, borderTop: "2px solid var(--border-default)" }}>
-              <span style={{ fontSize: 20, fontWeight: 800, color: "var(--text-primary)" }}>الإجمالي</span>
-              <span style={{ fontSize: 28, fontWeight: 800, color: "var(--primary)" }}>{formatCurrency(invoice.total)}</span>
-            </div>
+            );
+          })()}
           </div>
 
           {/* Action Buttons */}
@@ -284,6 +317,14 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
               <div style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "var(--primary)", color: "white", cursor: "pointer" }}>
                 <Eye style={{ width: 22, height: 22 }} />
                 <span style={{ fontSize: 14, fontWeight: 800 }}>عرض التفاصيل</span>
+              </div>
+            </Link>
+
+            {/* Edit Invoice */}
+            <Link href={`/invoices/new?edit=${invoice.id}`} onClick={close} style={{ textDecoration: "none" }}>
+              <div style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(79, 70, 229, 0.1)", color: "#4f46e5", cursor: "pointer" }}>
+                <Pencil style={{ width: 22, height: 22 }} />
+                <span style={{ fontSize: 14, fontWeight: 800 }}>تعديل الفاتورة</span>
               </div>
             </Link>
 
@@ -303,6 +344,30 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
               <span style={{ fontSize: 14, fontWeight: 800 }}>تحميل PDF</span>
             </button>
 
+            {/* Share via WhatsApp */}
+            <button
+              onClick={() => shareViaWhatsApp(formatInvoiceWhatsAppText(invoice, settings))}
+              style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(37, 211, 102, 0.1)", color: "#25D366", border: "none", cursor: "pointer" }}
+            >
+              <MessageCircle style={{ width: 22, height: 22 }} />
+              <span style={{ fontSize: 14, fontWeight: 800 }}>واتساب</span>
+            </button>
+
+            {/* Share as Image */}
+            <button
+              onClick={() => {
+                toast.promise(shareAsImage('mobile-invoice-detail-card', `فاتورة_${invoice.invoiceNumber}`), {
+                  loading: 'جاري توليد الصورة...',
+                  success: 'تم مشاركة الصورة بنجاح',
+                  error: 'فشل تصدير الصورة'
+                });
+              }}
+              style={{ height: 64, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, background: "rgba(6, 182, 212, 0.1)", color: "#06b6d4", border: "none", cursor: "pointer" }}
+            >
+              <ImageIcon style={{ width: 22, height: 22 }} />
+              <span style={{ fontSize: 14, fontWeight: 800 }}>مشاركة كصورة</span>
+            </button>
+
             {/* Mark Paid / Return */}
             {invoice.status !== "مدفوعة" && invoice.status !== "ملغاة" ? (
               <button
@@ -320,9 +385,7 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
                 <RotateCcw style={{ width: 22, height: 22 }} />
                 <span style={{ fontSize: 14, fontWeight: 800 }}>إرجاع</span>
               </button>
-            ) : (
-              <div />
-            )}
+            ) : <div />}
 
             {/* Delete */}
             {!confirmDelete ? (

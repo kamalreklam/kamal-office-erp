@@ -619,21 +619,22 @@ function DesktopInvoicePage() {
     : clients;
 
   return (
-    <div dir="rtl" className="flex h-screen flex-col overflow-hidden bg-slate-50 dark:bg-slate-950">
-      {/* ── Top bar ── */}
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-6 py-3 shrink-0">
-        <div className="flex items-center gap-3">
+    <div dir="rtl" className="flex h-screen flex-col overflow-hidden bg-[var(--ground)] text-[14px]">
+      {/* ── Top bar / Header ── */}
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200 bg-[var(--surface-1)] px-6 py-4 shrink-0 shadow-sm">
+        <div className="flex items-center gap-4">
           <button
             onClick={() => router.push("/invoices")}
-            className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] transition-colors active:scale-95"
+            title="رجوع"
           >
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">
+            <h1 className="text-[18px] font-bold text-[var(--text-primary)] leading-none">
               {isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}
             </h1>
-            <p className="text-xs text-slate-400 mt-0.5 font-mono">
+            <p className="text-[12px] text-[var(--text-muted)] mt-1.5 font-mono">
               {isEdit ? editingInvoice?.invoiceNumber : nextInvoiceNumber()}
             </p>
           </div>
@@ -641,65 +642,61 @@ function DesktopInvoicePage() {
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
-            size="sm"
-            className="gap-1.5 rounded-xl"
+            className="gap-2 rounded-xl text-[14px] px-4 h-10 border-[var(--border-default)] hover:bg-[var(--surface-2)]"
             onClick={() => handleSave("مسودة")}
           >
-            <FileText className="h-3.5 w-3.5" />
+            <FileText className="h-4 w-4" />
             حفظ مسودة
           </Button>
           <Button
-            size="sm"
-            className="gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700"
+            className="gap-2 rounded-xl text-[14px] px-4 h-10 border-[var(--border-default)] hover:bg-[var(--surface-2)]"
+            variant="outline"
             onClick={() => handleSave("غير مدفوعة")}
           >
-            <Save className="h-3.5 w-3.5" />
-            إصدار الفاتورة
+            <Save className="h-4 w-4" />
+            إصدار غير مدفوع
           </Button>
           <Button
-            size="sm"
-            className="gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700"
+            className="gap-2 rounded-xl text-[14px] px-5 h-10 bg-[var(--brand-primary)] hover:bg-[var(--brand-hover)] text-white shadow-md shadow-indigo-200"
             onClick={() => handleSave("مدفوعة")}
           >
-            حفظ مدفوعة
+            حفظ ومدفوعة
           </Button>
         </div>
       </header>
 
       {/* ── Split panel ── */}
       <div className="flex flex-1 overflow-hidden">
-
-        {/* ── LEFT: Line items ── */}
-        <div className="flex-1 overflow-y-auto p-6">
-
+        {/* ── RIGHT: Line items ── */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Notes toggle */}
-          <div className="mb-4">
+          <div className="m3-card bg-[var(--surface-1)]">
             <button
               onClick={() => setShowNotes((v) => !v)}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              className="flex items-center gap-2 text-[14px] font-semibold text-[var(--text-secondary)] hover:text-[var(--brand-primary)] transition-colors"
             >
-              <FileText className="h-3.5 w-3.5" />
-              {showNotes ? "إخفاء الملاحظات" : "إضافة ملاحظة"}
-              {showNotes ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+              <FileText className="h-4 w-4 text-[var(--brand-primary)]" />
+              {showNotes ? "إخفاء الملاحظات والتعليمات" : "إضافة ملاحظات أو تعليمات خاصة بالفاتورة"}
+              {showNotes ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </button>
             {showNotes && (
               <Textarea
-                placeholder="ملاحظات على الفاتورة..."
+                placeholder="اكتب ملاحظاتك هنا (مثال: شروط الدفع، معلومات التوصيل، تفاصيل الحبر المعبأ)..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="mt-2 min-h-[72px] rounded-xl border-slate-200 dark:border-slate-700 text-sm resize-none"
+                className="mt-3 min-h-[80px] rounded-xl border-[var(--border-default)] text-[14px] p-3 resize-none focus:border-[var(--brand-primary)]"
               />
             )}
           </div>
 
-          {/* Line items table */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm">
+          {/* Line items table / Cards */}
+          <div className="m3-card bg-[var(--surface-1)] overflow-hidden p-0">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_72px_110px_72px_90px_36px] gap-2 bg-slate-50 dark:bg-slate-800/50 px-5 py-2.5 pr-8 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              <span>المنتج</span>
+            <div className="grid grid-cols-[1fr_80px_120px_80px_100px_46px] gap-3 bg-[var(--surface-2)] px-6 py-3 border-b border-[var(--border-default)] text-[13px] font-bold text-[var(--text-muted)]">
+              <span>المنتج أو الخدمة</span>
               <span className="text-center">الكمية</span>
               <span className="text-center">السعر</span>
-              <span className="text-center">خصم%</span>
+              <span className="text-center">الخصم%</span>
               <span className="text-left">الإجمالي</span>
               <span />
             </div>
@@ -713,82 +710,84 @@ function DesktopInvoicePage() {
                 items={lineItems.map((i) => i.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                <div className="divide-y divide-[var(--border-default)]">
                   {lineItems.map((item) => (
                     <DraggableLineItem key={item.id} item={item}>
                       {() => (
-                        <div>
+                        <div className="hover:bg-[var(--surface-2)] transition-colors">
                           {item.isTemporary ? (
                             /* ── Temporary product row ── */
-                            <div className="grid grid-cols-[1fr_72px_110px_72px_90px_36px] gap-2 items-center px-5 py-3 pr-8">
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1.5">
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-600 bg-amber-50">مؤقت</Badge>
+                            <div className="grid grid-cols-[1fr_80px_120px_80px_100px_46px] gap-3 items-center px-6 py-4">
+                              <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[11px] font-bold py-0.5 rounded-md">منتج خارجي</Badge>
                                   <Input
-                                    placeholder="اسم المنتج..."
+                                    placeholder="اسم المنتج أو الخدمة..."
                                     value={item.productName}
                                     onChange={(e) => updateTempName(item.id, e.target.value)}
-                                    className="h-7 text-sm border-0 shadow-none bg-transparent p-0 focus-visible:ring-0 font-medium"
+                                    className="h-8 text-[14px] border-none shadow-none bg-transparent p-0 focus-visible:ring-0 font-bold text-[var(--text-primary)]"
                                   />
                                 </div>
-                                <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                                <div className="flex items-center gap-2 text-[12px] text-[var(--text-muted)]">
                                   <span>سعر التكلفة:</span>
                                   <Input
                                     type="number"
                                     placeholder="0"
                                     value={item.costPrice || ""}
                                     onChange={(e) => updateCostPrice(item.id, e.target.value)}
-                                    className="h-6 w-20 text-[11px] border-slate-200 rounded-lg"
+                                    className="h-7 w-24 text-[12px] border-[var(--border-default)] rounded-lg text-center font-mono"
                                   />
+                                  <span className="text-[11px] text-amber-600">(لن تظهر في الفاتورة النهائية للعميل)</span>
                                 </div>
                               </div>
                               <Input
                                 type="number" min={1}
                                 value={item.quantity}
                                 onChange={(e) => updateQty(item.id, parseInt(e.target.value) || 1)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                               />
                               <Input
                                 type="number" min={0} step="0.01"
                                 value={item._priceInput ?? item.unitPrice}
                                 onChange={(e) => updatePrice(item.id, e.target.value)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                               />
                               <Input
                                 type="number" min={0} max={100}
                                 value={item.discount || ""}
                                 onChange={(e) => updateLineDiscount(item.id, parseFloat(e.target.value) || 0)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                                 placeholder="0"
                               />
-                              <span className="text-sm font-bold text-slate-800 dark:text-slate-100 text-left">
+                              <span className="text-[14px] font-bold text-[var(--text-primary)] text-left font-mono">
                                 {formatCurrency(getLineTotal(item))}
                               </span>
                               <button
                                 onClick={() => removeRow(item.id)}
-                                className="rounded-lg p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors active:scale-95"
+                                title="حذف"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           ) : item.isBundle ? (
                             /* ── Bundle row ── */
                             <div>
-                              <div className="grid grid-cols-[1fr_72px_110px_72px_90px_36px] gap-2 items-center px-5 py-3 pr-8 bg-blue-50/40 dark:bg-blue-950/20">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-base">🎁</span>
+                              <div className="grid grid-cols-[1fr_80px_120px_80px_100px_46px] gap-3 items-center px-6 py-4 bg-indigo-50/20">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-[18px]">🎁</span>
                                   <div>
-                                    <span className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                                    <span className="text-[14px] font-bold text-[var(--text-primary)]">
                                       {item.productName}
                                     </span>
                                     {item.bundleComponents && (
                                       <button
                                         onClick={() => toggleBundleExpand(item.id)}
-                                        className="mr-2 flex items-center gap-0.5 text-[11px] text-blue-500 hover:text-blue-700"
+                                        className="mr-3 flex items-center gap-1 text-[12px] text-[var(--brand-primary)] hover:underline"
                                       >
                                         {expandedBundles.has(item.id)
-                                          ? <><ChevronDown className="h-3 w-3" />إخفاء التفاصيل</>
-                                          : <><ChevronRight className="h-3 w-3" />{item.bundleComponents.length} منتج</>
+                                          ? <><ChevronDown className="h-3.5 w-3.5" />إخفاء محتويات المجموعة</>
+                                          : <><ChevronRight className="h-3.5 w-3.5" />عرض محتويات المجموعة ({item.bundleComponents.length})</>
                                         }
                                       </button>
                                     )}
@@ -798,49 +797,50 @@ function DesktopInvoicePage() {
                                   type="number" min={1}
                                   value={item.quantity}
                                   onChange={(e) => updateQty(item.id, parseInt(e.target.value) || 1)}
-                                  className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                  className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                                 />
                                 <Input
                                   type="number" min={0} step="0.01"
                                   value={item._priceInput ?? item.unitPrice}
                                   onChange={(e) => updatePrice(item.id, e.target.value)}
-                                  className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                  className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                                 />
                                 <Input
                                   type="number" min={0} max={100}
                                   value={item.discount || ""}
                                   onChange={(e) => updateLineDiscount(item.id, parseFloat(e.target.value) || 0)}
-                                  className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                  className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                                   placeholder="0"
                                 />
-                                <span className="text-sm font-bold text-slate-800 dark:text-slate-100 text-left">
+                                <span className="text-[14px] font-bold text-[var(--text-primary)] text-left font-mono">
                                   {formatCurrency(getLineTotal(item))}
                                 </span>
                                 <button
                                   onClick={() => removeRow(item.id)}
-                                  className="rounded-lg p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                  className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors active:scale-95"
+                                  title="حذف"
                                 >
-                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <Trash2 className="h-4 w-4" />
                                 </button>
                               </div>
                               {/* Expanded component sub-rows */}
                               {expandedBundles.has(item.id) && item.bundleComponents && (
-                                <div className="border-t border-blue-100 dark:border-blue-900/30 bg-blue-50/20 dark:bg-blue-950/10">
+                                <div className="border-t border-[var(--border-default)] bg-[var(--surface-2)] divide-y divide-[var(--border-subtle)]">
                                   {item.bundleComponents.map((comp, ci) => {
                                     const ck = getColorKey(comp.productName);
                                     const cs = COLOR_STYLES[ck];
                                     return (
                                       <div
                                         key={ci}
-                                        className={`flex items-center gap-3 px-8 py-1.5 text-xs text-slate-500 ${cs?.bg || ""}`}
+                                        className="flex items-center gap-3 px-12 py-2 text-[13px] text-[var(--text-secondary)]"
                                       >
                                         {cs ? (
-                                          <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: cs.dot }} />
+                                          <span className="h-3 w-3 rounded-full shrink-0" style={{ background: cs.dot }} />
                                         ) : (
-                                          <span className="h-2.5 w-2.5 rounded-full bg-slate-300 shrink-0" />
+                                          <span className="h-3 w-3 rounded-full bg-slate-300 shrink-0" />
                                         )}
-                                        <span className={cs?.text || ""}>{comp.productName}</span>
-                                        <span className="text-slate-400">× {comp.quantity}</span>
+                                        <span className={cs?.text || "font-medium"}>{comp.productName}</span>
+                                        <span className="text-[var(--text-muted)] mr-auto">الكمية: {comp.quantity}</span>
                                       </div>
                                     );
                                   })}
@@ -849,48 +849,49 @@ function DesktopInvoicePage() {
                             </div>
                           ) : (
                             /* ── Regular product row ── */
-                            <div className="grid grid-cols-[1fr_72px_110px_72px_90px_36px] gap-2 items-center px-5 py-3 pr-8">
+                            <div className="grid grid-cols-[1fr_80px_120px_80px_100px_46px] gap-3 items-center px-6 py-4">
                               <div>
                                 {item.productId ? (
                                   <div>
-                                    <p className="text-sm font-medium text-slate-800 dark:text-slate-100 leading-none">
+                                    <p className="text-[14px] font-bold text-[var(--text-primary)]">
                                       {item.productName}
                                     </p>
                                     {item.description && (
-                                      <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">{item.description}</p>
+                                      <p className="text-[12px] text-[var(--text-muted)] mt-1 line-clamp-1">{item.description}</p>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-sm text-slate-300 italic">منتج غير محدد</span>
+                                  <span className="text-[14px] text-[var(--text-muted)] italic">اضغط لإضافة منتج من القائمة...</span>
                                 )}
                               </div>
                               <Input
                                 type="number" min={1}
                                 value={item.quantity}
                                 onChange={(e) => updateQty(item.id, parseInt(e.target.value) || 1)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                               />
                               <Input
                                 type="number" min={0} step="0.01"
                                 value={item._priceInput ?? item.unitPrice}
                                 onChange={(e) => updatePrice(item.id, e.target.value)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                               />
                               <Input
                                 type="number" min={0} max={100}
                                 value={item.discount || ""}
                                 onChange={(e) => updateLineDiscount(item.id, parseFloat(e.target.value) || 0)}
-                                className="h-8 text-center text-sm rounded-lg border-slate-200"
+                                className="h-9 text-center text-[14px] rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] font-mono"
                                 placeholder="0"
                               />
-                              <span className="text-sm font-bold text-slate-800 dark:text-slate-100 text-left">
+                              <span className="text-[14px] font-bold text-[var(--text-primary)] text-left font-mono">
                                 {formatCurrency(getLineTotal(item))}
                               </span>
                               <button
                                 onClick={() => removeRow(item.id)}
-                                className="rounded-lg p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-500 transition-colors"
+                                className="rounded-xl p-2 text-[var(--text-muted)] hover:bg-red-50 hover:text-red-500 transition-colors active:scale-95"
+                                title="حذف"
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-4 w-4" />
                               </button>
                             </div>
                           )}
@@ -903,98 +904,95 @@ function DesktopInvoicePage() {
             </DndContext>
 
             {/* Add product row */}
-            <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 px-5 py-3">
+            <div className="flex items-center gap-3 border-t border-[var(--border-default)] px-6 py-4 bg-[var(--surface-2)]">
               <Button
                 variant="ghost"
-                size="sm"
-                className="gap-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl font-bold"
+                className="gap-2 text-[var(--brand-primary)] hover:text-[var(--brand-hover)] hover:bg-[var(--brand-soft)] rounded-xl font-bold text-[14px] px-4"
                 onClick={() => { setSearchQuery(""); setSearchCategory("all"); setShowSearch(true); }}
               >
-                <Plus className="h-4 w-4" />
-                إضافة منتج
+                <Plus className="h-5 w-5" />
+                بحث وإضافة منتج
               </Button>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT: Client + Summary (sticky) ── */}
-        <div className="w-80 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto flex flex-col">
-
+        {/* ── LEFT: Client + Summary (sticky side panel) ── */}
+        <div className="w-80 shrink-0 border-r border-[var(--border-default)] bg-[var(--surface-1)] overflow-y-auto flex flex-col shadow-sm">
           {/* Client selector */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-5 border-b border-[var(--border-default)]">
             <div className="flex items-center gap-2 mb-3">
-              <User className="h-4 w-4 text-slate-400" />
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-400">العميل</span>
+              <User className="h-4 w-4 text-[var(--brand-primary)]" />
+              <span className="text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">العميل المستهدف</span>
             </div>
             <div ref={clientRef} className="relative">
               {selectedClient ? (
-                <div className="rounded-xl border-2 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 p-3">
+                <div className="rounded-2xl border-2 border-indigo-100 bg-indigo-50/30 p-4 relative overflow-hidden">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{selectedClient.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5" dir="ltr">{selectedClient.phone}</p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        الرصيد: <span className="font-bold text-slate-600 dark:text-slate-300">{formatCurrency(selectedClient.totalSpent)}</span>
+                      <p className="text-[15px] font-bold text-[var(--text-primary)]">{selectedClient.name}</p>
+                      <p className="text-[12px] text-[var(--text-secondary)] mt-1 font-mono" dir="ltr">{selectedClient.phone}</p>
+                      <p className="text-[12px] text-[var(--text-muted)] mt-2">
+                        الرصيد التراكمي: <span className="font-bold text-[var(--text-primary)] font-mono">{formatCurrency(selectedClient.totalSpent)}</span>
                       </p>
                     </div>
                     <button
                       onClick={() => { setSelectedClient(null); setClientSearch(""); }}
-                      className="rounded-lg p-1 text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-red-500 transition-colors"
+                      className="rounded-xl p-1.5 text-[var(--text-muted)] hover:bg-white hover:text-red-500 transition-colors active:scale-95 shadow-sm"
+                      title="إزالة العميل"
                     >
-                      <X className="h-3.5 w-3.5" />
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="relative">
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                  <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--text-muted)]" />
                   <Input
-                    placeholder="ابحث عن عميل..."
+                    placeholder="ابحث باسم العميل أو رقم الهاتف..."
                     value={clientSearch}
                     onChange={(e) => { setClientSearch(e.target.value); setShowClientDrop(true); }}
                     onFocus={() => setShowClientDrop(true)}
-                    className="pr-9 h-9 rounded-xl border-slate-200 text-sm"
+                    className="pr-10 h-11 rounded-xl border-[var(--border-default)] text-[14px] focus:border-[var(--brand-primary)]"
                   />
                 </div>
               )}
               {showClientDrop && !selectedClient && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg overflow-hidden">
-                  <div className="max-h-52 overflow-y-auto p-1">
-                    {filteredClients.length === 0 ? (
-                      <p className="p-3 text-center text-sm text-slate-400">لا يوجد عملاء</p>
-                    ) : filteredClients.slice(0, 15).map((c) => (
-                      <button
-                        key={c.id}
-                        onClick={() => { setSelectedClient(c); setClientSearch(c.name); setShowClientDrop(false); }}
-                        className="flex w-full items-center gap-2.5 rounded-lg p-2 text-right hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-[10px] font-bold text-blue-600 dark:text-blue-300">
-                          {c.name.charAt(0)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">{c.name}</p>
-                          <p className="text-[11px] text-slate-400" dir="ltr">{c.phone}</p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-xl border border-[var(--border-default)] bg-[var(--surface-1)] shadow-lg max-h-60 overflow-y-auto p-2">
+                  {filteredClients.length === 0 ? (
+                    <p className="p-4 text-center text-[14px] text-[var(--text-muted)]">لا يوجد عملاء مطابقين للبحث</p>
+                  ) : filteredClients.slice(0, 15).map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => { setSelectedClient(c); setClientSearch(c.name); setShowClientDrop(false); }}
+                      className="flex w-full items-center gap-3 rounded-xl p-2.5 text-right hover:bg-[var(--surface-2)] transition-colors"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-[12px] font-bold text-[var(--brand-primary)]">
+                        {c.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[14px] font-bold text-[var(--text-primary)] truncate">{c.name}</p>
+                        <p className="text-[11px] text-[var(--text-muted)] font-mono" dir="ltr">{c.phone}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
           {/* Discount controls */}
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="p-5 border-b border-[var(--border-default)] bg-[var(--surface-2)]">
             <div className="flex items-center gap-2 mb-3">
-              <Percent className="h-4 w-4 text-slate-400" />
-              <span className="text-xs font-bold uppercase tracking-wide text-slate-400">الخصم</span>
+              <Percent className="h-4 w-4 text-[var(--brand-primary)]" />
+              <span className="text-[12px] font-bold uppercase tracking-wide text-[var(--text-muted)]">تطبيق خصم إضافي</span>
             </div>
             <div className="flex gap-2">
               <Select
                 value={discountType}
                 onValueChange={(v) => setDiscountType(v as "percentage" | "fixed")}
               >
-                <SelectTrigger className="h-9 w-28 rounded-xl border-slate-200 text-sm">
+                <SelectTrigger className="h-10 w-28 rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] text-[14px] font-bold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -1007,62 +1005,62 @@ function DesktopInvoicePage() {
                 value={discountValue || ""}
                 onChange={(e) => setDiscountValue(parseFloat(e.target.value) || 0)}
                 placeholder="0"
-                className="h-9 flex-1 rounded-xl border-slate-200 text-sm text-center"
+                className="h-10 flex-1 rounded-xl border-[var(--border-default)] bg-[var(--surface-1)] text-[14px] text-center font-bold font-mono"
               />
             </div>
           </div>
 
-          {/* Summary */}
-          <div className="p-4 flex-1">
-            <div className="space-y-2.5">
-              <div className="flex justify-between text-sm text-slate-600 dark:text-slate-300">
+          {/* Summary totals */}
+          <div className="p-5 flex-1 space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between text-[14px] text-[var(--text-secondary)]">
                 <span>المجموع الفرعي</span>
-                <span className="font-medium">{formatCurrency(subtotal)}</span>
+                <span className="font-bold font-mono">{formatCurrency(subtotal)}</span>
               </div>
               {discountAmount > 0 && (
-                <div className="flex justify-between text-sm text-emerald-600 dark:text-emerald-400">
-                  <span>الخصم</span>
-                  <span className="font-medium">− {formatCurrency(discountAmount)}</span>
+                <div className="flex justify-between text-[14px] text-emerald-600">
+                  <span>الخصم الإجمالي</span>
+                  <span className="font-bold font-mono">− {formatCurrency(discountAmount)}</span>
                 </div>
               )}
               {settings.taxEnabled && taxAmount > 0 && (
-                <div className="flex justify-between text-sm text-slate-500">
-                  <span>ضريبة ({settings.taxRate}%)</span>
-                  <span className="font-medium">{formatCurrency(taxAmount)}</span>
+                <div className="flex justify-between text-[14px] text-[var(--text-secondary)]">
+                  <span>ضريبة القيمة المضافة ({settings.taxRate}%)</span>
+                  <span className="font-bold font-mono">+{formatCurrency(taxAmount)}</span>
                 </div>
               )}
-              <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-700">
-                <span className="font-bold text-slate-800 dark:text-slate-100">الإجمالي</span>
-                <span className="text-xl font-extrabold text-blue-600 dark:text-blue-400">
+              <div className="flex justify-between items-center pt-3 border-t border-[var(--border-default)]">
+                <span className="font-extrabold text-[15px] text-[var(--text-primary)]">الإجمالي النهائي</span>
+                <span className="text-[22px] font-black text-[var(--brand-primary)] font-mono">
                   {formatCurrency(total)}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 text-left">{settings.currencySymbol} · {settings.currency}</p>
             </div>
+            <p className="text-[12px] text-[var(--text-muted)] text-left font-mono">العملة المعتمدة: {settings.currencySymbol} ({settings.currency})</p>
           </div>
 
-          {/* Save actions */}
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          {/* Save actions panel */}
+          <div className="p-5 border-t border-[var(--border-default)] bg-[var(--surface-2)] space-y-2.5">
             <Button
-              className="w-full gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 font-bold"
+              className="w-full gap-2 rounded-xl h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[14px] shadow-sm active:scale-[0.98] transition-transform"
               onClick={() => handleSave("مدفوعة")}
             >
               <Save className="h-4 w-4" />
-              حفظ مدفوعة
+              حفظ كفاتورة مدفوعة
             </Button>
             <Button
               variant="outline"
-              className="w-full gap-2 rounded-xl"
+              className="w-full gap-2 rounded-xl h-11 border-[var(--border-default)] text-[14px] font-bold active:scale-[0.98] transition-transform"
               onClick={() => handleSave("غير مدفوعة")}
             >
               إصدار غير مدفوع
             </Button>
             <Button
               variant="ghost"
-              className="w-full gap-2 rounded-xl text-slate-400"
+              className="w-full gap-2 rounded-xl h-10 text-[var(--text-muted)] text-[14px] active:scale-[0.98] transition-transform"
               onClick={() => handleSave("مسودة")}
             >
-              حفظ مسودة
+              حفظ كمسودة
             </Button>
           </div>
         </div>
