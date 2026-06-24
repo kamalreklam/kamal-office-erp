@@ -627,6 +627,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (productData.sku !== undefined) row.sku = productData.sku;
       if (productData.description !== undefined) row.description = productData.description;
       if (productData.sellingPrice !== undefined) row.price = productData.sellingPrice;
+      if (productData.costPrice !== undefined) row.cost_price = productData.costPrice;
       if (productData.stock !== undefined) row.stock = productData.stock;
       if (productData.minStock !== undefined) row.min_stock = productData.minStock;
       if (productData.unit !== undefined) row.unit = productData.unit;
