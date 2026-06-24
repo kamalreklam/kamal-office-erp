@@ -103,6 +103,7 @@ export default function NewInvoicePage() {
   const [prefilled, setPrefilled] = useState(false)
 
   const [activeSearchRowId, setActiveSearchRowId] = useState<string | null>(null)
+  const [showBundlePicker, setShowBundlePicker] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [focusedSearchIndex, setFocusedSearchIndex] = useState(0)
 
@@ -691,41 +692,96 @@ export default function NewInvoicePage() {
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-inner shadow-white/20">
                   <Sparkles className="size-4 text-white" />
                 </div>
-                <span className="text-sm font-black text-slate-800 tracking-wide">
-                  إضافة سريعة: باقات وأحبار
-                </span>
+                <span className="text-sm font-black text-slate-800 tracking-wide">إضافة سريعة</span>
               </div>
-              
-              <div className="flex flex-wrap items-center gap-2.5">
-                {bundles.map(b => (
-                  <button key={b.id} onClick={() => quickAddItem({ id: b.id, name: b.name, type: 'bundle', bundle: b, sellingPrice: b.items.reduce((s, it) => s + (it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0) * it.quantity, 0) * (1 - b.discount / 100) })} className="group relative px-4 py-2.5 rounded-2xl text-[13px] font-bold text-white transition-all active:scale-95 bg-gradient-to-br from-indigo-500 via-purple-500 to-fuchsia-500 shadow-sm shadow-purple-500/20 hover:shadow-md hover:shadow-purple-500/40 hover:-translate-y-0.5 border border-white/20 flex-grow sm:flex-grow-0 text-center">
-                    <span className="flex items-center justify-center gap-1.5">
-                      <Layers className="size-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-                      {b.name}
-                    </span>
-                  </button>
-                ))}
-                
+
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <button
+                  onClick={() => setShowBundlePicker(v => !v)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[15px] font-bold active:scale-95 transition-all ${showBundlePicker ? 'bg-indigo-600 text-white shadow-md' : 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm hover:shadow-md hover:shadow-indigo-500/30'}`}
+                >
+                  <Layers className="size-4" />
+                  الباقات
+                  <span className="bg-white/20 text-[13px] font-black px-1.5 py-0.5 rounded-full">{bundles.length}</span>
+                </button>
+
                 {products.filter(p => p.category === 'حبر').map((p, idx) => {
                   const colors = [
-                    'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300 shadow-indigo-500/5',
-                    'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-100 hover:border-fuchsia-300 shadow-fuchsia-500/5',
-                    'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300 shadow-cyan-500/5',
-                    'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 shadow-emerald-500/5',
-                    'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 hover:border-rose-300 shadow-rose-500/5',
-                    'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:border-amber-300 shadow-amber-500/5'
-                  ];
-                  const c = colors[idx % colors.length];
+                    'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100',
+                    'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 hover:bg-fuchsia-100',
+                    'bg-cyan-50 text-cyan-700 border-cyan-200 hover:bg-cyan-100',
+                    'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100',
+                    'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
+                    'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                  ]
+                  const c = colors[idx % colors.length]
+                  const outOfStock = p.stock <= 0
                   return (
-                    <button key={p.id} onClick={() => quickAddItem({ id: p.id, name: p.name, type: 'product', product: p, sellingPrice: p.sellingPrice })} className={`group relative px-4 py-2.5 border rounded-2xl text-[13px] font-bold shadow-sm hover:shadow-md active:scale-95 hover:-translate-y-0.5 transition-all flex-grow sm:flex-grow-0 text-center ${c}`}>
-                      <span className="flex items-center justify-center gap-1.5">
-                        <Plus className="size-4 opacity-50 group-hover:opacity-100 transition-colors" />
-                        {p.name}
-                      </span>
+                    <button
+                      key={p.id}
+                      disabled={outOfStock}
+                      onClick={() => quickAddItem({ id: p.id, name: p.name, type: 'product', product: p, sellingPrice: p.sellingPrice })}
+                      className={`flex items-center gap-1.5 px-3 py-2 border rounded-2xl text-[15px] font-bold active:scale-95 transition-all ${c} ${outOfStock ? 'opacity-40 cursor-not-allowed' : ''}`}
+                    >
+                      <Plus className="size-4 opacity-60" />
+                      {p.name}
+                      <span className="text-[12px] opacity-50">({p.stock})</span>
                     </button>
-                  );
+                  )
                 })}
               </div>
+
+              {/* Inline bundle grid — expands in place */}
+              <AnimatePresence>
+                {showBundlePicker && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                      {bundles.map(b => {
+                        const bundlePrice = b.items.reduce((s, it) => {
+                          const price = it.sellingPrice ?? products.find(p => p.id === it.productId)?.sellingPrice ?? 0
+                          return s + price * it.quantity
+                        }, 0) * (1 - b.discount / 100)
+                        const availableUnits = b.items.length === 0 ? 0 : Math.min(
+                          ...b.items.map(it => {
+                            const prod = products.find(p => p.id === it.productId)
+                            return prod ? Math.floor(prod.stock / it.quantity) : 0
+                          })
+                        )
+                        const inStock = availableUnits > 0
+                        return (
+                          <button
+                            key={b.id}
+                            disabled={!inStock}
+                            onClick={() => { quickAddItem({ id: b.id, name: b.name, type: 'bundle', bundle: b, sellingPrice: bundlePrice }); setShowBundlePicker(false) }}
+                            className={`group flex flex-col gap-1.5 p-3 rounded-2xl border text-right transition-all active:scale-95 ${
+                              inStock ? 'bg-white border-indigo-100 hover:border-indigo-400 hover:shadow-md cursor-pointer' : 'bg-slate-50 border-slate-100 opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <span className="text-[15px] font-black text-slate-800 leading-snug">{b.name}</span>
+                              <span className={`shrink-0 text-[13px] font-bold px-2 py-0.5 rounded-full ${
+                                availableUnits > 3 ? 'bg-emerald-50 text-emerald-700'
+                                : availableUnits > 0 ? 'bg-amber-50 text-amber-700'
+                                : 'bg-rose-50 text-rose-600'
+                              }`}>{inStock ? availableUnits : '✕'}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[16px] font-black text-indigo-600">{formatCurrency(bundlePrice)}</span>
+                              <span className={`text-[13px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+                                inStock ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-slate-100 text-slate-400'
+                              }`}>+ إضافة</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
@@ -1027,31 +1083,8 @@ export default function NewInvoicePage() {
           </div>
         </div>
 
-        {/* ── Bottom Section: Notes & Summary ────────────────────────────────── */}
-        <div className="relative z-20 flex flex-col md:flex-row justify-between gap-6">
-          {/* Notes Section with Voice Dictation */}
-          <div className="flex-1 bg-white border border-slate-200 rounded-[2rem] p-4 sm:p-8 shadow-sm flex flex-col min-h-[250px]">
-            <div className="flex items-center justify-between mb-4">
-              <label className="text-sm font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                <AlignLeft className="size-4" />
-                ملاحظات الفاتورة
-              </label>
-              <button 
-                onClick={toggleDictation}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-600'}`}
-                title="إملاء صوتي"
-              >
-                <Mic className="size-5" />
-              </button>
-            </div>
-            <textarea
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              placeholder="اكتب ملاحظات الفاتورة هنا أو استخدم زر الإملاء الصوتي للتحدث باللغة العربية..."
-              className="flex-1 w-full bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm font-bold text-slate-800 resize-none focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all min-h-[120px]"
-            />
-          </div>
-
+        {/* ── Bottom Section: Summary ────────────────────────────────── */}
+        <div className="relative z-20 flex flex-col md:flex-row justify-end gap-6">
           <div className="w-full md:w-[420px] shrink-0 bg-gradient-to-br from-indigo-600 to-blue-700 border border-blue-500 rounded-[2rem] p-4 sm:p-8 shadow-xl text-white relative overflow-hidden">
             
             <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-2xl" />
@@ -1116,6 +1149,24 @@ export default function NewInvoicePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* ── Bottom Confirmation Bar ──────────────────────────────────── */}
+        <div className="relative z-20 flex flex-col sm:flex-row gap-3 mt-2">
+          <button
+            onClick={() => handleSave('مدفوعة جزئياً')}
+            className="flex-1 h-16 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-base hover:shadow-lg hover:shadow-amber-500/30 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            <Percent className="size-5" />
+            دفع جزئي
+          </button>
+          <button
+            onClick={() => handleSave('مدفوعة')}
+            className="flex-[2] h-16 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 text-white font-black text-base hover:shadow-lg hover:shadow-emerald-500/30 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            <CheckCircle className="size-5" />
+            دفع كامل وتأكيد
+          </button>
         </div>
       </div>
 

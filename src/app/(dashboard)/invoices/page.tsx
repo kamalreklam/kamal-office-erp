@@ -209,7 +209,7 @@ export default function InvoicesPage() {
             </p>
           </div>
           
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-nowrap items-center gap-3 w-full md:w-auto">
             <button
               className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-sky-500 border border-sky-600 text-white font-bold hover:bg-sky-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
               onClick={handleExport}
@@ -224,14 +224,6 @@ export default function InvoicesPage() {
             >
               <MessageCircle className="size-5" />
               <span className="hidden sm:inline">ملخص واتساب</span>
-            </button>
-
-            <button
-              className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-amber-500 text-white border border-amber-600 font-bold hover:bg-amber-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
-              onClick={shareAllOverdue}
-            >
-              <AlertCircle className="size-5" />
-              <span className="hidden sm:inline">متأخرات (واتساب)</span>
             </button>
 
             <DateRangeExportButton
