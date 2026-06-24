@@ -29,7 +29,11 @@ import {
   ChevronDown,
   ArrowUpDown,
   PlusCircle,
-  MinusCircle
+  MinusCircle,
+  CheckSquare,
+  Square,
+  X,
+  CheckCheck,
 } from 'lucide-react'
 
 function CategoryBadge({ category }: { category: string }) {
@@ -72,6 +76,12 @@ export default function InventoryPage() {
   const [activeCategory, setActiveCategory] = useState('الكل')
   const [sortBy, setSortBy] = useState('default')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+
+  // Bulk edit state
+  const [bulkMode, setBulkMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkField, setBulkField] = useState<'stock' | 'sellingPrice' | 'costPrice'>('stock')
+  const [bulkValue, setBulkValue] = useState('')
 
   // Filter & Sort
   const filtered = useMemo(() => {
@@ -168,6 +178,34 @@ export default function InventoryPage() {
     window.open(`https://wa.me/?text=${encodeURIComponent(lines.join('\n'))}`, '_blank')
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    setSelectedIds(new Set(filtered.map(p => p.id)))
+  }
+
+  function applyBulk() {
+    const val = parseFloat(bulkValue)
+    if (isNaN(val) || val < 0) { toast.error('أدخل قيمة صحيحة'); return }
+    selectedIds.forEach(id => updateProduct(id, { [bulkField]: val }))
+    toast.success(`تم تحديث ${selectedIds.size} صنف`)
+    setSelectedIds(new Set())
+    setBulkValue('')
+  }
+
+  function handleBulkDelete() {
+    const count = selectedIds.size
+    selectedIds.forEach(id => deleteProduct(id))
+    toast.success(`تم حذف ${count} صنف`)
+    setSelectedIds(new Set())
+  }
+
   function adjustStock(productId: string, delta: number) {
     const p = products.find(prod => prod.id === productId)
     if (!p) return
@@ -185,6 +223,7 @@ export default function InventoryPage() {
   }
 
   return (
+    <>
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
         {/* Page Head */}
@@ -228,6 +267,14 @@ export default function InventoryPage() {
             <button className="w-full sm:w-auto h-14 px-6 rounded-2xl bg-[#25D366] text-white border border-[#1DA851] font-bold hover:bg-[#1DA851] active:scale-95 transition-all shadow-md flex items-center justify-center gap-2" onClick={shareWhatsAppSummary}>
               <MessageCircle className="size-5" />
               <span>تقرير المخزون</span>
+            </button>
+
+            <button
+              onClick={() => { setBulkMode(m => !m); setSelectedIds(new Set()) }}
+              className={`w-full sm:w-auto h-14 px-6 rounded-2xl font-bold border-2 transition-all shadow-sm flex items-center justify-center gap-2 ${bulkMode ? 'bg-amber-500 border-amber-600 text-white' : 'bg-white border-slate-200 text-slate-700 hover:border-amber-400 hover:text-amber-600'}`}
+            >
+              <CheckCheck className="size-5" />
+              <span>{bulkMode ? 'إلغاء التحرير المجمّع' : 'تحرير مجمّع'}</span>
             </button>
 
             <Link href="/inventory/new" className="w-full sm:w-auto h-14 px-8 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-[0_8px_20px_-6px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2">
@@ -411,6 +458,13 @@ export default function InventoryPage() {
               <table className="w-full text-sm text-right">
                 <thead className="sticky top-0 z-10 text-xs font-black text-slate-400 uppercase bg-slate-50/80 backdrop-blur-md shadow-sm">
                   <tr>
+                    {bulkMode && (
+                      <th className="px-4 py-4">
+                        <button onClick={selectedIds.size === filtered.length ? () => setSelectedIds(new Set()) : selectAll} className="text-indigo-500 hover:text-indigo-700 transition-colors">
+                          {selectedIds.size === filtered.length && filtered.length > 0 ? <CheckSquare className="size-5" /> : <Square className="size-5" />}
+                        </button>
+                      </th>
+                    )}
                     <th className="px-6 py-4">#</th>
                     <th className="px-6 py-4">اسم الصنف</th>
                     <th className="px-6 py-4">الفئة</th>
@@ -430,12 +484,20 @@ export default function InventoryPage() {
                     const isLow = product.stock > 0 && product.stock <= product.minStock
                     const img = getProductImage(product.id)
                     return (
-                      <motion.tr 
+                      <motion.tr
                         variants={{ hidden: { opacity: 0, x: -20 }, visible: { opacity: 1, x: 0 } }}
-                        key={product.id} 
-                        onDoubleClick={() => router.push(`/inventory/${product.id}/edit`)}
-                        className={`border-b border-slate-50 transition-colors group cursor-pointer ${isEmpty ? 'grayscale opacity-60 hover:opacity-80 bg-slate-50/50' : isLow ? 'bg-rose-50/40 hover:bg-rose-50/80 shadow-[inset_4px_0_0_rgba(244,63,94,0.5)]' : 'hover:bg-slate-50'}`}
+                        key={product.id}
+                        onDoubleClick={() => !bulkMode && router.push(`/inventory/${product.id}/edit`)}
+                        onClick={() => bulkMode && toggleSelect(product.id)}
+                        className={`border-b border-slate-50 transition-colors group cursor-pointer ${selectedIds.has(product.id) ? 'bg-indigo-50/60' : isEmpty ? 'grayscale opacity-60 hover:opacity-80 bg-slate-50/50' : isLow ? 'bg-rose-50/40 hover:bg-rose-50/80 shadow-[inset_4px_0_0_rgba(244,63,94,0.5)]' : 'hover:bg-slate-50'}`}
                       >
+                        {bulkMode && (
+                          <td className="px-4 py-4">
+                            <button onClick={e => { e.stopPropagation(); toggleSelect(product.id) }} className="text-indigo-500">
+                              {selectedIds.has(product.id) ? <CheckSquare className="size-5" /> : <Square className="size-5 text-slate-300" />}
+                            </button>
+                          </td>
+                        )}
                         <td className="px-6 py-4 font-bold text-slate-400">{idx + 1}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
@@ -543,12 +605,18 @@ export default function InventoryPage() {
               const isLow = product.stock > 0 && product.stock <= product.minStock
               const img = getProductImage(product.id)
               return (
-                <motion.div 
+                <motion.div
                   variants={{ hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 } }}
                   key={product.id}
-                  onDoubleClick={() => router.push(`/inventory/${product.id}/edit`)}
-                  className={`bg-white rounded-[2rem] border p-5 cursor-pointer ${isEmpty ? 'grayscale opacity-75 border-slate-200' : isLow ? 'border-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.15)] ring-1 ring-rose-500/20' : 'border-slate-100 shadow-sm'}`}
+                  onDoubleClick={() => !bulkMode && router.push(`/inventory/${product.id}/edit`)}
+                  onClick={() => bulkMode && toggleSelect(product.id)}
+                  className={`bg-white rounded-[2rem] border p-5 cursor-pointer relative ${selectedIds.has(product.id) ? 'border-indigo-400 ring-2 ring-indigo-300/40 bg-indigo-50/30' : isEmpty ? 'grayscale opacity-75 border-slate-200' : isLow ? 'border-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.15)] ring-1 ring-rose-500/20' : 'border-slate-100 shadow-sm'}`}
                 >
+                  {bulkMode && (
+                    <button onClick={e => { e.stopPropagation(); toggleSelect(product.id) }} className="absolute top-4 start-4 text-indigo-500 z-10">
+                      {selectedIds.has(product.id) ? <CheckSquare className="size-6" /> : <Square className="size-6 text-slate-300" />}
+                    </button>
+                  )}
                   <div className="flex gap-4">
                     {img ? (
                       <img src={img} alt="" className="size-16 rounded-2xl object-cover border border-slate-200 shrink-0 shadow-sm" />
@@ -640,11 +708,17 @@ export default function InventoryPage() {
             const isLow = product.stock <= product.minStock
             const img = getProductImage(product.id)
             return (
-              <motion.div 
+              <motion.div
                 variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
                 key={product.id}
-                className={`bg-white rounded-[2rem] border ${isLow ? 'border-rose-200 shadow-[0_4px_15px_-3px_rgba(244,63,94,0.15)]' : 'border-slate-100 shadow-sm'} p-3 flex flex-col justify-between hover:shadow-md transition-shadow group`}
+                onClick={() => bulkMode && toggleSelect(product.id)}
+                className={`bg-white rounded-[2rem] border ${selectedIds.has(product.id) ? 'border-indigo-400 ring-2 ring-indigo-300/40 bg-indigo-50/20' : isLow ? 'border-rose-200 shadow-[0_4px_15px_-3px_rgba(244,63,94,0.15)]' : 'border-slate-100 shadow-sm'} p-3 flex flex-col justify-between hover:shadow-md transition-shadow group relative ${bulkMode ? 'cursor-pointer' : ''}`}
               >
+                {bulkMode && (
+                  <button onClick={e => { e.stopPropagation(); toggleSelect(product.id) }} className="absolute top-2 start-2 z-10 text-indigo-500">
+                    {selectedIds.has(product.id) ? <CheckSquare className="size-5" /> : <Square className="size-5 text-slate-300" />}
+                  </button>
+                )}
                 {/* Image / Thumbnail */}
                 <div className="relative aspect-square rounded-[1.5rem] overflow-hidden bg-slate-50 border border-slate-100 shrink-0">
                   {img ? (
@@ -728,5 +802,68 @@ export default function InventoryPage() {
       </div>
       </div>
     </div>
+
+    {/* Bulk Action Bar — outside scroll container, fixed to viewport */}
+    {bulkMode && (
+      <div className={`fixed bottom-0 inset-x-0 z-50 transition-transform duration-300 ${selectedIds.size > 0 ? 'translate-y-0' : 'translate-y-full'}`}>
+        <div className="bg-white border-t-2 border-indigo-200 shadow-[0_-8px_30px_-5px_rgba(79,70,229,0.2)] px-4 py-4" dir="rtl">
+          <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+            {/* Count + select all / clear */}
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-indigo-600 text-white font-black text-sm">
+                <CheckCheck className="size-4" />
+                {selectedIds.size} صنف محدد
+              </span>
+              <button onClick={selectAll} className="text-xs font-bold text-indigo-600 hover:underline">تحديد الكل</button>
+              <button onClick={() => setSelectedIds(new Set())} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-1">
+                <X className="size-3" /> إلغاء التحديد
+              </button>
+            </div>
+
+            <div className="h-px sm:h-8 sm:w-px bg-slate-200 w-full sm:w-auto" />
+
+            {/* Field + value + apply */}
+            <div className="flex items-center gap-2 flex-1 w-full sm:w-auto">
+              <select
+                value={bulkField}
+                onChange={e => setBulkField(e.target.value as typeof bulkField)}
+                className="h-11 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 shrink-0"
+              >
+                <option value="stock">المخزون</option>
+                <option value="sellingPrice">سعر المبيع</option>
+                <option value="costPrice">سعر التكلفة</option>
+              </select>
+              <input
+                type="number"
+                min="0"
+                placeholder="القيمة الجديدة"
+                value={bulkValue}
+                onChange={e => setBulkValue(e.target.value)}
+                className="h-11 flex-1 min-w-0 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                onClick={applyBulk}
+                disabled={!bulkValue}
+                className="h-11 px-5 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+              >
+                تطبيق
+              </button>
+            </div>
+
+            <div className="h-px sm:h-8 sm:w-px bg-slate-200 w-full sm:w-auto" />
+
+            {/* Bulk delete */}
+            <button
+              onClick={handleBulkDelete}
+              className="h-11 px-5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 font-bold text-sm hover:bg-rose-100 transition-all flex items-center gap-2 shrink-0"
+            >
+              <Trash2 className="size-4" />
+              حذف المحدد
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
