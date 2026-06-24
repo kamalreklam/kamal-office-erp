@@ -128,7 +128,7 @@ export function formatProductWhatsAppText(product: Product, settings: AppSetting
     `اسم المنتج: *${product.name}*`,
     `الفئة: ${product.category}`,
     `كود الـ SKU: \`${product.sku || "غير متوفر"}\``,
-    `سعر البيع الافتراضي: *${formatCurrencyAr(product.price, symbol)}*`,
+    `سعر البيع الافتراضي: *${formatCurrencyAr(product.sellingPrice, symbol)}*`,
     `المخزون المتوفر: *${product.stock} ${product.unit}*`,
     `الحد الأدنى للتنبيه: ${product.minStock} ${product.unit}`,
     `حالة المخزون: ${status}`,

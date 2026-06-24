@@ -328,13 +328,13 @@ export function MobileInventory() {
                   <div>
                     <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>السعر</span>
                     <span style={{ fontSize: 16, fontWeight: 800, color: "var(--primary)" }}>
-                      {formatCurrency(product.price)}
+                      {formatCurrency(product.sellingPrice)}
                     </span>
                   </div>
                   <div className="text-center">
                     <span style={{ fontSize: 11, color: "var(--text-muted)", display: "block" }}>إجمالي القيمة</span>
                     <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-secondary)" }}>
-                      {formatCurrency(product.price * product.stock)}
+                      {formatCurrency(product.sellingPrice * product.stock)}
                     </span>
                   </div>
                   <div className="flex gap-1.5 no-capture">

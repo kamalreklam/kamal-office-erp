@@ -425,7 +425,7 @@ function DesktopInventory() {
                         </td>
                         <td className="p-4 font-bold text-[var(--brand-primary)]">
                           <InlineEdit
-                            value={product.price}
+                            value={product.sellingPrice}
                             type="currency"
                             format={formatCurrency}
                             onSave={(v) => updateProduct(product.id, { price: v })}
@@ -450,7 +450,7 @@ function DesktopInventory() {
                           </div>
                         </td>
                         <td className="p-4 font-bold text-[var(--text-secondary)] font-mono">
-                          {formatCurrency(product.price * product.stock)}
+                          {formatCurrency(product.sellingPrice * product.stock)}
                         </td>
                         <td className="p-4 text-center">
                           <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2.5 py-0.5 rounded-full border ${statusColorClass}`}>
@@ -612,11 +612,11 @@ function DesktopInventory() {
                     <div className="flex items-center justify-between border-t border-gray-50 pt-3">
                       <div>
                         <p className="text-[10px] text-[var(--text-muted)] mb-0.5 font-medium">السعر</p>
-                        <p className="text-base font-extrabold text-[var(--brand-primary)] font-mono">{formatCurrency(product.price)}</p>
+                        <p className="text-base font-extrabold text-[var(--brand-primary)] font-mono">{formatCurrency(product.sellingPrice)}</p>
                       </div>
                       <div className="text-left">
                         <p className="text-[10px] text-[var(--text-muted)] mb-0.5 font-medium">إجمالي القيمة</p>
-                        <p className="text-xs font-bold text-[var(--text-secondary)] font-mono">{formatCurrency(product.price * product.stock)}</p>
+                        <p className="text-xs font-bold text-[var(--text-secondary)] font-mono">{formatCurrency(product.sellingPrice * product.stock)}</p>
                       </div>
                     </div>
 

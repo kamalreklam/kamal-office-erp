@@ -398,8 +398,8 @@ function DesktopInvoicePage() {
       productName: product.name,
       description: product.description,
       quantity: 1,
-      unitPrice: product.price,
-      total: product.price,
+      unitPrice: product.sellingPrice,
+      total: product.sellingPrice,
     };
     setLineItems((prev) => {
       const withoutEmpty = prev.filter((i) => i.productId || i.isTemporary || i.isBundle);
@@ -435,11 +435,11 @@ function DesktopInvoicePage() {
   function openBundleDialog(bundleId: string) {
     const bundle = bundles.find((b) => b.id === bundleId);
     if (!bundle) return;
-    // Default price = sum of sellingPrice × quantity, fallback to product.price
+    // Default price = sum of sellingPrice × quantity, fallback to product.sellingPrice
     const defaultPrice = bundle.items.reduce((s, bi) => {
       if (bi.sellingPrice !== undefined) return s + bi.sellingPrice * bi.quantity;
       const product = products.find((p) => p.id === bi.productId);
-      return s + (product?.price || 0) * bi.quantity;
+      return s + (product?.sellingPrice || 0) * bi.quantity;
     }, 0);
     setBundleSetPrice(String(defaultPrice));
     setActiveBundleId(bundleId);

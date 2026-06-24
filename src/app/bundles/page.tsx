@@ -78,9 +78,9 @@ export function resolveItems(items: BundleItem[], products: Product[]): Resolved
 }
 
 export const itemSell = (item: BundleItem, product?: Product) =>
-  item.sellingPrice ?? product?.price ?? 0;
+  item.sellingPrice ?? product?.sellingPrice ?? 0;
 export const itemCost = (item: BundleItem, product?: Product) =>
-  item.costPrice ?? product?.price ?? 0;
+  item.costPrice ?? product?.costPrice ?? 0;
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
