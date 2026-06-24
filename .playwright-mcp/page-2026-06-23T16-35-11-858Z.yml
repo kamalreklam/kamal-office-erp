@@ -1,0 +1,246 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e30]:
+      - complementary [ref=e31]:
+        - generic [ref=e32]:
+          - img [ref=e34]
+          - generic [ref=e37]: كمال للتجهيزات
+        - navigation "التنقّل الرئيسي" [ref=e39]:
+          - generic [ref=e40]:
+            - paragraph [ref=e41]: نظرة عامة
+            - list [ref=e42]:
+              - listitem [ref=e43]:
+                - link "الرئيسية" [ref=e44] [cursor=pointer]:
+                  - /url: /
+                  - img [ref=e45]
+                  - generic [ref=e50]: الرئيسية
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: العمليات
+            - list [ref=e53]:
+              - listitem [ref=e54]:
+                - link "الفواتير" [ref=e55] [cursor=pointer]:
+                  - /url: /invoices
+                  - img [ref=e57]
+                  - generic [ref=e60]: الفواتير
+              - listitem [ref=e61]:
+                - link "العملاء" [ref=e62] [cursor=pointer]:
+                  - /url: /clients
+                  - img [ref=e63]
+                  - generic [ref=e68]: العملاء
+              - listitem [ref=e69]:
+                - link "الطلبات" [ref=e70] [cursor=pointer]:
+                  - /url: /orders
+                  - img [ref=e71]
+                  - generic [ref=e74]: الطلبات
+          - generic [ref=e75]:
+            - paragraph [ref=e76]: الكتالوج
+            - list [ref=e77]:
+              - listitem [ref=e78]:
+                - link "المنتجات" [ref=e79] [cursor=pointer]:
+                  - /url: /inventory
+                  - img [ref=e80]
+                  - generic [ref=e84]: المنتجات
+              - listitem [ref=e85]:
+                - link "المجموعات" [ref=e86] [cursor=pointer]:
+                  - /url: /bundles
+                  - img [ref=e87]
+                  - generic [ref=e91]: المجموعات
+          - generic [ref=e92]:
+            - paragraph [ref=e93]: المالية
+            - list [ref=e94]:
+              - listitem [ref=e95]:
+                - link "الحسابات" [ref=e96] [cursor=pointer]:
+                  - /url: /accounting
+                  - img [ref=e97]
+                  - generic [ref=e100]: الحسابات
+              - listitem [ref=e101]:
+                - link "التقارير" [ref=e102] [cursor=pointer]:
+                  - /url: /reports
+                  - img [ref=e103]
+                  - generic [ref=e106]: التقارير
+          - generic [ref=e107]:
+            - paragraph [ref=e108]: الإدارة
+            - list [ref=e109]:
+              - listitem [ref=e110]:
+                - link "الإعدادات" [ref=e111] [cursor=pointer]:
+                  - /url: /settings
+                  - img [ref=e112]
+                  - generic [ref=e115]: الإعدادات
+        - button "طي القائمة" [ref=e117] [cursor=pointer]:
+          - img [ref=e118]
+          - generic [ref=e121]: طي القائمة
+      - main [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - generic [ref=e126]: الفواتير
+            - generic [ref=e127]: "|"
+            - generic [ref=e128]: الثلاثاء، 23 حزيران 2026
+          - generic [ref=e129]:
+            - button "بحث... ⌘K" [ref=e130] [cursor=pointer]:
+              - img [ref=e131]
+              - generic [ref=e134]: بحث...
+              - generic [ref=e135]: ⌘K
+            - generic [ref=e136]:
+              - heading "بحث سريع" [level=2] [ref=e137]
+              - paragraph [ref=e138]: ابحث عن صفحة أو منتج أو عميل أو فاتورة
+            - button "الإشعارات" [ref=e139] [cursor=pointer]:
+              - img [ref=e140]
+            - generic [ref=e144]:
+              - button "حساب المستخدم" [ref=e145] [cursor=pointer]: ك
+              - generic [ref=e146]:
+                - generic [ref=e147]: كمال
+                - generic [ref=e148]: مسؤول النظام
+        - generic [ref=e151]:
+          - generic [ref=e153]:
+            - generic [ref=e154]:
+              - button [ref=e155] [cursor=pointer]:
+                - img [ref=e156]
+              - generic [ref=e158]:
+                - heading "فاتورة جديدة" [level=1] [ref=e159]
+                - paragraph [ref=e160]: "رقم المرجع: INV-2026-039"
+            - generic [ref=e161]:
+              - generic [ref=e162]:
+                - generic [ref=e164]: مسودة
+                - generic [ref=e167]: معتمدة
+                - generic [ref=e170]: مدفوعة
+              - generic [ref=e172]:
+                - button "حفظ مسودة" [ref=e173] [cursor=pointer]
+                - button "اعتماد الفاتورة" [ref=e174] [cursor=pointer]:
+                  - img [ref=e175]
+                  - text: اعتماد الفاتورة
+          - generic [ref=e178]:
+            - generic [ref=e180]:
+              - generic [ref=e181]:
+                - generic [ref=e182]: العميل
+                - generic [ref=e184]:
+                  - img [ref=e185]
+                  - textbox "ابحث عن عميل مسجل..." [ref=e188]
+              - generic [ref=e189]:
+                - generic [ref=e190]:
+                  - img [ref=e191]
+                  - text: تاريخ الفاتورة
+                - textbox [ref=e193]: 2026-06-23
+            - generic [ref=e194]:
+              - generic [ref=e195]:
+                - heading "عناصر الفاتورة" [level=3] [ref=e196]:
+                  - img [ref=e198]
+                  - text: عناصر الفاتورة
+                - generic [ref=e202]:
+                  - generic [ref=e203]:
+                    - img [ref=e205]
+                    - generic [ref=e208]: إضافة سريعة
+                  - generic [ref=e209]:
+                    - button "الباقات 6" [active] [ref=e210] [cursor=pointer]:
+                      - img [ref=e211]
+                      - text: الباقات
+                      - generic [ref=e215]: "6"
+                    - button "EP C21000 Dye Ink Master Book V63.2 - Black (361)" [ref=e216] [cursor=pointer]:
+                      - img [ref=e217]
+                      - text: EP C21000 Dye Ink Master Book V63.2 - Black
+                      - generic [ref=e218]: (361)
+                  - generic [ref=e285]:
+                    - button "HP Magic CMYK 265 $17 + إضافة" [ref=e286] [cursor=pointer]:
+                      - generic [ref=e287]:
+                        - generic [ref=e288]: HP Magic CMYK
+                        - generic [ref=e289]: "265"
+                      - generic [ref=e290]:
+                        - generic [ref=e291]: $17
+                        - generic [ref=e292]: + إضافة
+                    - button "V15 CMYK 176 $22 + إضافة" [ref=e293] [cursor=pointer]:
+                      - generic [ref=e294]:
+                        - generic [ref=e295]: V15 CMYK
+                        - generic [ref=e296]: "176"
+                      - generic [ref=e297]:
+                        - generic [ref=e298]: $22
+                        - generic [ref=e299]: + إضافة
+                    - button "HP Pigment V77 CMYK 29 $38 + إضافة" [ref=e300] [cursor=pointer]:
+                      - generic [ref=e301]:
+                        - generic [ref=e302]: HP Pigment V77 CMYK
+                        - generic [ref=e303]: "29"
+                      - generic [ref=e304]:
+                        - generic [ref=e305]: $38
+                        - generic [ref=e306]: + إضافة
+                    - button "EP 108 CMYK+LC+LM 30 $4.2 + إضافة" [ref=e307] [cursor=pointer]:
+                      - generic [ref=e308]:
+                        - generic [ref=e309]: EP 108 CMYK+LC+LM
+                        - generic [ref=e310]: "30"
+                      - generic [ref=e311]:
+                        - generic [ref=e312]: $4.2
+                        - generic [ref=e313]: + إضافة
+                    - button "Epson V63.2 CMYK 361 $28 + إضافة" [ref=e314] [cursor=pointer]:
+                      - generic [ref=e315]:
+                        - generic [ref=e316]: Epson V63.2 CMYK
+                        - generic [ref=e317]: "361"
+                      - generic [ref=e318]:
+                        - generic [ref=e319]: $28
+                        - generic [ref=e320]: + إضافة
+                    - button "Epson V58.3 CMYK 281 $24 + إضافة" [ref=e321] [cursor=pointer]:
+                      - generic [ref=e322]:
+                        - generic [ref=e323]: Epson V58.3 CMYK
+                        - generic [ref=e324]: "281"
+                      - generic [ref=e325]:
+                        - generic [ref=e326]: $24
+                        - generic [ref=e327]: + إضافة
+              - generic [ref=e219]:
+                - generic [ref=e220]:
+                  - generic [ref=e221]: المنتج
+                  - generic [ref=e222]: الكمية
+                  - generic [ref=e223]: السعر
+                  - generic [ref=e224]: الإجمالي
+                - generic [ref=e226]:
+                  - button [ref=e227] [cursor=pointer]:
+                    - img [ref=e228]
+                  - generic [ref=e231]:
+                    - generic [ref=e233]:
+                      - textbox "البحث عن منتج..." [ref=e234]
+                      - button "+ وصف" [ref=e235] [cursor=pointer]
+                    - spinbutton [ref=e237]: "1"
+                    - spinbutton [ref=e240]
+                    - generic [ref=e242]: $0
+              - generic [ref=e243]:
+                - button "إضافة منتج جديد" [ref=e244] [cursor=pointer]:
+                  - img [ref=e245]
+                  - text: إضافة منتج جديد
+                - button "إضافة منتج مؤقت" [ref=e246] [cursor=pointer]:
+                  - img [ref=e247]
+                  - text: إضافة منتج مؤقت
+                - button "تكوين حزمة عروض" [ref=e248] [cursor=pointer]:
+                  - img [ref=e249]
+                  - text: تكوين حزمة عروض
+            - generic [ref=e253]:
+              - generic [ref=e254]:
+                - generic [ref=e255]:
+                  - generic [ref=e256]:
+                    - img [ref=e257]
+                    - text: ملاحظات الفاتورة
+                  - button "إملاء صوتي" [ref=e258] [cursor=pointer]:
+                    - img [ref=e259]
+                - textbox "اكتب ملاحظات الفاتورة هنا أو استخدم زر الإملاء الصوتي للتحدث باللغة العربية..." [ref=e262]
+              - generic [ref=e266]:
+                - generic [ref=e267]:
+                  - generic [ref=e268]: المبلغ الفرعي
+                  - generic [ref=e269]: $0
+                - generic [ref=e270]:
+                  - generic [ref=e271]:
+                    - img [ref=e272]
+                    - text: الخصم
+                  - generic [ref=e276]:
+                    - combobox [ref=e278] [cursor=pointer]:
+                      - option "%" [selected]
+                      - option "$"
+                    - spinbutton [ref=e279]
+                - generic [ref=e280]:
+                  - generic [ref=e281]: الإجمالي
+                  - generic [ref=e282]: $0
+                  - generic:
+                    - generic:
+                      - generic: 0.00$
+                      - generic: USD
+                    - generic:
+                      - generic: 0.00€
+                      - generic: EUR
+    - region "Notifications alt+T"
+  - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e25] [cursor=pointer]:
+    - img [ref=e26]
+  - alert [ref=e283]

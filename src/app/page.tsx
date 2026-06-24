@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileDashboard } from "@/components/mobile/mobile-dashboard";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { AnimatedCounter } from "@/components/animated-counter";
 import { SortableWidgets } from "@/components/sortable-widgets";
 import { motion } from "framer-motion";
@@ -50,7 +50,7 @@ export default function DashboardPage() {
   }
 
   if (isMobile) {
-    return <MobileShell><MobileDashboard /></MobileShell>;
+    return <AppShell><MobileDashboard /></AppShell>;
   }
 
   return <DesktopDashboard />;

@@ -1,0 +1,581 @@
+[     136ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     176ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2145024ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2146055ms] [LOG] [Fast Refresh] done in 1114ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2155093ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2156059ms] [LOG] [Fast Refresh] done in 160ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2165866ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2167657ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2168153ms] [LOG] [Fast Refresh] done in 1890ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2168835ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2168890ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2186904ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2188723ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2189079ms] [LOG] [Fast Refresh] done in 1920ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2189239ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2189513ms] [LOG] [Fast Refresh] done in 378ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2189766ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2189817ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2203772ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2205502ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2206044ms] [LOG] [Fast Refresh] done in 1845ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2206528ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2206576ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2215817ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2217547ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2217938ms] [LOG] [Fast Refresh] done in 1832ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2218090ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2218324ms] [LOG] [Fast Refresh] done in 335ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2218457ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2218513ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2235082ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2235098ms] [LOG] [Fast Refresh] done in 131ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2235237ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2235875ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2236274ms] [LOG] [Fast Refresh] done in 738ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2236828ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2236863ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2237419ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2237429ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2237429ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2269135ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2270919ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2270936ms] [LOG] [Fast Refresh] done in 1899ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2271045ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2271313ms] [LOG] [Fast Refresh] done in 370ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2271468ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2271718ms] [LOG] [Fast Refresh] done in 361ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2271973ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2272013ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2272353ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2272355ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2272385ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2296338ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2296354ms] [LOG] [Fast Refresh] done in 117ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2296586ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2297464ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2297823ms] [LOG] [Fast Refresh] done in 979ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2297940ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2298476ms] [LOG] [Fast Refresh] done in 646ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2298588ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2298588ms] [LOG] [Fast Refresh] done in 101ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2298803ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2298839ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2299186ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2299191ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2299192ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2310778ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2312709ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2313162ms] [LOG] [Fast Refresh] done in 2043ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2313306ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2313712ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2313739ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2314036ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2314037ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2314037ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2320202ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2320234ms] [LOG] [Fast Refresh] done in 134ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2320497ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2320566ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2321064ms] [LOG] [Fast Refresh] done in 171ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2321214ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2321602ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2321634ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2321861ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2321877ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2321878ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2332543ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2334338ms] [WARNING] [Fast Refresh] performing full reload
+
+Fast Refresh will perform a full reload when you edit a file that's imported by modules outside of the React rendering tree.
+You might have a file which exports a React component but also exports a value that is imported by a non-React component file.
+Consider migrating the non-React component export to a separate file and importing it into both files.
+
+It is also possible the parent component of the component you edited is a class component, which disables Fast Refresh.
+Fast Refresh requires at least one parent function component in your React tree. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2334739ms] [LOG] [Fast Refresh] done in 1895ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2335380ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2335422ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2335662ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2335667ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2335668ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2384186ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2385961ms] [LOG] [Fast Refresh] done in 1826ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2488850ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2488898ms] [LOG] [Fast Refresh] done in 160ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2496398ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2497493ms] [LOG] [Fast Refresh] done in 1134ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2507611ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2507683ms] [LOG] [Fast Refresh] done in 175ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2507920ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2507936ms] [LOG] [Fast Refresh] done in 128ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2518075ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2519851ms] [LOG] [Fast Refresh] done in 1832ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2530247ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2530294ms] [LOG] [Fast Refresh] done in 148ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2539688ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2539688ms] [LOG] [Fast Refresh] done in 102ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2545541ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2545588ms] [LOG] [Fast Refresh] done in 147ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2545912ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2546204ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[ 2546282ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[ 2546285ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[ 2546298ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[ 2546305ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[ 2546343ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings:0
+[ 2546389ms] [ERROR] Refused to execute script from 'http://localhost:3000/_next/static/development/_clientMiddlewareManifest.js' because its MIME type ('application/json') is not executable, and strict MIME type checking is enabled. @ http://localhost:3000/settings:0
+[ 2546448ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 2546564ms] Error: ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/(dashboard)/invoices/page.tsx:489:23)
+    at Object.getCompilationErrors (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1189:59)
+    at DevBundlerService.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\base-server.js:1745:26)
+[ 2546563ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2546569ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2546614ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2546680ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2546733ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:489:23
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  487 |                         </td>
+  488 |                       </tr>
+> 489 |                     ))}
+      |                       ^
+  490 |                   </tbody>
+  491 |                 </table>
+  492 |               </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2546794ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2572088ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2573803ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2573844ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2574456ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2574545ms] [LOG] [Fast Refresh] done in 190ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2574607ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2574647ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2574734ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2574765ms] [LOG] [Fast Refresh] done in 220ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2574844ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2585181ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2586957ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[ 2587001ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings?_rsc=kw7yf:0
+[ 2587035ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/settings:0
+[ 2587108ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[ 2587123ms] [ERROR] Refused to execute script from 'http://localhost:3000/_next/static/development/_clientMiddlewareManifest.js' because its MIME type ('application/json') is not executable, and strict MIME type checking is enabled. @ http://localhost:3000/settings:0
+[ 2587127ms] Error: ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/(dashboard)/invoices/page.tsx:568:17)
+    at Object.getCompilationErrors (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1189:59)
+    at DevBundlerService.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\base-server.js:1745:26)
+[ 2587129ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2587133ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587133ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:570:12
+Unterminated regexp literal
+  568 |               ))}
+  569 |             </div>
+> 570 |           </>
+      |            ^^
+  571 |         )}
+  572 |       </div>
+  573 |     </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587175ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587176ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:570:12
+Unterminated regexp literal
+  568 |               ))}
+  569 |             </div>
+> 570 |           </>
+      |            ^^
+  571 |         )}
+  572 |       </div>
+  573 |     </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587276ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587276ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:570:12
+Unterminated regexp literal
+  568 |               ))}
+  569 |             </div>
+> 570 |           </>
+      |            ^^
+  571 |         )}
+  572 |       </div>
+  573 |     </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2587353ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2603866ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2603866ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:570:12
+Unterminated regexp literal
+  568 |               ))}
+  569 |             </div>
+> 570 |           </>
+      |            ^^
+  571 |         )}
+  572 |       </div>
+  573 |     </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2603880ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2604003ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2604021ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:568:17
+Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+  566 |                   </div>
+  567 |                 </div>
+> 568 |               ))}
+      |                 ^
+  569 |             </div>
+  570 |           </>
+  571 |         )}
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2604021ms] [ERROR] ./src/app/(dashboard)/invoices/page.tsx:570:12
+Unterminated regexp literal
+  568 |               ))}
+  569 |             </div>
+> 570 |           </>
+      |            ^^
+  571 |         )}
+  572 |       </div>
+  573 |     </div>
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[ 2604236ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2604349ms] [LOG] [Fast Refresh] done in 216ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2604481ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2604902ms] [LOG] [Fast Refresh] done in 521ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[ 2605215ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2605256ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2605620ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/stock_movements?select=*&order=created_at.desc&limit=500:0
+[ 2605620ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/invoice_payments?select=*&order=created_at.desc:0
+[ 2605622ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://pajjacoachbzjsdzoheg.supabase.co/rest/v1/suppliers?select=*:0
+[ 2668030ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2668077ms] [LOG] [Fast Refresh] done in 162ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2668293ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[ 2668310ms] [LOG] [Fast Refresh] done in 129ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431

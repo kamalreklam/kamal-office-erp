@@ -1,0 +1,196 @@
+[     114ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     127ms] [LOG] [Fast Refresh] done in 117ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     291ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[     334ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  335518ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  336677ms] [LOG] [Fast Refresh] done in 1266ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  413650ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  414371ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  414522ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  415198ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:3272
+[  415200ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/invoices/new?_rsc=fq066:0
+[  415222ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/invoices/new?_rsc=fq066:0
+[  415255ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/invoices/new:0
+[  415310ms] [ERROR] Refused to execute script from 'http://localhost:3000/_next/static/development/_clientMiddlewareManifest.js' because its MIME type ('application/json') is not executable, and strict MIME type checking is enabled. @ http://localhost:3000/invoices/new:0
+[  415339ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_react-dom_0bruynb._.js:15305
+[  415399ms] Error: ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+
+    at <unknown> (Error: ./src/app/(dashboard)/invoices/new/page.tsx:792:21)
+    at Object.getCompilationErrors (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\hot-reloader-turbopack.js:1189:59)
+    at DevBundlerService.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\lib\dev-bundler-service.js:44:55)
+    at DevServer.getCompilationError (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:719:42)
+    at DevServer.findPageComponents (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\dev\next-dev-server.js:689:43)
+    at async DevServer.renderErrorToResponseImpl (file://D:\PROJECTS\Kamal\kamal-office\node_modules\next\dist\server\base-server.js:1745:26)
+[  415401ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  415404ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  415482ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  415507ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  415586ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  415645ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  462192ms] [ERROR] ./src/app/(dashboard)/invoices/new/page.tsx:792:21
+Expected '</', got 'jsx text'
+  790 |                   })}
+  791 |                 </div>
+> 792 |               </div>
+      |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 793 |
+      | ^
+> 794 |               {/* ── Inks ── */}
+      | ^^^^^^^^^^^^^^
+  795 |               {products.filter(p => p.category === 'حبر').length > 0 && (
+  796 |                 <div>
+  797 |                   <div className="flex items-center gap-2 mb-3">
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component Browser]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(dashboard)/invoices/new/page.tsx [Client Component SSR]
+    ./src/app/(dashboard)/invoices/new/page.tsx [Server Component] @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1945
+[  462302ms] [LOG] [Fast Refresh] rebuilding @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  463289ms] [LOG] [Fast Refresh] done in 911ms @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_0u_w_5s._.js:1226
+[  463668ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
+[  463708ms] [LOG] [HMR] connected @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_115brz8._.js:2431
