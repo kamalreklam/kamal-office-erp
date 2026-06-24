@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileBundles } from "@/components/mobile/mobile-bundles";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ export const itemCost = (item: BundleItem, product?: Product) =>
 
 export default function BundlesPage() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileShell><MobileBundles /></MobileShell>;
+  if (isMobile) return <AppShell><MobileBundles /></AppShell>;
   return <DesktopBundles />;
 }
 

@@ -27,7 +27,7 @@ import { TablePageSkeleton } from "@/components/skeletons";
 import { Sidesheet } from "@/components/sidesheet";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileInvoices } from "@/components/mobile/mobile-invoices";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { shareAsImage, formatInvoiceWhatsAppText, shareViaWhatsApp } from "@/lib/share";
 import { PaymentLedger } from "@/components/payment-ledger";
 
@@ -40,7 +40,7 @@ export default function InvoicesPage() {
   }
 
   if (isMobile) {
-    return <MobileShell><MobileInvoices /></MobileShell>;
+    return <AppShell><MobileInvoices /></AppShell>;
   }
 
   return <DesktopInvoices />;

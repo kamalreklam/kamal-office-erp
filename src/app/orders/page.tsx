@@ -6,7 +6,7 @@ import { useDebounce } from "@/lib/use-debounce";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileOrders } from "@/components/mobile/mobile-orders";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ const statusConfig: Record<OrderStatus, { icon: typeof Clock; bg: string; border
 
 export default function OrdersPage() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileShell><MobileOrders /></MobileShell>;
+  if (isMobile) return <AppShell><MobileOrders /></AppShell>;
   return <DesktopOrders />;
 }
 

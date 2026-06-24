@@ -5,7 +5,7 @@ import { loadInvoiceTemplate, saveInvoiceTemplate, resetInvoiceTemplate, DEFAULT
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileSettings } from "@/components/mobile/mobile-settings";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
 
 export default function SettingsPage() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileShell><MobileSettings /></MobileShell>;
+  if (isMobile) return <AppShell><MobileSettings /></AppShell>;
   return <DesktopSettings />;
 }
 

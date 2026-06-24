@@ -30,7 +30,7 @@ import { FadeInView } from "@/components/fade-in-view";
 import { InlineEdit } from "@/components/inline-edit";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileInventory } from "@/components/mobile/mobile-inventory";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 
 export default function InventoryPage() {
   const isMobile = useIsMobile();
@@ -41,7 +41,7 @@ export default function InventoryPage() {
   }
 
   if (isMobile) {
-    return <MobileShell><MobileInventory /></MobileShell>;
+    return <AppShell><MobileInventory /></AppShell>;
   }
 
   return <DesktopInventory />;

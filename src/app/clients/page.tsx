@@ -29,7 +29,7 @@ import { DateRangeExportButton, type DateRange } from "@/components/date-range-p
 import { CardGridSkeleton } from "@/components/skeletons";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileClients } from "@/components/mobile/mobile-clients";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 
 const avatarColors = [
   "bg-sky-100 text-sky-700",
@@ -57,7 +57,7 @@ export default function ClientsPage() {
   }
 
   if (isMobile) {
-    return <MobileShell><MobileClients /></MobileShell>;
+    return <AppShell><MobileClients /></AppShell>;
   }
 
   return <DesktopClients />;

@@ -8,7 +8,7 @@ import { formatCurrency } from "@/lib/data";
 import {
   getColorKey, detectType, resolveItems, itemSell,
   colorStyles,
-} from "@/app/(dashboard)/bundles/bundle-utils";
+} from "@/app/bundles/bundle-utils";
 
 const typeOrder = ["printer", "ink", "tank", "other"] as const;
 

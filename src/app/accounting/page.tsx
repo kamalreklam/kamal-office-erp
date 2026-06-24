@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileAccounting } from "@/components/mobile/mobile-accounting";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ function daysBetween(d1: string, d2: string) {
 
 export default function AccountingPage() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileShell><MobileAccounting /></MobileShell>;
+  if (isMobile) return <AppShell><MobileAccounting /></AppShell>;
   return <DesktopAccounting />;
 }
 function DesktopAccounting() {

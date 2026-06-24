@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ResponsiveShell } from "@/components/responsive-shell";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { MobileReports } from "@/components/mobile/mobile-reports";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { useStore } from "@/lib/store";
 import { formatCurrency } from "@/lib/data";
@@ -43,7 +43,7 @@ function getMonthKey(dateStr: string) {
 
 export default function ReportsPage() {
   const isMobile = useIsMobile();
-  if (isMobile) return <MobileShell><MobileReports /></MobileShell>;
+  if (isMobile) return <AppShell><MobileReports /></AppShell>;
   return <DesktopReports />;
 }
 function DailyClosingSection() {
