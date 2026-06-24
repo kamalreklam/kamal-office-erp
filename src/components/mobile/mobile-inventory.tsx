@@ -275,20 +275,11 @@ export function MobileInventory() {
                     <p style={{ fontSize: 15, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, textAlign: "right" }} className="line-clamp-2">
                       {product.name}
                     </p>
-<<<<<<< HEAD
                     {product.sku && (
                       <p style={{ fontSize: 11, fontFamily: "monospace", color: "var(--text-muted)", marginTop: 2 }}>
                         {product.sku}
                       </p>
                     )}
-=======
-                    <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{product.category}</p>
-                  </div>
-                  <div className="text-left shrink-0">
-                    <p style={{ fontSize: 20, fontWeight: 800, color: "var(--primary)" }}>
-                      {formatCurrency(product.sellingPrice)}
-                    </p>
->>>>>>> origin/master
                   </div>
                 </div>
 
@@ -319,7 +310,6 @@ export function MobileInventory() {
                       {product.stock} / {product.minStock} {product.unit}
                     </span>
                   </div>
-<<<<<<< HEAD
                   <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                     <div
                       style={{
@@ -354,15 +344,6 @@ export function MobileInventory() {
                       title="مشاركة واتساب"
                     >
                       <MessageCircle style={{ width: 14, height: 14 }} />
-=======
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--text-muted)" }}>
-                    القيمة: {formatCurrency(product.sellingPrice * product.stock)}
-                  </span>
-                  <div className="flex gap-2">
-                    <button onClick={() => router.push(`/inventory/${product.id}/edit`)}
-                      style={{ height: 34, width: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--accent-soft)", color: "var(--primary)", border: "none", cursor: "pointer" }}>
-                      <Pencil style={{ width: 15, height: 15 }} />
->>>>>>> origin/master
                     </button>
                     <button
                       onClick={() => {

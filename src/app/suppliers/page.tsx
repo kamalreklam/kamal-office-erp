@@ -32,7 +32,7 @@ import { exportCSV } from "@/lib/export";
 import { useDebounce } from "@/lib/use-debounce";
 import { CardGridSkeleton } from "@/components/skeletons";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { MobileShell } from "@/components/mobile/mobile-shell";
+import { AppShell } from "@/components/app-shell";
 
 // ── Mobile placeholder ─────────────────────────────────────────────────────
 function MobileSuppliers() {
@@ -70,7 +70,7 @@ export default function SuppliersPage() {
   }
 
   if (isMobile) {
-    return <MobileShell><MobileSuppliers /></MobileShell>;
+    return <AppShell><MobileSuppliers /></AppShell>;
   }
 
   return <DesktopSuppliers />;

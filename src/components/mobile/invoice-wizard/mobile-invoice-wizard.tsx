@@ -654,7 +654,6 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           <div ref={productSearchRef} className="relative space-y-2">
             {showProductSearch ? (
               <>
-<<<<<<< HEAD
                 <div className="relative">
                   <Search className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
                   <input
@@ -698,45 +697,6 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                       );
                     })
                   )}
-=======
-                <Search className="absolute right-3 top-[11px] h-4 w-4 text-[#94a3b8]" />
-                <input
-                  type="text"
-                  placeholder="ابحث عن منتج..."
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  autoFocus
-                  className="w-full rounded-[10px] border-[1.5px] border-[#2563eb] bg-white pr-9 pl-3 py-2.5 text-sm text-[#1e293b] outline-none"
-                />
-                {/* Dropdown */}
-                <div className="absolute top-full mt-1 left-0 right-0 z-20 rounded-[10px] border border-[#e2e8f0] bg-white shadow-lg overflow-hidden">
-                  <div className="max-h-64 overflow-y-auto p-1">
-                    {filteredProducts.length === 0 ? (
-                      <p className="p-3 text-center text-sm text-[#94a3b8]">لا توجد منتجات</p>
-                    ) : (
-                      filteredProducts.map((p) => {
-                        const outOfStock = p.stock <= 0;
-                        const inCart = cart.some((c) => c.productId === p.id);
-                        return (
-                          <button
-                            key={p.id}
-                            onClick={() => addProductToCart(p)}
-                            disabled={outOfStock}
-                            className={`flex w-full items-center gap-2 rounded-[8px] px-1 py-2 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium text-[#1e293b] truncate" dir="ltr">{p.name}</p>
-                              <p className={`text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
-                                {outOfStock ? "نفذ المخزون" : `${p.category} · ${p.stock}`}
-                              </p>
-                            </div>
-                            {inCart && <Check className="h-4 w-4 shrink-0 text-[#2563eb]" />}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
->>>>>>> origin/master
                 </div>
               </>
             ) : (
@@ -1007,13 +967,8 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 placeholder="0.00"
                 className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-3 text-center text-lg font-bold font-mono text-[var(--text-primary)] outline-none focus:border-cyan-500 mb-1"
               />
-<<<<<<< HEAD
               <p className="text-[11px] text-[var(--text-muted)] text-center mb-4">
                 الافتراضي (مجموع السعر الفردي) = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
-=======
-              <p className="text-[11px] text-[#94a3b8] text-center mb-4">
-                الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.sellingPrice, 0))}
->>>>>>> origin/master
               </p>
 
               <button
