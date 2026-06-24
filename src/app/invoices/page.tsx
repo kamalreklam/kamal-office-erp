@@ -405,7 +405,7 @@ function DesktopInvoices() {
               {/* Cost & Profit Margin Analysis (New premium business feature) */}
               {(() => {
                 const totalCost = selectedInvoice.items.reduce((sum, item) => {
-                  const basePrice = products.find(p => p.id === item.productId)?.price ?? item.unitPrice;
+                  const basePrice = products.find(p => p.id === item.productId)?.sellingPrice ?? item.unitPrice;
                   const itemCost = item.isTemporary ? (item.costPrice ?? 0) : basePrice * 0.65;
                   return sum + (itemCost * item.quantity);
                 }, 0);

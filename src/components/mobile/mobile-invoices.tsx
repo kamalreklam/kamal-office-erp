@@ -282,7 +282,7 @@ function InvoiceSheet({ invoice, onClose }: { invoice: Invoice; onClose: () => v
           {/* Cost & Profit Margin Analysis */}
           {(() => {
             const totalCost = invoice.items.reduce((sum, item) => {
-              const basePrice = products.find(p => p.id === item.productId)?.price ?? item.unitPrice;
+              const basePrice = products.find(p => p.id === item.productId)?.sellingPrice ?? item.unitPrice;
               const itemCost = item.isTemporary ? (item.costPrice ?? 0) : basePrice * 0.65;
               return sum + (itemCost * item.quantity);
             }, 0);

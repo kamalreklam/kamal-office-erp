@@ -493,7 +493,7 @@ function DesktopInvoicePage() {
 
   function openInkSetDialog(set: (typeof inkSets)[0]) {
     setActiveInkSet(set);
-    setInkSetPrice(String(set.items.reduce((s, p) => s + p.price, 0)));
+    setInkSetPrice(String(set.items.reduce((s, p) => s + p.sellingPrice, 0)));
     setInkSetDialogOpen(true);
     setShowSearch(false);
   }
@@ -1188,7 +1188,7 @@ function DesktopInvoicePage() {
                     >
                       <span className="text-sm text-slate-700 dark:text-slate-200">{p.name}</span>
                       <div className="flex items-center gap-3 text-xs text-slate-400">
-                        <span>{formatCurrency(p.price)}</span>
+                        <span>{formatCurrency(p.sellingPrice)}</span>
                         <span className={p.stock <= 0 ? "text-red-400" : "text-emerald-500"}>{p.stock} {p.unit || "عبوة"}</span>
                       </div>
                     </button>
@@ -1219,7 +1219,7 @@ function DesktopInvoicePage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-400 shrink-0">
-                        <span className="font-medium">{formatCurrency(p.price)}</span>
+                        <span className="font-medium">{formatCurrency(p.sellingPrice)}</span>
                         <span className={p.stock <= 0 ? "text-red-400" : p.stock <= 3 ? "text-amber-400" : "text-emerald-500"}>
                           {p.stock <= 0 ? "نفذ" : `${p.stock} ${p.unit || "عبوة"}`}
                         </span>

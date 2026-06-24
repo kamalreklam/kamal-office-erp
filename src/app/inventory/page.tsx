@@ -58,7 +58,7 @@ function DesktopInventory() {
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
   const [sortBy, setSortBy] = useState("default");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [csvPreview, setCsvPreview] = useState<{ name: string; category: string; price: number; costPrice: number; stock: number; minStock: number; unit: string; action: "جديد" | "تحديث"; existingId?: string }[]>([]);
+  const [csvPreview, setCsvPreview] = useState<{ name: string; category: string; sellingPrice: number; costPrice: number; stock: number; minStock: number; unit: string; action: "جديد" | "تحديث"; existingId?: string }[]>([]);
   const [csvModalOpen, setCsvModalOpen] = useState(false);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,8 +74,8 @@ function DesktopInventory() {
       return matchSearch && matchCategory;
     });
     switch (sortBy) {
-      case "price-asc": return [...list].sort((a, b) => a.price - b.price);
-      case "price-desc": return [...list].sort((a, b) => b.price - a.price);
+      case "price-asc": return [...list].sort((a, b) => a.sellingPrice - b.sellingPrice);
+      case "price-desc": return [...list].sort((a, b) => b.sellingPrice - a.sellingPrice);
       case "stock-asc": return [...list].sort((a, b) => a.stock - b.stock);
       case "stock-desc": return [...list].sort((a, b) => b.stock - a.stock);
       case "name": return [...list].sort((a, b) => a.name.localeCompare(b.name, "ar"));
@@ -118,13 +118,13 @@ function DesktopInventory() {
         const cols = line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
         const name = cols[nameIdx] || "";
         const category = catIdx !== -1 ? cols[catIdx] || "عام" : "عام";
-        const price = priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0 : 0;
+        const sellingPrice = priceIdx !== -1 ? parseFloat(cols[priceIdx]) || 0 : 0;
         const costPrice = costIdx !== -1 ? parseFloat(cols[costIdx]) || 0 : 0;
         const stock = stockIdx !== -1 ? parseInt(cols[stockIdx]) || 0 : 0;
         const minStock = minIdx !== -1 ? parseInt(cols[minIdx]) || 0 : 0;
         const unit = unitIdx !== -1 ? cols[unitIdx] || "قطعة" : "قطعة";
         const existing = products.find((p) => p.name.trim() === name.trim());
-        return { name, category, price, costPrice, stock, minStock, unit, action: (existing ? "تحديث" : "جديد") as "جديد" | "تحديث", existingId: existing?.id };
+        return { name, category, sellingPrice, costPrice, stock, minStock, unit, action: (existing ? "تحديث" : "جديد") as "جديد" | "تحديث", existingId: existing?.id };
       }).filter((r) => r.name !== "");
       if (rows.length === 0) { toast.error("لا توجد صفوف صالحة في الملف"); return; }
       setCsvPreview(rows);
@@ -137,9 +137,9 @@ function DesktopInventory() {
     let count = 0;
     csvPreview.forEach((row) => {
       if (row.action === "تحديث" && row.existingId) {
-        updateProduct(row.existingId, { price: row.price, stock: row.stock, category: row.category });
+        updateProduct(row.existingId, { sellingPrice: row.sellingPrice, stock: row.stock, category: row.category });
       } else {
-        addProduct({ name: row.name, category: row.category, sku: "", description: "", price: row.price, stock: row.stock, minStock: 0, unit: row.unit || "قطعة" });
+        addProduct({ name: row.name, category: row.category, sku: "", description: "", sellingPrice: row.sellingPrice, costPrice: row.costPrice, stock: row.stock, minStock: 0, unit: row.unit || "قطعة" });
       }
       count++;
     });
@@ -149,7 +149,7 @@ function DesktopInventory() {
   }
 
   function shareWhatsApp() {
-    const totalValue = filtered.reduce((s, p) => s + p.price * p.stock, 0);
+    const totalValue = filtered.reduce((s, p) => s + p.sellingPrice * p.stock, 0);
     const totalStock = filtered.reduce((s, p) => s + p.stock, 0);
     const lines = [
       `📦 *تقرير المخزون - ${settings.businessName}*`,
@@ -163,10 +163,10 @@ function DesktopInventory() {
       `📋 *قائمة المنتجات:*`,
     ];
     filtered.forEach((p, i) => {
-      const val = p.price * p.stock;
+      const val = p.sellingPrice * p.stock;
       const warn = p.stock <= p.minStock ? " ⚠️" : "";
       lines.push(`${i + 1}. ${p.name}${warn}`);
-      lines.push(`   الكمية: ${p.stock} ${p.unit} | السعر: ${settings.currencySymbol}${p.price} | القيمة: ${settings.currencySymbol}${val.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
+      lines.push(`   الكمية: ${p.stock} ${p.unit} | السعر: ${settings.currencySymbol}${p.sellingPrice} | القيمة: ${settings.currencySymbol}${val.toLocaleString("en-US", { minimumFractionDigits: 2 })}`);
     });
     if (lowStock.length > 0) {
       lines.push("");
@@ -189,7 +189,7 @@ function DesktopInventory() {
     lowStock.forEach((p) => {
       lines.push(`• ${p.name} (${p.sku})`);
       lines.push(`  الكمية: ${p.stock} ${p.unit} | الحد الأدنى: ${p.minStock}`);
-      lines.push(`  السعر: ${formatCurrency(p.price)}`);
+      lines.push(`  السعر: ${formatCurrency(p.sellingPrice)}`);
     });
     const text = encodeURIComponent(lines.join("\n"));
     window.open(`https://wa.me/?text=${text}`, "_blank");
@@ -222,7 +222,7 @@ function DesktopInventory() {
               <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleCsvFile(f); e.target.value = ""; }} />
               <Button variant="outline" size="sm" className="gap-1.5 h-10 px-4 rounded-xl border-[var(--border-default)] hover:bg-[var(--surface-2)] text-[13px] font-bold" onClick={() => {
                 exportCSV("inventory", ["الاسم", "الكود", "الفئة", "السعر", "المخزون", "الوحدة", "الحد الأدنى"],
-                  filtered.map((p) => [p.name, p.sku, p.category, String(p.price), String(p.stock), p.unit, String(p.minStock)])
+                  filtered.map((p) => [p.name, p.sku, p.category, String(p.sellingPrice), String(p.stock), p.unit, String(p.minStock)])
                 );
                 toast.success("تم تصدير المخزون");
               }}>
@@ -428,7 +428,7 @@ function DesktopInventory() {
                             value={product.sellingPrice}
                             type="currency"
                             format={formatCurrency}
-                            onSave={(v) => updateProduct(product.id, { price: v })}
+                            onSave={(v) => updateProduct(product.id, { sellingPrice: v })}
                           />
                         </td>
                         <td className="p-4">
@@ -501,13 +501,13 @@ function DesktopInventory() {
                     </td>
                     <td />
                     <td className="p-4 text-[var(--brand-primary)] font-mono">
-                      {formatCurrency(filtered.reduce((s, p) => s + p.price, 0))}
+                      {formatCurrency(filtered.reduce((s, p) => s + p.sellingPrice, 0))}
                     </td>
                     <td className="p-4 font-mono">
                       {filtered.reduce((s, p) => s + p.stock, 0).toLocaleString("en-US")} وحدة
                     </td>
                     <td className="p-4 text-[var(--brand-primary)] font-mono">
-                      {formatCurrency(filtered.reduce((s, p) => s + p.price * p.stock, 0))}
+                      {formatCurrency(filtered.reduce((s, p) => s + p.sellingPrice * p.stock, 0))}
                     </td>
                     <td colSpan={2} />
                   </tr>
@@ -716,7 +716,7 @@ function DesktopInventory() {
                   <tr key={i} className="hover:bg-[var(--surface-2)]/40">
                     <td className="p-3 font-medium">{row.name}</td>
                     <td className="p-3 text-[var(--text-muted)]">{row.category}</td>
-                    <td className="p-3 font-mono">{row.price}</td>
+                    <td className="p-3 font-mono">{row.sellingPrice}</td>
                     <td className="p-3 font-mono">{row.stock}</td>
                     <td className="p-3 text-center">
                       <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${row.action === "جديد" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>

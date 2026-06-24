@@ -691,7 +691,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                           </div>
                           {inCart && <Check className="h-4.5 w-4.5 text-[var(--brand-primary)] shrink-0" />}
                           <span className={`shrink-0 font-bold font-mono text-[14px] ${outOfStock ? "text-[var(--text-muted)]" : "text-[var(--brand-primary)]"}`}>
-                            {formatCurrency(p.price)}
+                            {formatCurrency(p.sellingPrice)}
                           </span>
                         </button>
                       );
@@ -968,7 +968,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--surface-2)] px-3 py-3 text-center text-lg font-bold font-mono text-[var(--text-primary)] outline-none focus:border-cyan-500 mb-1"
               />
               <p className="text-[11px] text-[var(--text-muted)] text-center mb-4">
-                الافتراضي (مجموع السعر الفردي) = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.price, 0))}
+                الافتراضي (مجموع السعر الفردي) = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.sellingPrice, 0))}
               </p>
 
               <button
