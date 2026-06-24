@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+.playwright-mcp/
+.serena/
+.serena_bak/
+*.jpeg
+*.png
+!public/**
