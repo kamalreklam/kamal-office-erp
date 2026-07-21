@@ -7,6 +7,17 @@ function sanitizeFilename(name: string): string {
   return name.replace(/[/\\?%*:|"<>]/g, "_").replace(/\s+/g, "_");
 }
 
+// Escape user-controlled values before interpolating into the HTML string
+// sent to the server-side PDF renderer (client names, notes, product names).
+function esc(value: unknown): string {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function fmt(amount: number, symbol = "$"): string {
   const formatted = amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
   const clean = formatted.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
@@ -68,7 +79,7 @@ export async function exportInvoicePDF(
   const rows = items.map((item, i) => `
     <tr>
       <td><span class="row-num">${String(i + 1).padStart(2, "0")}</span></td>
-      <td><div class="item-name">${item.productName}</div></td>
+      <td><div class="item-name">${esc(item.productName)}</div></td>
       <td class="t-center">${item.quantity}</td>
       <td class="t-center"><span class="t-mono">${fmt(item.unitPrice, c).replace(c, "")}</span></td>
       <td class="t-left"><span class="t-mono">${fmt(item.total, c).replace(c, "")}</span></td>
@@ -226,9 +237,9 @@ body {
 <div class="title-bar">
   <div style="display:flex;align-items:baseline;gap:14px">
     <span class="invoice-label">فاتورة</span>
-    <span class="invoice-number">#${invoice.invoiceNumber}</span>
+    <span class="invoice-number">#${esc(invoice.invoiceNumber)}</span>
   </div>
-  <span class="invoice-date">${dateStr}</span>
+  <span class="invoice-date">${esc(dateStr)}</span>
 </div>
 
 <!-- Content -->
@@ -237,8 +248,8 @@ body {
   <!-- Client -->
   <div class="info-block">
     <span class="info-block-label">العميل</span>
-    <span class="name">${invoice.clientName}</span>
-    ${clientDetail ? `<span class="detail">${clientDetail}</span>` : ""}
+    <span class="name">${esc(invoice.clientName)}</span>
+    ${clientDetail ? `<span class="detail">${esc(clientDetail)}</span>` : ""}
   </div>
 
   <!-- Items Table -->
@@ -269,7 +280,7 @@ body {
         </div>
       </div>
     </div>
-    ${invoice.notes ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${invoice.notes}</div></div>` : ""}
+    ${invoice.notes ? `<div class="notes-section"><div class="notes-title">ملاحظات</div><div class="notes-text">${esc(invoice.notes)}</div></div>` : ""}
   </div>
 
 </div>
@@ -302,10 +313,10 @@ function buildReportHtml(
   stats: { label: string; value: string }[],
   headers: string[], rows: string[][], totalsRow?: string[],
 ): string {
-  const statsHtml = stats.map(s => `<div class="stat"><div class="s-lbl">${s.label}</div><div class="s-val">${s.value}</div></div>`).join("");
-  const headHtml = headers.map(h => `<th>${h}</th>`).join("");
-  const bodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("");
-  const totHtml = totalsRow ? `<tr class="tot">${totalsRow.map(c => `<td>${c}</td>`).join("")}</tr>` : "";
+  const statsHtml = stats.map(s => `<div class="stat"><div class="s-lbl">${esc(s.label)}</div><div class="s-val">${esc(s.value)}</div></div>`).join("");
+  const headHtml = headers.map(h => `<th>${esc(h)}</th>`).join("");
+  const bodyHtml = rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join("")}</tr>`).join("");
+  const totHtml = totalsRow ? `<tr class="tot">${totalsRow.map(c => `<td>${esc(c)}</td>`).join("")}</tr>` : "";
 
   return `<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap" rel="stylesheet">
@@ -329,10 +340,10 @@ tr:nth-child(even){background:#fafbfc}
 .ftr{position:fixed;bottom:12px;left:28px;right:28px;display:flex;justify-content:space-between;font-size:6px;color:#bdc3c7;border-top:.5px solid #ecf0f1;padding-top:4px}
 </style></head><body>
 <div class="bar"></div>
-<div class="hdr"><div><h1>${title}</h1><div class="sub">${subtitle}</div></div><div style="text-align:left"><div class="dr">من ${dateRange.from} إلى ${dateRange.to}</div><div class="co">${companyName} | ${companyNameEn}</div></div></div>
+<div class="hdr"><div><h1>${esc(title)}</h1><div class="sub">${esc(subtitle)}</div></div><div style="text-align:left"><div class="dr">من ${esc(dateRange.from)} إلى ${esc(dateRange.to)}</div><div class="co">${esc(companyName)} | ${esc(companyNameEn)}</div></div></div>
 <div class="stats">${statsHtml}</div>
 <table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}${totHtml}</tbody></table>
-<div class="ftr"><span>${companyName} — ${companyNameEn}</span><span>${new Date().toLocaleDateString("en-GB")}</span></div>
+<div class="ftr"><span>${esc(companyName)} — ${esc(companyNameEn)}</span><span>${new Date().toLocaleDateString("en-GB")}</span></div>
 </body></html>`;
 }
 

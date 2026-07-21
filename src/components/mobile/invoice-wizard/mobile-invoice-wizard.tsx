@@ -450,14 +450,14 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
           <ArrowRight className="h-5 w-5" />
         </button>
         <h1 className="text-lg font-bold text-[#1e293b]">{isEdit ? "تعديل الفاتورة" : "فاتورة جديدة"}</h1>
-        <span className="mr-auto rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-[11px] font-bold text-[#92400e]">مسودة</span>
+        <span className="mr-auto rounded-full bg-[#fef3c7] px-2.5 py-0.5 text-xs font-bold text-[#92400e]">مسودة</span>
       </div>
 
       <div className="px-4 pb-48 space-y-4 pt-4">
 
         {/* ─── 1. CLIENT SECTION ─── */}
         <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">العميل</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#94a3b8]">العميل</label>
 
           {selectedClient ? (
             <div className="flex items-center gap-3 rounded-[10px] border-[1.5px] border-[#2563eb]/30 bg-[#2563eb]/5 px-3 py-2.5">
@@ -498,7 +498,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                           onClick={() => selectClient(c)}
                           className="flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors hover:bg-[#f1f5f9]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[10px] font-bold text-[#2563eb]">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[11px] font-bold text-[#2563eb]">
                             {c.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -518,7 +518,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
         {/* ─── 2. PRODUCTS SECTION ─── */}
         <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
           <div className="flex items-center justify-between mb-3">
-            <label className="text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">المنتجات</label>
+            <label className="text-xs font-bold uppercase tracking-wide text-[#94a3b8]">المنتجات</label>
             {cart.length > 0 && (
               <span className="text-xs font-bold text-[#2563eb]">{cart.length} منتج</span>
             )}
@@ -563,10 +563,10 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                               onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
                               className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
                             />
-                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[10px] font-bold text-white">مؤقت</span>
+                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[11px] font-bold text-white">مؤقت</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
+                            <span className="text-[11px] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
                             <input
                               type="text" inputMode="decimal" dir="ltr"
                               placeholder="0.00"
@@ -586,12 +586,12 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-bold text-[#1e293b] truncate">{item.productName}</p>
                           {item.isBundle && (
-                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[10px] font-bold text-white">باقة</span>
+                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[11px] font-bold text-white">باقة</span>
                           )}
                         </div>
                       )}
                       {item.isBundle && item.bundleComponents && (
-                        <p className="text-[11px] text-[#94a3b8] mt-0.5 truncate">
+                        <p className="text-xs text-[#94a3b8] mt-0.5 truncate">
                           {item.bundleComponents.map((c) => `${c.productName} x${c.quantity}`).join(" . ")}
                         </p>
                       )}
@@ -608,7 +608,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   <div className="grid grid-cols-3 gap-2">
                     {/* Quantity */}
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
+                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
                       <div className="flex items-center rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc]">
                         <button
                           onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
@@ -635,7 +635,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
                     {/* Price */}
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">السعر</label>
+                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">السعر</label>
                       <input
                         type="text"
                         inputMode="decimal"
@@ -648,7 +648,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
                     {/* Line total */}
                     <div>
-                      <label className="block text-[10px] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
+                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
                       <div className="flex h-[30px] items-center justify-center rounded-[8px] bg-[#2563eb]/5 text-sm font-bold font-mono text-[#2563eb]">
                         {formatCurrency(getLineTotal(item))}
                       </div>
@@ -690,7 +690,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                           >
                             <div className="flex-1 min-w-0">
                               <p className="text-[13px] font-medium text-[#1e293b] truncate" dir="ltr">{p.name}</p>
-                              <p className={`text-[11px] ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
+                              <p className={`text-xs ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
                                 {outOfStock ? "نفذ المخزون" : `${p.category} · ${p.stock}`}
                               </p>
                             </div>
@@ -741,7 +741,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
         {/* ─── 3. DISCOUNT SECTION ─── */}
         <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#94a3b8]">الخصم</label>
           <div className="flex gap-2 mb-2">
             <div className="flex gap-1 rounded-[10px] border-[1.5px] border-[#e2e8f0] p-0.5">
               {(["percentage", "fixed"] as const).map((t) => (
@@ -797,7 +797,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
         {/* ─── 5. NOTES ─── */}
         <div className="rounded-[14px] border border-[#e2e8f0] bg-white p-4">
-          <label className="mb-2 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">ملاحظات</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-[#94a3b8]">ملاحظات</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -896,7 +896,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                       <div key={bi.productId} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
                         <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
                         <span className="text-sm font-medium flex-1 truncate">{bi.product?.name || bi.productName}</span>
-                        <span className={`text-[10px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                        <span className={`text-[11px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
                           {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `${bi.product.stock}`) : "—"}
                         </span>
                       </div>
@@ -904,7 +904,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   })}
                 </div>
 
-                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر المجموعة ($)</label>
+                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#94a3b8]">سعر المجموعة ($)</label>
                 <input
                   type="text" inputMode="decimal" dir="ltr"
                   value={bundleSetPrice}
@@ -912,7 +912,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   placeholder="0.00"
                   className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#7c3aed] mb-1"
                 />
-                <p className="text-[11px] text-[#94a3b8] text-center mb-4">
+                <p className="text-xs text-[#94a3b8] text-center mb-4">
                   الافتراضي = {formatCurrency(defaultTotal)}
                 </p>
 
@@ -958,7 +958,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                     <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
                       <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
                       <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
-                      <span className={`text-[10px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                      <span className={`text-[11px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
                         {p.stock <= 0 ? "نفذ!" : `${p.stock}`}
                       </span>
                     </div>
@@ -966,7 +966,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 })}
               </div>
 
-              <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-[#94a3b8]">سعر الطقم ($)</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-[#94a3b8]">سعر الطقم ($)</label>
               <input
                 type="text" inputMode="decimal" dir="ltr"
                 value={inkSetPrice}
@@ -974,7 +974,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                 placeholder="0.00"
                 className="w-full rounded-[10px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-center text-lg font-bold font-mono text-[#1e293b] outline-none focus:border-[#06b6d4] mb-1"
               />
-              <p className="text-[11px] text-[#94a3b8] text-center mb-4">
+              <p className="text-xs text-[#94a3b8] text-center mb-4">
                 الافتراضي = {formatCurrency(activeInkSet.items.reduce((s, p) => s + p.sellingPrice, 0))}
               </p>
 

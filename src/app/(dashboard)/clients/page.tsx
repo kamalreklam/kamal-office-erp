@@ -151,7 +151,7 @@ function PremiumClientsLayout() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
@@ -351,7 +351,7 @@ function PremiumClientsLayout() {
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-900 truncate max-w-[180px]">{client.name}</span>
                                 {tier && (
-                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border flex items-center gap-1 ${tier.styles}`}>
+                                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-md border flex items-center gap-1 ${tier.styles}`}>
                                     <span>{tier.icon}</span>
                                     <span>{tier.label}</span>
                                   </span>
@@ -456,7 +456,7 @@ function PremiumClientsLayout() {
                           {client.name}
                         </h3>
                         {tier && (
-                          <span className={`text-[11px] font-black px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm ${tier.styles}`}>
+                          <span className={`text-xs font-black px-2.5 py-1 rounded-lg border flex items-center gap-1.5 shadow-sm ${tier.styles}`}>
                             <span>{tier.icon}</span>
                             {tier.label}
                           </span>
@@ -494,7 +494,7 @@ function PremiumClientsLayout() {
                       )}
                     </div>
                     <div className="text-left shrink-0">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">المشتريات</span>
+                      <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">المشتريات</span>
                       <span className="font-black text-lg font-mono text-indigo-600 tracking-tight">{formatCurrency(client.totalSpent)}</span>
                     </div>
                   </div>

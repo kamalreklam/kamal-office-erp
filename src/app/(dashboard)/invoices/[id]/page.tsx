@@ -23,7 +23,9 @@ import {
   Clock,
   Printer,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  Ban,
+  RotateCcw
 } from 'lucide-react'
 import confetti from 'canvas-confetti'
 
@@ -212,6 +214,16 @@ export default function InvoiceDetailPage({
     }
   }
 
+  function toggleCancel() {
+    if (invoice.status === 'ملغاة') {
+      updateInvoiceStatus(invoice.id, 'غير مدفوعة')
+      toast.success('تم التراجع عن إلغاء الفاتورة')
+    } else {
+      updateInvoiceStatus(invoice.id, 'ملغاة')
+      toast.success('تم إلغاء الفاتورة وإعادة المنتجات إلى المخزون بنجاح')
+    }
+  }
+
   function handleDeleteInvoice() {
     if (confirm('هل أنت متأكد من حذف هذه الفاتورة نهائياً؟')) {
       deleteInvoice(invoice.id)
@@ -221,7 +233,7 @@ export default function InvoiceDetailPage({
   }
 
   return (
-    <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen relative" dir="rtl">
+    <div className="pb-16 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen relative" dir="rtl">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 space-y-8">
         {/* Top Header info */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
@@ -236,6 +248,94 @@ export default function InvoiceDetailPage({
           </div>
           <div>
             <StatusBadge status={invoice.status} />
+          </div>
+        </div>
+
+        {/* ACTION TOOLBAR — 2 rows of 4, docked at the top */}
+        <div className="bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.1)] rounded-2xl p-2 print:hidden">
+          <div className="grid grid-cols-4 gap-2">
+            <Link
+              href={`/invoices/new?edit=${invoice.id}`}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-indigo-500 hover:bg-indigo-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Pencil className="size-4" />
+              <span className="hidden sm:inline">تعديل</span>
+            </Link>
+
+            <button
+              onClick={togglePaid}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-emerald-500 hover:bg-emerald-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              {invoice.status === 'مدفوعة' ? (
+                <>
+                  <CircleX className="size-4 text-warning" />
+                  <span className="hidden sm:inline">إلغاء الدفع</span>
+                </>
+              ) : (
+                <>
+                  <CircleCheck className="size-4 text-emerald-600" />
+                  <span className="hidden sm:inline">تحديد كمدفوعة</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={toggleCancel}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-gray-500 hover:bg-gray-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              {invoice.status === 'ملغاة' ? (
+                <>
+                  <RotateCcw className="size-4" />
+                  <span className="hidden sm:inline">التراجع عن الإلغاء</span>
+                </>
+              ) : (
+                <>
+                  <Ban className="size-4" />
+                  <span className="hidden sm:inline">إلغاء الفاتورة</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={shareWhatsApp}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-[#25D366] hover:bg-[#1DA851] font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <MessageCircle className="size-4" />
+              <span className="hidden sm:inline">واتساب</span>
+            </button>
+
+            <button
+              onClick={handleSaveAsImage}
+              disabled={savingImage}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-sky-500 hover:bg-sky-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50"
+            >
+              <ImageIcon className="size-4" />
+              <span className="hidden sm:inline">{savingImage ? 'جاري...' : 'صورة'}</span>
+            </button>
+
+            <button
+              onClick={handleExportPDF}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-rose-500 hover:bg-rose-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Download className="size-4" />
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+
+            <button
+              onClick={() => window.print()}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-slate-500 hover:bg-slate-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Printer className="size-4" />
+              <span className="hidden sm:inline">طباعة</span>
+            </button>
+
+            <button
+              onClick={handleDeleteInvoice}
+              className="h-12 px-2 sm:px-4 rounded-xl text-white bg-rose-600 hover:bg-rose-700 font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Trash2 className="size-4" />
+              <span className="hidden sm:inline">حذف</span>
+            </button>
           </div>
         </div>
 
@@ -363,7 +463,7 @@ export default function InvoiceDetailPage({
 
               {/* 4. Calculations Summary */}
               <div className="flex justify-end pt-8 border-t-2 border-slate-100 mt-8">
-                <div className="w-full sm:w-[420px] bg-slate-50 border border-slate-200 p-6 sm:p-8 rounded-[2rem] shadow-sm">
+                <div className="w-full sm:w-[420px] bg-slate-50 border border-slate-200 p-5 sm:p-6 md:p-8 rounded-[2rem] shadow-sm">
                   <div className="space-y-4">
                     <div className="flex justify-between items-center text-sm">
                       <span className="font-bold text-slate-500">المبلغ الفرعي:</span>
@@ -412,78 +512,6 @@ export default function InvoiceDetailPage({
           )}
           </div>
         </div>
-      </div>
-
-      {/* ANCHORED GLASSMORPHIC ACTION TOOLBAR */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white/90 backdrop-blur-xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl p-2 flex items-center gap-2 print:hidden w-[95%] sm:w-auto overflow-x-auto justify-start sm:justify-center hide-scrollbar">
-        
-        <Link 
-          href={`/invoices/new?edit=${invoice.id}`}
-          className="h-12 px-4 rounded-xl text-white bg-indigo-500 hover:bg-indigo-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          <Pencil className="size-4" />
-          <span className="hidden sm:inline">تعديل</span>
-        </Link>
-
-        <button
-          onClick={togglePaid}
-          className="h-12 px-4 rounded-xl text-white bg-emerald-500 hover:bg-emerald-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          {invoice.status === 'مدفوعة' ? (
-            <>
-              <CircleX className="size-4 text-warning" />
-              <span className="hidden sm:inline">إلغاء الدفع</span>
-            </>
-          ) : (
-            <>
-              <CircleCheck className="size-4 text-emerald-600" />
-              <span className="hidden sm:inline">تحديد كمدفوعة</span>
-            </>
-          )}
-        </button>
-
-        <button
-          onClick={shareWhatsApp}
-          className="h-12 px-4 rounded-xl text-white bg-[#25D366] hover:bg-[#1DA851] font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          <MessageCircle className="size-4" />
-          <span className="hidden sm:inline">واتساب</span>
-        </button>
-
-        <button
-          onClick={handleSaveAsImage}
-          disabled={savingImage}
-          className="h-12 px-4 rounded-xl text-white bg-sky-500 hover:bg-sky-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm disabled:opacity-50"
-        >
-          <ImageIcon className="size-4" />
-          <span className="hidden sm:inline">{savingImage ? 'جاري...' : 'صورة'}</span>
-        </button>
-
-        <button
-          onClick={handleExportPDF}
-          className="h-12 px-4 rounded-xl text-white bg-rose-500 hover:bg-rose-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          <Download className="size-4" />
-          <span className="hidden sm:inline">PDF</span>
-        </button>
-
-        <button
-          onClick={() => window.print()}
-          className="h-12 px-4 rounded-xl text-white bg-slate-500 hover:bg-slate-600 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          <Printer className="size-4" />
-          <span className="hidden sm:inline">طباعة</span>
-        </button>
-
-        <div className="w-px h-8 bg-slate-200 mx-1 hidden sm:block shrink-0" />
-
-        <button
-          onClick={handleDeleteInvoice}
-          className="h-12 px-4 rounded-xl text-white bg-rose-600 hover:bg-rose-700 font-bold text-sm flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm"
-        >
-          <Trash2 className="size-4" />
-          <span className="hidden sm:inline">حذف</span>
-        </button>
       </div>
     </div>
   )

@@ -25,10 +25,34 @@ export interface Product {
   minStock: number;
   unit: string;
   createdAt: string;
+  /** Whether the product is active/usable. Undefined = active (legacy rows). */
+  isActive?: boolean;
+  /** Manual display order for the inventory sheet — shared via Supabase, not per-browser. */
+  sortOrder?: number;
 }
 
 export type InvoiceStatus = "مسودة" | "مدفوعة" | "مدفوعة جزئياً" | "غير مدفوعة" | "ملغاة";
 export type OrderStatus = "قيد الانتظار" | "قيد التنفيذ" | "جاهز للاستلام" | "مكتمل";
+export type PaymentMethod = "نقدي" | "حوالة" | "شيك" | "بطاقة";
+
+export interface Payment {
+  id: string;
+  invoiceId: string;
+  amount: number;
+  method: PaymentMethod;
+  notes: string;
+  createdAt: string;
+}
+
+export interface Supplier {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  notes: string;
+  totalOwed: number;
+  createdAt: string;
+}
 
 export interface InvoiceItem {
   id: string;
@@ -72,6 +96,30 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   updatedAt: string;
+}
+
+// Purchase Orders (buying orders from suppliers that add to inventory)
+export type PurchaseOrderStatus = "draft" | "ordered" | "received" | "cancelled";
+
+export interface PurchaseOrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  costPrice: number;
+  total: number;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string;
+  supplierId: string;
+  supplierName: string;
+  items: PurchaseOrderItem[];
+  total: number;
+  status: PurchaseOrderStatus;
+  notes: string;
+  createdAt: string;
+  receivedAt: string;
 }
 
 // ==========================================

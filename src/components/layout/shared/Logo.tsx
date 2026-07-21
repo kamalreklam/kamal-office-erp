@@ -71,7 +71,7 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
 
   return (
     <div className='flex items-center'>
-      <img src='/logo.png' alt='Mawj' className='h-8 w-auto object-contain' />
+      <img src='/logo.png' alt='كمال للتجهيزات المكتبية' className='h-8 w-auto object-contain' />
       <LogoText
         color={color}
         ref={logoTextRef}

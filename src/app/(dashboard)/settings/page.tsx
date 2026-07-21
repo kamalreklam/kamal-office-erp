@@ -113,7 +113,7 @@ export default function SettingsPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
@@ -140,13 +140,13 @@ export default function SettingsPage() {
 
         {/* Business Info Card */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
               <Building2 className="size-6" />
             </div>
             <h2 className="text-xl font-black text-slate-900">معلومات المنشأة</h2>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             <div className="flex flex-col sm:flex-row gap-8 items-start">
               <div className="shrink-0 w-full sm:w-auto flex justify-center">
                 <ImageUpload
@@ -210,13 +210,13 @@ export default function SettingsPage() {
 
         {/* Invoice Settings Card */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
               <FileText className="size-6" />
             </div>
             <h2 className="text-xl font-black text-slate-900">إعدادات الفواتير</h2>
           </div>
-          <div className="p-6 sm:p-8 space-y-6">
+          <div className="p-5 sm:p-6 md:p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">بادئة الفاتورة</label>
@@ -305,13 +305,13 @@ export default function SettingsPage() {
 
         {/* Notifications Card */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
               <Bell className="size-6" />
             </div>
             <h2 className="text-xl font-black text-slate-900">التنبيهات</h2>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             <div className="flex justify-between items-center bg-slate-50 rounded-2xl p-6 border border-slate-200">
               <div>
                 <h3 className="font-bold text-slate-900">تنبيه المخزون المنخفض</h3>
@@ -332,13 +332,13 @@ export default function SettingsPage() {
 
         {/* Product Categories */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex items-center gap-4">
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
               <Package className="size-6" />
             </div>
             <h2 className="text-xl font-black text-slate-900">فئات المنتجات</h2>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             <p className="text-sm font-bold text-slate-500 mb-6">
               إدارة فئات وتصنيفات المنتجات المتاحة في المخزون
             </p>
@@ -387,7 +387,7 @@ export default function SettingsPage() {
 
         {/* HTML Template Editor Card */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-fuchsia-50 flex items-center justify-center text-fuchsia-600 shrink-0">
                 <Code2 className="size-6" />
@@ -414,7 +414,7 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             
             <div className="mb-6 border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
               <button 
@@ -471,7 +471,7 @@ export default function SettingsPage() {
 
         {/* Danger Zone */}
         <div className="bg-white rounded-[2.5rem] border-2 border-rose-100 shadow-sm overflow-hidden mt-12">
-          <div className="p-6 sm:p-8 bg-rose-50/50 border-b border-rose-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4">
+          <div className="p-5 sm:p-6 md:p-8 bg-rose-50/50 border-b border-rose-100 flex items-start sm:items-center justify-between flex-col sm:flex-row gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
                 <AlertTriangle className="size-6" />
@@ -492,7 +492,7 @@ export default function SettingsPage() {
             )}
           </div>
           {resetWarningOpen && (
-            <div className="p-6 sm:p-8 bg-rose-50/30">
+            <div className="p-5 sm:p-6 md:p-8 bg-rose-50/30">
               <div className="bg-rose-100 border border-rose-200 rounded-2xl p-6 mb-6 text-center sm:text-right">
                 <h3 className="font-black text-rose-800 text-lg mb-2">هل أنت متأكد تماماً؟</h3>
                 <p className="text-rose-700 font-bold text-sm">

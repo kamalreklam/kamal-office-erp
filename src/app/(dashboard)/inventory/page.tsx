@@ -11,7 +11,6 @@ import { motion } from 'framer-motion'
 import { exportCSV } from '@/lib/export'
 import { DateRangeExportButton, type DateRange } from '@/components/date-range-picker'
 import { useIsMobile } from '@/hooks/use-is-mobile'
-import { InlineEdit } from '@/components/inline-edit'
 import { CopyToClipboard } from '@/components/copy-to-clipboard'
 import { EmptyState } from '@/components/empty-state'
 import {
@@ -28,15 +27,14 @@ import {
   Package,
   ChevronDown,
   ArrowUpDown,
-  PlusCircle,
-  MinusCircle,
+  Lock,
   CheckSquare,
   Square,
   X,
   CheckCheck,
 } from 'lucide-react'
 
-function CategoryBadge({ category }: { category: string }) {
+export function CategoryBadge({ category }: { category: string }) {
   const cat = category.toLowerCase();
   let colorClass = "bg-amber-50 text-amber-700 border-amber-200/60";
   let dotColor = "bg-amber-500";
@@ -113,7 +111,7 @@ export default function InventoryPage() {
   }, [products, debouncedSearch, activeCategory, sortBy])
 
   const lowStock = useMemo(() => getLowStockProducts(products), [products])
-  const totalValue = filtered.reduce((sum, p) => sum + p.costPrice * p.stock, 0)
+  const totalValue = filtered.reduce((sum, p) => sum + p.sellingPrice * p.stock, 0)
   const totalUnits = filtered.reduce((sum, p) => sum + p.stock, 0)
 
   // Handlers
@@ -154,7 +152,7 @@ export default function InventoryPage() {
       `📋 *قائمة المنتجات الأهم:*`,
     ]
     filtered.slice(0, 15).forEach((p, i) => {
-      const val = p.costPrice * p.stock
+      const val = p.sellingPrice * p.stock
       const warn = p.stock <= p.minStock ? ' ⚠️ (منخفض)' : ''
       lines.push(`${i + 1}. ${p.name}${warn} | الكمية: ${p.stock} ${p.unit} | القيمة: ${formatCurrency(val)}`)
     })
@@ -206,14 +204,6 @@ export default function InventoryPage() {
     setSelectedIds(new Set())
   }
 
-  function adjustStock(productId: string, delta: number) {
-    const p = products.find(prod => prod.id === productId)
-    if (!p) return
-    const newStock = Math.max(0, p.stock + delta)
-    updateProduct(productId, { stock: newStock })
-    toast.success(`تم تحديث مخزون "${p.name}" إلى ${newStock}`)
-  }
-
   if (connectionStatus === 'loading') {
     return (
       <div className="flex items-center justify-center py-20">
@@ -225,7 +215,7 @@ export default function InventoryPage() {
   return (
     <>
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         {/* Page Head */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="text-center md:text-start w-full md:w-auto">
@@ -239,8 +229,8 @@ export default function InventoryPage() {
               onClick={() => {
                 exportCSV(
                   'inventory',
-                  ['الاسم', 'الكود', 'الفئة', 'سعر التكلفة', 'سعر المبيع', 'المخزون', 'الوحدة', 'الحد الأدنى'],
-                  filtered.map(p => [p.name, p.sku, p.category, String(p.costPrice), String(p.sellingPrice), String(p.stock), p.unit, String(p.minStock)])
+                  ['الاسم', 'الكود', 'سعر المبيع', 'المخزون', 'الوحدة', 'الحد الأدنى'],
+                  filtered.map(p => [p.name, p.sku, String(p.sellingPrice), String(p.stock), p.unit, String(p.minStock)])
                 )
                 toast.success('تم تصدير المخزون بنجاح')
               }}
@@ -281,18 +271,27 @@ export default function InventoryPage() {
               <Plus className="size-5" />
               <span>منتج جديد</span>
             </Link>
+
+            <Link
+              href="/inventory/advanced"
+              title="الإدارة المتقدمة — التكلفة والفئة والربح"
+              className="w-full sm:w-auto h-14 px-4 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              <Lock className="size-5" />
+              <span>الإدارة المتقدمة</span>
+            </Link>
           </div>
         </div>
 
       {/* Low Stock Alerts */}
       {lowStock.length > 0 && (
-        <div className="bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 rounded-[2rem] p-6 sm:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-[0_0_25px_rgba(244,63,94,0.15)] ring-1 ring-rose-200/50">
+        <div className="bg-gradient-to-r from-rose-50 to-red-50 border border-rose-200 rounded-[2rem] p-5 sm:p-6 md:p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 shadow-[0_0_25px_rgba(244,63,94,0.15)] ring-1 ring-rose-200/50">
           <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white text-rose-500 flex items-center justify-center shrink-0 shadow-sm border border-rose-100 relative">
+            <div className="w-12 h-12 rounded-2xl bg-white text-rose-500 flex items-center justify-center shrink-0 shadow-sm border border-rose-100 relative overflow-hidden">
               <div className="absolute inset-0 rounded-2xl bg-rose-400 opacity-20 animate-ping"></div>
               <AlertTriangle className="size-6 relative z-10" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h4 className="font-black text-rose-800 text-lg">{lowStock.length} منتجات في حالة عجز أو مخزون منخفض</h4>
               <p className="text-sm font-bold text-rose-600 mt-1">
                 {lowStock.slice(0, 4).map(p => p.name).join('، ')}
@@ -467,11 +466,10 @@ export default function InventoryPage() {
                     )}
                     <th className="px-6 py-4">#</th>
                     <th className="px-6 py-4">اسم الصنف</th>
-                    <th className="px-6 py-4">الفئة</th>
-                    <th className="px-6 py-4">التكلفة</th>
                     <th className="px-6 py-4">المبيع</th>
                     <th className="px-6 py-4">المخزون المتوفر</th>
-                    <th className="px-6 py-4">القيمة الإجمالية</th>
+                    <th className="px-6 py-4">قيمة المخزون بالبيع</th>
+                    <th className="px-6 py-4">الحالة</th>
                     <th className="px-6 py-4 text-center">إجراءات</th>
                   </tr>
                 </thead>
@@ -514,56 +512,31 @@ export default function InventoryPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <CategoryBadge category={product.category} />
-                        </td>
                         <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                          <InlineEdit
-                            value={product.costPrice}
-                            type="currency"
-                            format={formatCurrency}
-                            onSave={v => updateProduct(product.id, { costPrice: v })}
-                          />
-                        </td>
-                        <td className="px-6 py-4 font-mono font-bold text-slate-700">
-                          <InlineEdit
-                            value={product.sellingPrice}
-                            type="currency"
-                            format={formatCurrency}
-                            onSave={v => updateProduct(product.id, { sellingPrice: v })}
-                          />
+                          {formatCurrency(product.sellingPrice)}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => adjustStock(product.id, -1)}
-                              className="text-slate-400 hover:text-rose-500 bg-slate-100 hover:bg-rose-100 p-1 rounded-lg transition-colors"
-                            >
-                              <MinusCircle className="size-5" />
-                            </button>
-                            
-                            <InlineEdit
-                              value={product.stock}
-                              onSave={v => updateProduct(product.id, { stock: v })}
-                              className={`w-12 text-center font-mono text-lg font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}
-                            />
-                            
-                            <button
-                              onClick={() => adjustStock(product.id, 1)}
-                              className="text-slate-400 hover:text-emerald-500 bg-slate-100 hover:bg-emerald-100 p-1 rounded-lg transition-colors"
-                            >
-                              <PlusCircle className="size-5" />
-                            </button>
-                            
-                            <span className="text-xs font-bold text-slate-400 ms-1 uppercase">{product.unit}</span>
+                            <span className={`font-mono text-lg font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
+                              {product.stock}
+                            </span>
+                            <span className="text-xs font-bold text-slate-400 uppercase">{product.unit}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 font-mono font-black text-slate-900">
-                          {formatCurrency(product.costPrice * product.stock)}
+                          {formatCurrency(product.sellingPrice * product.stock)}
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={e => { e.stopPropagation(); updateProduct(product.id, { isActive: product.isActive === false }) }}
+                            className={`rounded-full border px-2.5 py-0.5 text-xs font-bold transition-colors ${product.isActive === false ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                          >
+                            {product.isActive === false ? 'معطّل' : 'فعّال'}
+                          </button>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Link 
+                            <Link
                               href={`/inventory/${product.id}/history`}
                               className="p-2 bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-600 rounded-xl transition-colors"
                               title="سجل المبيعات والتعديلات"
@@ -627,46 +600,37 @@ export default function InventoryPage() {
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start">
-                        <span className="font-black text-slate-900 text-lg block leading-tight">{product.name}</span>
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-black text-slate-900 text-base sm:text-lg block leading-snug break-words">{product.name}</span>
+                        </div>
+                        <button
+                          onClick={e => { e.stopPropagation(); updateProduct(product.id, { isActive: product.isActive === false }) }}
+                          className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold ${product.isActive === false ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                        >
+                          {product.isActive === false ? 'معطّل' : 'فعّال'}
+                        </button>
                       </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <CategoryBadge category={product.category} />
-                        {isEmpty && <span className="inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-slate-200 text-slate-600">نفذت الكمية</span>}
-                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-100 text-rose-700 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]">منخفض المخزون</span>}
+                      <div className="flex items-center gap-2 mt-2 flex-wrap">
+                        {isEmpty && <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-slate-200 text-slate-600">نفذت الكمية</span>}
+                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-rose-100 text-rose-700 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]">منخفض المخزون</span>}
                       </div>
                       <div className="font-mono text-xs font-bold text-slate-400 mt-2"><CopyToClipboard text={product.sku}>{product.sku}</CopyToClipboard></div>
                     </div>
                   </div>
 
                   <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
-                    {/* Stock Quick Adjustment Panel */}
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => adjustStock(product.id, -1)}
-                        className="h-12 w-12 flex items-center justify-center rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all active:scale-95 shadow-sm"
-                      >
-                        <MinusCircle className="size-6" />
-                      </button>
-
-                      <div className="text-center min-w-[60px]">
-                        <span className={`font-mono text-2xl font-black block ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
-                          {product.stock}
-                        </span>
-                        <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">{product.unit}</span>
-                      </div>
-
-                      <button
-                        onClick={() => adjustStock(product.id, 1)}
-                        className="h-12 w-12 flex items-center justify-center rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 transition-all active:scale-95 shadow-sm"
-                      >
-                        <PlusCircle className="size-6" />
-                      </button>
+                    {/* Stock quantity (adjust from the product edit page) */}
+                    <div className="text-center min-w-[60px]">
+                      <span className={`font-mono text-2xl font-black block ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
+                        {product.stock}
+                      </span>
+                      <span className="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">{product.unit}</span>
                     </div>
 
                     <div className="text-left bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100">
-                      <span className="text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">الإجمالي</span>
-                      <span className="font-mono text-lg font-black text-indigo-600">{formatCurrency(product.costPrice * product.stock)}</span>
+                      <span className="text-xs font-bold text-slate-400 block mb-1 uppercase tracking-wider">سعر البيع</span>
+                      <span className="font-mono text-lg font-black text-indigo-600">{formatCurrency(product.sellingPrice)}</span>
                     </div>
                   </div>
 
@@ -729,47 +693,28 @@ export default function InventoryPage() {
                     </div>
                   )}
                   {isLow && (
-                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[10px] font-black bg-rose-500 text-white shadow-sm animate-pulse">منخفض</span>
+                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-rose-500 text-white shadow-sm animate-pulse">منخفض</span>
                   )}
                 </div>
 
                 {/* Content details */}
                 <div className="mt-4 flex-1">
-                  <div className="mb-2">
-                    <CategoryBadge category={product.category} />
-                  </div>
-                  <span className="font-black text-slate-900 text-sm block leading-tight mt-1 truncate" title={product.name}>
+                  <span className="font-black text-slate-900 text-xs sm:text-sm block leading-snug break-words">
                     {product.name}
                   </span>
-                  <span className="font-mono text-[10px] font-bold text-slate-400 block mt-1">{product.sku}</span>
+                  <span className="font-mono text-[11px] font-bold text-slate-400 block mt-1">{product.sku}</span>
                 </div>
 
                 {/* Pricing and Stock info */}
                 <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-50">
                   <div>
-                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">السعر</span>
+                    <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">السعر</span>
                     <span className="font-mono text-sm font-black text-indigo-600">{formatCurrency(product.sellingPrice)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5 bg-slate-50 rounded-xl px-2 py-1.5 border border-slate-100">
-                    <button
-                      onClick={(e) => { e.preventDefault(); adjustStock(product.id, -1) }}
-                      className="text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md p-0.5 transition-colors"
-                      title="إنقاص المخزون"
-                    >
-                      <MinusCircle className="size-4" />
-                    </button>
-                    <div className="text-center min-w-[28px]">
-                      <span className={`font-mono text-sm font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
-                        {product.stock}
-                      </span>
-                    </div>
-                    <button
-                      onClick={(e) => { e.preventDefault(); adjustStock(product.id, 1) }}
-                      className="text-slate-400 hover:text-emerald-500 hover:bg-emerald-50 rounded-md p-0.5 transition-colors"
-                      title="زيادة المخزون"
-                    >
-                      <PlusCircle className="size-4" />
-                    </button>
+                  <div className="text-center bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-100">
+                    <span className={`font-mono text-sm font-black ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
+                      {product.stock}
+                    </span>
                   </div>
                 </div>
 
@@ -831,7 +776,6 @@ export default function InventoryPage() {
               >
                 <option value="stock">المخزون</option>
                 <option value="sellingPrice">سعر المبيع</option>
-                <option value="costPrice">سعر التكلفة</option>
               </select>
               <input
                 type="number"

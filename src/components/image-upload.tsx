@@ -77,14 +77,14 @@ export function ImageUpload({
           )}
         >
           <Camera className="h-5 w-5" />
-          <span className="text-[10px]">{label}</span>
+          <span className="text-[11px]">{label}</span>
         </button>
       )}
       {!value && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="mt-1 text-[11px] text-primary hover:underline"
+          className="mt-1 text-xs text-primary hover:underline"
         >
           اختيار ملف
         </button>

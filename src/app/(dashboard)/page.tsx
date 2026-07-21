@@ -42,7 +42,7 @@ export default function DashboardPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -169,7 +169,7 @@ export default function DashboardPage() {
             <div>
               <h3 className="font-black text-indigo-900 text-lg flex items-center gap-2">
                 تحليل الذكاء الاصطناعي 
-                <span className="bg-indigo-100 text-indigo-600 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold animate-pulse">Beta</span>
+                <span className="bg-indigo-100 text-indigo-600 text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold animate-pulse">Beta</span>
               </h3>
               <p className="text-indigo-800/80 font-medium mt-1 leading-relaxed text-sm md:text-base">
                 {lowStockItems.length > 0 
@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Revenue Chart */}
-          <div className="lg:col-span-2 bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm">
+          <div className="lg:col-span-2 bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h2 className="text-xl font-black text-slate-900">تحليل المبيعات</h2>
@@ -202,7 +202,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Low Stock Alerts */}
-          <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm flex flex-col h-[400px] lg:h-auto">
+          <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col h-[400px] lg:h-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
@@ -225,9 +225,9 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 lowStockItems.map(product => (
-                  <div key={product.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <div key={product.id} className="flex items-start justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100">
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-slate-900 truncate">{product.name}</p>
+                      <p className="font-bold text-slate-900 break-words text-sm sm:text-base">{product.name}</p>
                       <p className="text-xs font-bold text-slate-400 mt-0.5">{product.category} · الحد: {product.minStock}</p>
                     </div>
                     <div className="ms-3 text-left shrink-0">
@@ -243,7 +243,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Invoices List */}
-        <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm">
+        <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">

@@ -242,7 +242,7 @@ export default function AccountingPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -343,7 +343,7 @@ export default function AccountingPage() {
 
         {/* P&L Statement */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                 <Wallet className="size-6" />
@@ -361,7 +361,7 @@ export default function AccountingPage() {
               <span>تصدير CSV</span>
             </button>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             <div className="space-y-3 max-w-3xl mx-auto">
               
               <div className="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -418,7 +418,7 @@ export default function AccountingPage() {
         </div>
 
         {/* Monthly Revenue Trend */}
-        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+        <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
           <h2 className="text-xl font-black text-slate-900 mb-6">الإيرادات والخصومات الشهرية</h2>
           <div className="h-[350px]" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
@@ -450,7 +450,7 @@ export default function AccountingPage() {
             <>
         {/* Accounts Receivable */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="p-5 sm:p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
                 <AlertCircle className="size-6" />
@@ -470,7 +470,7 @@ export default function AccountingPage() {
               <span>تصدير CSV</span>
             </button>
           </div>
-          <div className="p-6 sm:p-8">
+          <div className="p-5 sm:p-6 md:p-8">
             {/* Aging Summary */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
               {Object.entries(receivables.aging).map(([bucket, amount]) => {
@@ -480,7 +480,7 @@ export default function AccountingPage() {
                 const text = isCritical ? 'text-rose-600' : isWarning ? 'text-amber-600' : 'text-slate-700';
                 return (
                   <div key={bucket} className={`p-4 text-center rounded-2xl border ${bg} transition-all`}>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{bucket}</p>
+                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{bucket}</p>
                     <p className={`text-xl font-black font-mono tracking-tight ${text}`}>
                       {formatCurrency(amount)}
                     </p>
@@ -575,7 +575,7 @@ export default function AccountingPage() {
 
         {/* Client Balances */}
         {clientBalances.length > 0 && (
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center">
                 <User className="size-5 text-slate-600" />
@@ -592,11 +592,11 @@ export default function AccountingPage() {
                       <span className="font-bold text-slate-900">{c.name}</span>
                       <div className="flex gap-4">
                         <div className="text-right">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">مستحق</p>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">مستحق</p>
                           <p className="font-black font-mono text-amber-600">{formatCurrency(c.unpaid)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">مدفوع</p>
+                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">مدفوع</p>
                           <p className="font-bold font-mono text-slate-500">{formatCurrency(c.paid)}</p>
                         </div>
                       </div>
@@ -617,7 +617,7 @@ export default function AccountingPage() {
             <>
         {/* Tax Summary */}
         {taxSummary && (
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-fuchsia-50 flex items-center justify-center">
                 <Receipt className="size-5 text-fuchsia-600" />

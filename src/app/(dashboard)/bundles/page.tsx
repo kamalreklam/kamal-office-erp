@@ -75,7 +75,7 @@ export default function BundlesPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
           <div>
@@ -166,7 +166,7 @@ export default function BundlesPage() {
                     }`}
                   >
                     {/* Header Strip */}
-                    <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-100 bg-slate-50/50">
+                    <div className="p-5 sm:p-6 md:p-8 flex flex-col md:flex-row md:items-start justify-between gap-6 border-b border-slate-100 bg-slate-50/50">
                       <div className="flex items-start gap-5 min-w-0">
                         <div
                           className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-inner ${
@@ -216,7 +216,7 @@ export default function BundlesPage() {
                     </div>
 
                     {/* Components List */}
-                    <div className="p-6 md:p-8 flex-1 bg-white">
+                    <div className="p-5 sm:p-6 md:p-8 flex-1 bg-white">
                       <h4 className="text-xs font-black text-slate-400 mb-4 uppercase tracking-wider">محتويات المجموعة</h4>
                       <div className="space-y-3">
                         {resolved.map((c, idx) => {
@@ -228,15 +228,15 @@ export default function BundlesPage() {
                           return (
                             <div
                               key={idx}
-                              className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors shadow-sm"
+                              className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors shadow-sm"
                               style={{ opacity: isDeleted ? 0.6 : 1 }}
                             >
-                              <div className="flex items-center gap-4 min-w-0">
+                              <div className="flex items-start gap-4 min-w-0">
                                 <div className="w-10 h-10 bg-white rounded-xl border border-slate-200 flex items-center justify-center shrink-0">
                                   <ItemIcon type={c.type} colorKey={c.colorKey} />
                                 </div>
                                 <div className="min-w-0">
-                                  <span className={`font-bold text-sm truncate block ${isDeleted ? "line-through text-rose-500" : "text-slate-900"}`}>
+                                  <span className={`font-bold text-xs sm:text-sm break-words block ${isDeleted ? "line-through text-rose-500" : "text-slate-900"}`}>
                                     {isDeleted ? `${c.productName} (محذوف)` : (c.product?.name || c.productName)}
                                   </span>
                                   {!isDeleted && (
@@ -248,7 +248,7 @@ export default function BundlesPage() {
                               </div>
                               <div className="flex items-center gap-6 shrink-0">
                                 <div className="text-center bg-white rounded-xl px-4 py-2 border border-slate-200 shadow-sm">
-                                  <span className="text-[10px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">الكمية</span>
+                                  <span className="text-[11px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">الكمية</span>
                                   <span className="font-black text-base font-mono text-indigo-600">×{c.quantity}</span>
                                 </div>
                               </div>
@@ -259,7 +259,7 @@ export default function BundlesPage() {
                     </div>
 
                     {/* Financial Footer */}
-                    <div className="p-6 md:p-8 bg-slate-50/50 border-t border-slate-100 space-y-6">
+                    <div className="p-5 sm:p-6 md:p-8 bg-slate-50/50 border-t border-slate-100 space-y-6">
                       <div className="grid grid-cols-2 gap-6 pb-6 border-b border-slate-200/60">
                         <div>
                           <span className="text-xs font-bold text-slate-500 block mb-1 uppercase tracking-wider">سعر التكلفة الإجمالي</span>
@@ -268,7 +268,7 @@ export default function BundlesPage() {
                         <div className="text-end">
                           <div className="flex items-center justify-end gap-2 mb-1">
                             {bundle.discount > 0 && (
-                              <span className="bg-indigo-100 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              <span className="bg-indigo-100 text-indigo-700 text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                                 خصم {bundle.discount}%
                               </span>
                             )}

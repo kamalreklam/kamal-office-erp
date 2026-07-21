@@ -39,7 +39,7 @@ export function CopyToClipboard({ text, className, children }: CopyToClipboardPr
         )}
       </span>
       {copied && (
-        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-200">
+        <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold px-2 py-1 rounded shadow-lg whitespace-nowrap animate-in fade-in zoom-in duration-200">
           تم النسخ!
         </span>
       )}

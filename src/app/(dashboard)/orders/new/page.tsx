@@ -63,7 +63,7 @@ export default function NewOrderPage() {
 
         {/* Form Card */}
         <div className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 sm:p-8 space-y-6">
+          <div className="p-5 sm:p-6 md:p-8 space-y-6">
             
             {/* Client Select */}
             <div>
@@ -128,7 +128,7 @@ export default function NewOrderPage() {
           </div>
 
           {/* Actions */}
-          <div className="p-6 sm:p-8 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-end gap-3">
+          <div className="p-5 sm:p-6 md:p-8 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row justify-end gap-3">
             <button 
               onClick={() => router.push("/orders")}
               className="h-14 px-8 rounded-2xl bg-amber-500 border border-amber-600 text-white font-bold hover:bg-amber-600 active:scale-95 transition-all w-full sm:w-auto shadow-md"

@@ -132,7 +132,7 @@ export default function EditBundlePage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         {/* Page header */}
         <div className="flex items-center gap-4">
           <button
@@ -155,7 +155,7 @@ export default function EditBundlePage() {
           {/* LEFT: Builder */}
           <div className="xl:col-span-8 space-y-8">
             {/* Section A: Info */}
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
               <h3 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-4">معلومات المجموعة</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -195,7 +195,7 @@ export default function EditBundlePage() {
 
             {/* Section B: Selected items */}
             {items.length > 0 && (
-              <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+              <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <h3 className="text-lg font-black text-slate-900">المنتجات المختارة</h3>
                   <span className="bg-indigo-50 text-indigo-700 text-xs font-black px-3 py-1.5 rounded-full uppercase tracking-wider">{items.length} عنصر</span>
@@ -207,7 +207,7 @@ export default function EditBundlePage() {
                       {multiType && (
                         <div className="flex items-center gap-3 py-2">
                           <div className="h-px flex-1 bg-slate-200" />
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
+                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
                             {group.label}
                           </span>
                           <div className="h-px flex-1 bg-slate-200" />
@@ -239,7 +239,7 @@ export default function EditBundlePage() {
                                 )}
                               </div>
                               <div className="min-w-0">
-                                <span className="font-bold text-sm text-slate-900 block truncate">
+                                <span className="font-bold text-xs sm:text-sm text-slate-900 block break-words">
                                   {item.product?.name || item.productName}
                                 </span>
                                 <span className="text-xs font-medium text-slate-500 font-mono mt-0.5 block">
@@ -269,14 +269,14 @@ export default function EditBundlePage() {
 
                               <div className="flex items-center gap-6 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
                                 <div className="space-y-1 text-center">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">سعر التكلفة</span>
+                                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">سعر التكلفة</span>
                                   <span className="block text-sm font-black text-slate-700 font-mono">
                                     {formatCurrency(cost)}
                                   </span>
                                 </div>
                                 <div className="w-px h-8 bg-slate-200" />
                                 <div className="space-y-1">
-                                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">سعر المبيع</span>
+                                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">سعر المبيع</span>
                                   <input
                                     type="number"
                                     value={item.sellingPrice ?? 0}
@@ -304,7 +304,7 @@ export default function EditBundlePage() {
             )}
 
             {/* Section C: Product picker */}
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
+            <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm space-y-6">
               <h3 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-4">إضافة منتجات</h3>
 
               {/* Search and filters */}
@@ -357,7 +357,7 @@ export default function EditBundlePage() {
                             <ProductTypeIcon product={p} className="size-5" />
                           </div>
                           <div className="min-w-0">
-                            <span className="font-bold text-sm block truncate text-slate-900" title={p.name}>
+                            <span className="font-bold text-xs sm:text-sm block break-words text-slate-900">
                               {p.name}
                             </span>
                             <span className="text-xs font-bold text-slate-400 block mt-0.5 uppercase tracking-wider">
@@ -390,7 +390,7 @@ export default function EditBundlePage() {
 
           {/* RIGHT: Summary panel */}
           <div className="xl:col-span-4">
-            <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm space-y-6 xl:sticky xl:top-8">
+            <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm space-y-6 xl:sticky xl:top-8">
               <h3 className="text-xl font-black text-slate-900 border-b border-slate-100 pb-4">معاينة المجموعة</h3>
 
               <div className="p-6 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-4">
@@ -423,8 +423,8 @@ export default function EditBundlePage() {
                     {resolved.map((it, i) => {
                       const cs = colorStyles[it.colorKey];
                       return (
-                        <div key={i} className="flex items-center justify-between gap-3 text-sm p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
-                          <div className="flex items-center gap-3 min-w-0">
+                        <div key={i} className="flex items-start justify-between gap-3 text-sm p-3 rounded-xl bg-white border border-slate-100 shadow-sm">
+                          <div className="flex items-start gap-3 min-w-0">
                             <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
                               {cs ? (
                                 <div className="size-2.5 rounded-full shadow-sm" style={{ backgroundColor: cs.dot }} />
@@ -436,11 +436,11 @@ export default function EditBundlePage() {
                                 <Package className="size-4 text-slate-400" />
                               )}
                             </div>
-                            <span className="truncate max-w-[140px] font-bold text-slate-700 text-xs">
+                            <span className="break-words font-bold text-slate-700 text-xs">
                               {it.product?.name || it.productName}
                             </span>
                           </div>
-                          <span className="text-indigo-600 font-black font-mono">×{it.quantity}</span>
+                          <span className="text-indigo-600 font-black font-mono shrink-0">×{it.quantity}</span>
                         </div>
                       );
                     })}

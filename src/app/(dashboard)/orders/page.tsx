@@ -202,7 +202,7 @@ function DesktopOrders() {
               {/* Updated at */}
               <div className="flex items-center gap-1.5 mt-3 text-slate-400 font-bold">
                 <Clock className="size-3.5" />
-                <span className={compact ? 'text-[10px]' : 'text-xs'}>{order.updatedAt}</span>
+                <span className={compact ? 'text-[11px]' : 'text-xs'}>{order.updatedAt}</span>
               </div>
             </div>
           </div>
@@ -273,7 +273,7 @@ function DesktopOrders() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
@@ -359,8 +359,8 @@ function DesktopOrders() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-              <div className="flex items-center gap-3 w-full sm:w-auto">
-                <div className="relative flex-1 sm:w-40">
+              <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="relative w-full sm:w-40">
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                     <Calendar className="size-4 text-slate-400" />
                   </div>
@@ -371,8 +371,8 @@ function DesktopOrders() {
                     className="w-full h-14 pl-4 pr-10 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-slate-600 text-sm"
                   />
                 </div>
-                <span className="text-slate-400 font-bold text-sm">إلى</span>
-                <div className="relative flex-1 sm:w-40">
+                <span className="hidden sm:inline text-slate-400 font-bold text-sm">إلى</span>
+                <div className="relative w-full sm:w-40">
                   <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
                     <Calendar className="size-4 text-slate-400" />
                   </div>

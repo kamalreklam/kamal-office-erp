@@ -101,7 +101,7 @@ export function MobileAccounting() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{inv.invoiceNumber}</p>
-                      <Badge variant="outline" className={`text-[11px] ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
+                      <Badge variant="outline" className={`text-xs ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
                     </div>
                     <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{inv.clientName} · {inv.createdAt}</p>
                   </div>

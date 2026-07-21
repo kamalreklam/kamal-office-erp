@@ -62,7 +62,7 @@ export default function ReportsPage() {
   const totalUnpaid = yearInvoices.filter((i) => i.status === "غير مدفوعة").reduce((s, i) => s + i.total, 0);
   const invoiceCount = yearInvoices.length;
   const paidCount = yearInvoices.filter((i) => i.status === "مدفوعة").length;
-  const avgInvoice = paidCount > 0 ? totalRevenue / paidCount : 0;
+  const avgInvoice = paidCount > 0 ? Math.round((totalRevenue / paidCount) * 100) / 100 : 0;
 
   const monthlyData = useMemo(() => {
     const map = new Map<string, { revenue: number; count: number; unpaid: number }>();
@@ -208,7 +208,7 @@ export default function ReportsPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -284,7 +284,7 @@ export default function ReportsPage() {
                         {growth >= 0 ? <TrendingUp className="size-3.5 me-1 inline" /> : <TrendingDown className="size-3.5 me-1 inline" />}
                         <span>{Math.abs(growth).toFixed(1)}%</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400">من الشهر السابق</span>
+                      <span className="text-[11px] font-bold text-slate-400">من الشهر السابق</span>
                     </div>
                   )}
                 </div>
@@ -294,7 +294,7 @@ export default function ReportsPage() {
         </div>
 
         {/* Main Chart */}
-        <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+        <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h3 className="text-xl font-black text-slate-900">
               الإيرادات الشهرية لسنة {selectedYear}
@@ -311,7 +311,7 @@ export default function ReportsPage() {
             </div>
           </div>
           <div className="h-[400px] w-full" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200} debounce={200}>
               <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#64748b", fontWeight: 600 }} axisLine={false} tickLine={false} dy={10} />
@@ -342,7 +342,7 @@ export default function ReportsPage() {
         {/* Dynamic Lists */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Top Clients */}
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center">
                 <Users className="size-6 text-indigo-600" />
@@ -379,7 +379,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Top Products */}
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center">
                 <Package className="size-6 text-emerald-600" />
@@ -395,11 +395,11 @@ export default function ReportsPage() {
                   const percent = (p.revenue / maxVal) * 100;
                   return (
                     <div key={i} className="group">
-                      <div className="flex justify-between items-center text-sm font-bold mb-2">
-                        <span className="text-slate-900 truncate max-w-[200px]">{p.name}</span>
-                        <div className="text-right">
+                      <div className="flex flex-wrap justify-between items-center gap-x-2 gap-y-1 text-sm font-bold mb-2">
+                        <span className="text-slate-900 break-words text-xs sm:text-sm">{p.name}</span>
+                        <div className="flex items-baseline gap-2 whitespace-nowrap">
                           <span className="text-emerald-600 font-mono text-base tracking-tight">{formatCurrency(p.revenue)}</span>
-                          <span className="text-xs text-slate-400 mr-2">({p.qty} وحدة)</span>
+                          <span className="text-xs text-slate-400">({p.qty} وحدة)</span>
                         </div>
                       </div>
                       <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -419,14 +419,14 @@ export default function ReportsPage() {
         {/* Pie Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Status Breakdown */}
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <h3 className="text-xl font-black text-slate-900 mb-8">توزيع حالات الفواتير</h3>
             {statusBreakdown.length === 0 ? (
               <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-3xl border border-slate-100">لا توجد بيانات متاحة</div>
             ) : (
               <div className="flex flex-col md:flex-row items-center justify-around gap-8">
-                <div className="h-[220px] w-[220px]" dir="ltr">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[220px] w-[220px] shrink-0" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200} debounce={200}>
                     <PieChart>
                       <Pie
                         data={statusBreakdown}
@@ -449,7 +449,7 @@ export default function ReportsPage() {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-col gap-3 w-full md:w-auto">
+                <div className="flex flex-col gap-3 w-full md:w-auto min-w-0">
                   {statusBreakdown.map((item, i) => (
                     <div key={i} className="flex items-center justify-between gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-700">
@@ -465,14 +465,14 @@ export default function ReportsPage() {
           </div>
 
           {/* Revenue by Category */}
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 border border-slate-200/60 shadow-sm">
+          <div className="bg-white rounded-[2.5rem] p-5 sm:p-6 md:p-8 border border-slate-200/60 shadow-sm">
             <h3 className="text-xl font-black text-slate-900 mb-8">الإيرادات حسب الفئة</h3>
             {categoryRevenue.length === 0 ? (
               <div className="text-center py-12 text-slate-400 font-bold text-sm bg-slate-50 rounded-3xl border border-slate-100">لا توجد بيانات متاحة</div>
             ) : (
               <div className="flex flex-col md:flex-row items-center justify-around gap-8">
-                <div className="h-[220px] w-[220px]" dir="ltr">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-[220px] w-[220px] shrink-0" dir="ltr">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={200} debounce={200}>
                     <PieChart>
                       <Pie
                         data={categoryRevenue}
@@ -488,14 +488,14 @@ export default function ReportsPage() {
                           <Cell key={i} fill={COLORS[i % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip 
-                        formatter={(value) => [formatCurrency(Number(value)), "الإيرادات"]} 
+                      <Tooltip
+                        formatter={(value) => [formatCurrency(Number(value)), "الإيرادات"]}
                         contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', fontWeight: 700 }}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-col gap-3 w-full md:w-auto">
+                <div className="flex flex-col gap-3 w-full md:w-auto min-w-0">
                   {categoryRevenue.map((item, i) => (
                     <div key={i} className="flex items-center justify-between gap-4 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
                       <div className="flex items-center gap-3 text-sm font-bold text-slate-700">

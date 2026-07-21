@@ -74,6 +74,11 @@
 }
 
 :root {
+  /* Used by the default Button variant (src/components/ui/button.tsx) — was
+     referenced there without ever being defined, making every plain <Button>
+     render white text on a transparent background (invisible). */
+  --gradient-brand: linear-gradient(135deg, #4f46e5, #2563eb);
+
   --border-radius: var(--mui-shape-borderRadius);
   --border-color: var(--mui-palette-divider);
   --primary-color: var(--mui-palette-primary-main);

@@ -9,26 +9,6 @@ import { Menu, X } from 'lucide-react'
 
 const STORAGE_KEY = 'kamal-v2-sidebar-collapsed'
 
-function WaveMark({ className }: { className?: string }) {
-  return (
-    <span
-      className={cn('flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary shadow-softer', className)}
-      aria-hidden
-    >
-      <svg viewBox="0 0 24 24" className="size-5 text-gold" fill="none">
-        <path
-          d="M2 13c1.8-3 3.6-3 5.4 0s3.6 3 5.4 0 3.6-3 5.4 0"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        />
-        <path
-          d="M2 8c1.8-3 3.6-3 5.4 0s3.6 3 5.4 0s3.6-3 5.4 0"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"
-        />
-      </svg>
-    </span>
-  )
-}
-
 export default function CustomLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
@@ -113,7 +93,7 @@ export default function CustomLayout({ children }: { children: React.ReactNode }
             'flex h-14 items-center border-b border-border shrink-0',
             collapsed ? 'justify-center px-2' : 'gap-2.5 px-4'
           )}>
-            <WaveMark />
+            <img src="/logo.png" alt="كمال للتجهيزات المكتبية" className="size-8 shrink-0 object-contain" />
             {!collapsed && (
               <span className="text-lg font-bold tracking-tight text-primary truncate">كمال للتجهيزات</span>
             )}

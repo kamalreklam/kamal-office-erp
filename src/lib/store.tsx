@@ -19,7 +19,14 @@ import {
   type Order,
   type InvoiceStatus,
   type OrderStatus,
+  type Payment,
+  type PaymentMethod,
+  type Supplier,
+  type PurchaseOrder,
+  type PurchaseOrderItem,
+  type PurchaseOrderStatus,
 } from "./data";
+export type { Payment, PaymentMethod, Supplier, PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus };
 import { supabase } from "./supabase";
 import { toast } from "sonner";
 
@@ -175,6 +182,9 @@ interface StoreContextType {
   invoices: Invoice[];
   orders: Order[];
   bundles: ProductBundle[];
+  suppliers: Supplier[];
+  payments: Payment[];
+  purchaseOrders: PurchaseOrder[];
   settings: AppSettings;
 
   // Client CRUD
@@ -184,7 +194,9 @@ interface StoreContextType {
 
   // Product CRUD
   addProduct: (product: Omit<Product, "id" | "createdAt"> & { image?: string }) => Product;
+  addProducts: (products: (Omit<Product, "id" | "createdAt"> & { image?: string })[]) => Product[];
   updateProduct: (id: string, data: Partial<Product> & { image?: string }) => void;
+  reorderProducts: (orderedIds: string[]) => void;
   deleteProduct: (id: string) => void;
   getProductImage: (id: string) => string;
 
@@ -204,6 +216,22 @@ interface StoreContextType {
   updateBundle: (id: string, data: Partial<ProductBundle>) => void;
   deleteBundle: (id: string) => void;
 
+  // Supplier CRUD
+  addSupplier: (supplier: Omit<Supplier, "id" | "createdAt" | "totalOwed">) => Supplier;
+  updateSupplier: (id: string, data: Partial<Supplier>) => void;
+  deleteSupplier: (id: string) => void;
+
+  // Payment CRUD
+  addPayment: (payment: Omit<Payment, "id" | "createdAt">) => Payment;
+  deletePayment: (id: string, invoiceId: string) => void;
+  getInvoicePayments: (invoiceId: string) => Payment[];
+
+  // Purchase Order CRUD (buying orders → inventory)
+  addPurchaseOrder: (po: Omit<PurchaseOrder, "id" | "poNumber" | "createdAt">) => PurchaseOrder;
+  updatePurchaseOrder: (id: string, data: Partial<PurchaseOrder>) => void;
+  receivePurchaseOrder: (id: string) => void;
+  deletePurchaseOrder: (id: string) => void;
+
   // Settings
   updateSettings: (data: Partial<AppSettings>) => void;
 
@@ -212,6 +240,7 @@ interface StoreContextType {
 
   // Helpers
   nextInvoiceNumber: () => string;
+  injectInvoice: (invoice: Invoice) => void;
   connectionStatus: "connected" | "offline" | "loading";
 }
 
@@ -252,12 +281,22 @@ function productToRow(p: Product) {
     sku: p.sku,
     description: p.description,
     price: p.sellingPrice,
+    selling_price: p.sellingPrice,
     cost_price: p.costPrice,
     stock: p.stock,
     min_stock: p.minStock,
     unit: p.unit,
+    is_active: p.isActive !== false,
     created_at: p.createdAt,
+    sort_order: p.sortOrder ?? 0,
   };
+}
+
+// Read a price preferring the dedicated column; fall back to legacy `price`
+// only when absent. Uses `!= null` so a legitimate 0 is not overwritten.
+function readPrice(dedicated: unknown, legacy: unknown): number {
+  const v = dedicated != null ? Number(dedicated) : Number(legacy);
+  return Number.isFinite(v) ? v : 0;
 }
 
 function rowToProduct(r: Record<string, unknown>): Product {
@@ -267,12 +306,77 @@ function rowToProduct(r: Record<string, unknown>): Product {
     category: (r.category || "ملحقات") as string,
     sku: (r.sku || "") as string,
     description: (r.description || "") as string,
-    costPrice: Number(r.cost_price || r.price) || 0,
-    sellingPrice: Number(r.selling_price || r.price) || 0,
+    costPrice: readPrice(r.cost_price, r.price),
+    sellingPrice: readPrice(r.selling_price, r.price),
     stock: Number(r.stock) || 0,
     minStock: Number(r.min_stock) || 5,
     unit: (r.unit || "قطعة") as string,
+    isActive: r.is_active !== false,
     createdAt: r.created_at as string,
+    sortOrder: Number(r.sort_order) || 0,
+  };
+}
+
+// --- Supplier mappers ---
+function supplierToRow(s: Supplier) {
+  return {
+    id: s.id, name: s.name, phone: s.phone, address: s.address,
+    notes: s.notes, total_owed: s.totalOwed, created_at: s.createdAt,
+  };
+}
+function rowToSupplier(r: Record<string, unknown>): Supplier {
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    phone: (r.phone || "") as string,
+    address: (r.address || "") as string,
+    notes: (r.notes || "") as string,
+    totalOwed: Number(r.total_owed) || 0,
+    createdAt: r.created_at as string,
+  };
+}
+
+// --- Payment mappers ---
+function paymentToRow(p: Payment) {
+  return {
+    id: p.id, invoice_id: p.invoiceId, amount: p.amount,
+    method: p.method, notes: p.notes, created_at: p.createdAt,
+  };
+}
+function rowToPayment(r: Record<string, unknown>): Payment {
+  return {
+    id: r.id as string,
+    invoiceId: (r.invoice_id || "") as string,
+    amount: Number(r.amount) || 0,
+    method: (r.method || "نقدي") as PaymentMethod,
+    notes: (r.notes || "") as string,
+    createdAt: r.created_at as string,
+  };
+}
+
+// --- Purchase order mappers ---
+function purchaseOrderToRow(po: PurchaseOrder) {
+  return {
+    id: po.id, po_number: po.poNumber, supplier_id: po.supplierId,
+    supplier_name: po.supplierName, items: JSON.stringify(po.items),
+    total: po.total, status: po.status, notes: po.notes,
+    created_at: po.createdAt, received_at: po.receivedAt,
+  };
+}
+function rowToPurchaseOrder(r: Record<string, unknown>): PurchaseOrder {
+  let items = r.items;
+  if (typeof items === "string") { try { items = JSON.parse(items); } catch { items = []; } }
+  return {
+    id: r.id as string,
+    poNumber: (r.po_number || "") as string,
+    supplierId: (r.supplier_id || "") as string,
+    supplierName: (r.supplier_name || "") as string,
+    items: (Array.isArray(items) ? items : []) as PurchaseOrderItem[],
+    total: Number(r.total) || 0,
+    status: (r.status || "draft") as PurchaseOrderStatus,
+    notes: (r.notes || "") as string,
+    createdAt: r.created_at as string,
+    receivedAt: (r.received_at || "") as string,
   };
 }
 
@@ -453,6 +557,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [bundles, setBundles] = useState<ProductBundle[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
   const [productImages, setProductImages] = useState<Record<string, string>>({});
   const [initialized, setInitialized] = useState(false);
@@ -471,6 +578,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           bundlesRes,
           settingsRes,
           imagesRes,
+          suppliersRes,
+          paymentsRes,
+          purchaseOrdersRes,
         ] = await Promise.all([
           supabase.from("clients").select("*"),
           supabase.from("products").select("*"),
@@ -479,13 +589,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           supabase.from("bundles").select("*"),
           supabase.from("app_settings").select("*").eq("id", "default").single(),
           supabase.from("product_images").select("*"),
+          supabase.from("suppliers").select("*"),
+          supabase.from("payments").select("*"),
+          supabase.from("purchase_orders").select("*"),
         ]);
 
         const dbClients = (clientsRes.data || []).map(rowToClient);
-        const dbProducts = (productsRes.data || []).map(rowToProduct);
+        const dbProducts = (productsRes.data || []).map(rowToProduct).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
         const dbInvoices = (invoicesRes.data || []).map(rowToInvoice);
         const dbOrders = (ordersRes.data || []).map(rowToOrder);
         const dbBundles = (bundlesRes.data || []).map(rowToBundle);
+        const dbSuppliers = (suppliersRes.data || []).map(rowToSupplier);
+        const dbPayments = (paymentsRes.data || []).map(rowToPayment);
+        const dbPurchaseOrders = (purchaseOrdersRes.data || []).map(rowToPurchaseOrder);
         const dbSettings = settingsRes.data ? rowToSettings(settingsRes.data) : null;
         const dbImages: Record<string, string> = {};
         (imagesRes.data || []).forEach((row: { product_id: string; image_data: string }) => {
@@ -500,6 +616,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           setInvoices(dbInvoices);
           setOrders(dbOrders);
           setBundles(dbBundles);
+          setSuppliers(dbSuppliers);
+          setPayments(dbPayments);
+          setPurchaseOrders(dbPurchaseOrders);
           setSettings(dbSettings || defaultSettings);
           setProductImages(dbImages);
         } else {
@@ -600,12 +719,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const addProduct = useCallback(
     (data: Omit<Product, "id" | "createdAt"> & { image?: string }): Product => {
       const { image, ...productData } = data;
-      const newProduct: Product = {
-        ...productData,
-        id: `p_${crypto.randomUUID()}`,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-      setProducts((prev) => [newProduct, ...prev]);
+      const createdAt = new Date().toISOString().split("T")[0];
+      let newProduct!: Product;
+      setProducts((prev) => {
+        const maxOrder = prev.reduce((m, p) => Math.max(m, p.sortOrder ?? 0), 0);
+        newProduct = { ...productData, id: `p_${crypto.randomUUID()}`, createdAt, sortOrder: maxOrder + 1 };
+        return [newProduct, ...prev];
+      });
       dbExec(supabase.from("products").insert(productToRow(newProduct)));
       if (image) {
         setProductImages((prev) => ({ ...prev, [newProduct.id]: image }));
@@ -615,6 +735,42 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     []
   );
+
+  const addProducts = useCallback(
+    (items: (Omit<Product, "id" | "createdAt"> & { image?: string })[]): Product[] => {
+      const createdAt = new Date().toISOString().split("T")[0];
+      let newProducts!: Product[];
+      setProducts((prev) => {
+        const maxOrder = prev.reduce((m, p) => Math.max(m, p.sortOrder ?? 0), 0);
+        newProducts = items.map((data, i) => {
+          const { image: _image, ...productData } = data;
+          return { ...productData, id: `p_${crypto.randomUUID()}`, createdAt, sortOrder: maxOrder + 1 + i };
+        });
+        return [...newProducts, ...prev];
+      });
+      dbExec(supabase.from("products").insert(newProducts.map(productToRow)));
+      return newProducts;
+    },
+    []
+  );
+
+  // Persists a full manual reorder of the given product ids (already in their new
+  // display order) by writing sequential sort_order values — shared via Supabase,
+  // not per-browser localStorage.
+  const reorderProducts = useCallback((orderedIds: string[]) => {
+    setProducts((prev) => {
+      const orderMap = new Map(orderedIds.map((id, i) => [id, i]));
+      const next = prev.map((p) => {
+        if (!orderMap.has(p.id)) return p;
+        const newOrder = orderMap.get(p.id)!;
+        if ((p.sortOrder ?? 0) !== newOrder) {
+          dbExec(supabase.from("products").update({ sort_order: newOrder }).eq("id", p.id));
+        }
+        return { ...p, sortOrder: newOrder };
+      });
+      return next.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    });
+  }, []);
 
   const updateProduct = useCallback(
     (id: string, data: Partial<Product> & { image?: string }) => {
@@ -627,11 +783,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (productData.category !== undefined) row.category = productData.category;
       if (productData.sku !== undefined) row.sku = productData.sku;
       if (productData.description !== undefined) row.description = productData.description;
-      if (productData.sellingPrice !== undefined) row.price = productData.sellingPrice;
+      if (productData.sellingPrice !== undefined) {
+        row.price = productData.sellingPrice;
+        row.selling_price = productData.sellingPrice;
+      }
       if (productData.costPrice !== undefined) row.cost_price = productData.costPrice;
       if (productData.stock !== undefined) row.stock = productData.stock;
       if (productData.minStock !== undefined) row.min_stock = productData.minStock;
       if (productData.unit !== undefined) row.unit = productData.unit;
+      if (productData.isActive !== undefined) row.is_active = productData.isActive;
       if (Object.keys(row).length > 0) {
         dbExec(supabase.from("products").update(row).eq("id", id));
       }
@@ -659,6 +819,155 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [productImages]
   );
 
+  // --- Supplier CRUD (Supabase-backed) ---
+  const addSupplier = useCallback(
+    (data: Omit<Supplier, "id" | "createdAt" | "totalOwed">): Supplier => {
+      const newSupplier: Supplier = {
+        ...data,
+        id: `sup_${crypto.randomUUID()}`,
+        totalOwed: 0,
+        createdAt: new Date().toISOString().split("T")[0],
+      };
+      setSuppliers((prev) => [newSupplier, ...prev]);
+      dbExec(supabase.from("suppliers").insert(supplierToRow(newSupplier)));
+      return newSupplier;
+    },
+    []
+  );
+  const updateSupplier = useCallback((id: string, data: Partial<Supplier>) => {
+    setSuppliers((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
+    const row: Record<string, unknown> = {};
+    if (data.name !== undefined) row.name = data.name;
+    if (data.phone !== undefined) row.phone = data.phone;
+    if (data.address !== undefined) row.address = data.address;
+    if (data.notes !== undefined) row.notes = data.notes;
+    if (data.totalOwed !== undefined) row.total_owed = data.totalOwed;
+    dbExec(supabase.from("suppliers").update(row).eq("id", id));
+  }, []);
+  const deleteSupplier = useCallback((id: string) => {
+    setSuppliers((prev) => prev.filter((s) => s.id !== id));
+    dbExec(supabase.from("suppliers").delete().eq("id", id));
+  }, []);
+
+  // --- Payment CRUD (Supabase-backed, auto-updates invoice status) ---
+  const addPayment = useCallback(
+    (data: Omit<Payment, "id" | "createdAt">): Payment => {
+      const newPayment: Payment = {
+        ...data,
+        id: `pay_${crypto.randomUUID()}`,
+        createdAt: new Date().toISOString(),
+      };
+      setPayments((prev) => [newPayment, ...prev]);
+      dbExec(supabase.from("payments").insert(paymentToRow(newPayment)));
+      setInvoices((prev) =>
+        prev.map((inv) => {
+          if (inv.id !== data.invoiceId) return inv;
+          const existing = payments.filter((p) => p.invoiceId === data.invoiceId);
+          const totalPaid = existing.reduce((s, p) => s + p.amount, 0) + data.amount;
+          let newStatus: InvoiceStatus = inv.status;
+          if (totalPaid >= inv.total) newStatus = "مدفوعة";
+          else if (totalPaid > 0) newStatus = "مدفوعة جزئياً";
+          if (newStatus === inv.status) return inv;
+          dbExec(supabase.from("invoices").update({ status: newStatus }).eq("id", inv.id));
+          return { ...inv, status: newStatus };
+        })
+      );
+      return newPayment;
+    },
+    [payments]
+  );
+  const deletePayment = useCallback((id: string, invoiceId: string) => {
+    setPayments((prev) => prev.filter((p) => p.id !== id));
+    dbExec(supabase.from("payments").delete().eq("id", id));
+    setInvoices((prev) =>
+      prev.map((inv) => {
+        if (inv.id !== invoiceId) return inv;
+        const remaining = payments.filter((p) => p.invoiceId === invoiceId && p.id !== id);
+        const totalPaid = remaining.reduce((s, p) => s + p.amount, 0);
+        const newStatus: InvoiceStatus = totalPaid >= inv.total ? "مدفوعة" : totalPaid > 0 ? "مدفوعة جزئياً" : "غير مدفوعة";
+        dbExec(supabase.from("invoices").update({ status: newStatus }).eq("id", inv.id));
+        return { ...inv, status: newStatus };
+      })
+    );
+  }, [payments]);
+  const getInvoicePayments = useCallback(
+    (invoiceId: string) => payments.filter((p) => p.invoiceId === invoiceId),
+    [payments]
+  );
+
+  // --- Purchase Order CRUD (receiving adds to inventory + updates cost) ---
+  const applyPurchaseOrderToInventory = useCallback((po: PurchaseOrder) => {
+    setProducts((prev) =>
+      prev.map((p) => {
+        const item = po.items.find((it) => it.productId === p.id);
+        if (!item) return p;
+        return { ...p, stock: p.stock + item.quantity, costPrice: item.costPrice > 0 ? item.costPrice : p.costPrice };
+      })
+    );
+    po.items.forEach((item) => {
+      if (!item.productId) return;
+      dbExec(supabase.rpc("adjust_stock", { p_id: item.productId, p_delta: item.quantity }));
+      if (item.costPrice > 0) {
+        dbExec(supabase.from("products").update({ cost_price: item.costPrice }).eq("id", item.productId));
+      }
+    });
+  }, []);
+  const addPurchaseOrder = useCallback(
+    (data: Omit<PurchaseOrder, "id" | "poNumber" | "createdAt">): PurchaseOrder => {
+      const seq = purchaseOrders.length + 1;
+      const newPO: PurchaseOrder = {
+        ...data,
+        id: `po_${crypto.randomUUID()}`,
+        poNumber: `PO-${String(seq).padStart(4, "0")}`,
+        createdAt: new Date().toISOString().split("T")[0],
+        receivedAt: data.status === "received" ? new Date().toISOString().split("T")[0] : "",
+      };
+      setPurchaseOrders((prev) => [newPO, ...prev]);
+      dbExec(supabase.from("purchase_orders").insert(purchaseOrderToRow(newPO)));
+      if (newPO.status === "received") {
+        applyPurchaseOrderToInventory(newPO);
+        if (newPO.supplierId) {
+          const sup = suppliers.find((s) => s.id === newPO.supplierId);
+          if (sup) updateSupplier(newPO.supplierId, { totalOwed: sup.totalOwed + newPO.total });
+        }
+      }
+      return newPO;
+    },
+    [purchaseOrders, suppliers, applyPurchaseOrderToInventory, updateSupplier]
+  );
+  const updatePurchaseOrder = useCallback((id: string, data: Partial<PurchaseOrder>) => {
+    setPurchaseOrders((prev) => prev.map((po) => (po.id === id ? { ...po, ...data } : po)));
+    const row: Record<string, unknown> = {};
+    if (data.supplierId !== undefined) row.supplier_id = data.supplierId;
+    if (data.supplierName !== undefined) row.supplier_name = data.supplierName;
+    if (data.items !== undefined) row.items = JSON.stringify(data.items);
+    if (data.total !== undefined) row.total = data.total;
+    if (data.status !== undefined) row.status = data.status;
+    if (data.notes !== undefined) row.notes = data.notes;
+    if (data.receivedAt !== undefined) row.received_at = data.receivedAt;
+    dbExec(supabase.from("purchase_orders").update(row).eq("id", id));
+  }, []);
+  const receivePurchaseOrder = useCallback((id: string) => {
+    setPurchaseOrders((prev) =>
+      prev.map((po) => {
+        if (po.id !== id || po.status === "received") return po;
+        const receivedAt = new Date().toISOString().split("T")[0];
+        const received: PurchaseOrder = { ...po, status: "received", receivedAt };
+        applyPurchaseOrderToInventory(received);
+        if (received.supplierId) {
+          const sup = suppliers.find((s) => s.id === received.supplierId);
+          if (sup) updateSupplier(received.supplierId, { totalOwed: sup.totalOwed + received.total });
+        }
+        dbExec(supabase.from("purchase_orders").update({ status: "received", received_at: receivedAt }).eq("id", id));
+        return received;
+      })
+    );
+  }, [suppliers, applyPurchaseOrderToInventory, updateSupplier]);
+  const deletePurchaseOrder = useCallback((id: string) => {
+    setPurchaseOrders((prev) => prev.filter((po) => po.id !== id));
+    dbExec(supabase.from("purchase_orders").delete().eq("id", id));
+  }, []);
+
   // --- Invoice CRUD (with stock deduction) ---
   const nextInvoiceNumber = useCallback(() => {
     const prefix = settings.invoicePrefix || "INV";
@@ -673,6 +982,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }, 0);
     return `${pattern}${String(maxNum + 1).padStart(3, "0")}`;
   }, [invoices, settings.invoicePrefix]);
+
+  // Adds an invoice that was already persisted server-side (e.g. by the AI assistant route)
+  // into local state, so it appears immediately without a full refetch.
+  const injectInvoice = useCallback((invoice: Invoice) => {
+    setInvoices((prev) => (prev.some((inv) => inv.id === invoice.id) ? prev : [invoice, ...prev]));
+  }, []);
 
   const addInvoice = useCallback(
     (
@@ -1313,12 +1628,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         invoices,
         orders,
         bundles,
+        suppliers,
+        payments,
+        purchaseOrders,
         settings,
         addClient,
         updateClient,
         deleteClient,
         addProduct,
+        addProducts,
         updateProduct,
+        reorderProducts,
         deleteProduct,
         getProductImage,
         addInvoice,
@@ -1331,9 +1651,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         addBundle,
         updateBundle,
         deleteBundle,
+        addSupplier,
+        updateSupplier,
+        deleteSupplier,
+        addPayment,
+        deletePayment,
+        getInvoicePayments,
+        addPurchaseOrder,
+        updatePurchaseOrder,
+        receivePurchaseOrder,
+        deletePurchaseOrder,
         updateSettings,
         importOdooData,
         nextInvoiceNumber,
+        injectInvoice,
         connectionStatus,
       }}
     >

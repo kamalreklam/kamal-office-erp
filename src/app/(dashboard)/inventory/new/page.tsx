@@ -55,7 +55,7 @@ function ImageUploadField({ value, onChange }: { value: string; onChange: (v: st
           className="size-28 rounded-2xl border-2 border-dashed border-mist bg-white flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-300"
         >
           <Camera className="size-6" />
-          <span className="text-[11px] font-bold">صورة المنتج</span>
+          <span className="text-xs font-bold">صورة المنتج</span>
         </button>
       )}
     </div>
@@ -101,7 +101,7 @@ export default function NewProductPage() {
         </div>
 
         {/* Form Card */}
-        <div className="bg-white rounded-[2rem] p-6 md:p-8 border border-slate-100 shadow-sm">
+        <div className="bg-white rounded-[2rem] p-5 sm:p-6 md:p-8 border border-slate-100 shadow-sm">
         <div className="space-y-5">
           {/* Image Upload + Title and SKU Inputs */}
           <div className="flex flex-col sm:flex-row gap-5 items-start">

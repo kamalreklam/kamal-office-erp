@@ -69,6 +69,19 @@ const variantStyles: Record<string, React.CSSProperties> = {
   },
 }
 
+// Detects a caller-supplied background/text-color utility in className so it isn't
+// silently overridden by the inline variantStyles below — inline `style` always wins
+// over Tailwind classes in the cascade, so e.g. a caller's `bg-white` had no effect
+// until now, no matter what the className said.
+function hasBgClass(className: unknown): boolean {
+  if (typeof className !== "string") return false
+  return /(^|\s)bg-(?!clip-)\S/.test(className)
+}
+function hasTextColorClass(className: unknown): boolean {
+  if (typeof className !== "string") return false
+  return /(^|\s)text-(white|black|current|inherit|transparent|[a-z]+-\d{2,3})(\s|$)/.test(className)
+}
+
 function Button({
   className,
   variant = "default",
@@ -76,12 +89,17 @@ function Button({
   style,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const resolvedVariant = variantStyles[variant || "default"]
+  const variantStyle = { ...resolvedVariant }
+  if (hasBgClass(className)) delete variantStyle.background
+  if (hasTextColorClass(className)) delete variantStyle.color
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       style={{
-        ...variantStyles[variant || "default"],
+        ...variantStyle,
         ...style,
       }}
       {...props}

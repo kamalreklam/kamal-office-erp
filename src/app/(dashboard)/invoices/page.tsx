@@ -195,7 +195,7 @@ export default function InvoicesPage() {
 
   return (
     <div className="pb-32 bg-gradient-to-br from-indigo-50/50 via-white to-blue-50/30 min-h-screen" dir="rtl">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16 space-y-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-10 sm:pb-16 space-y-6 sm:space-y-8">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -209,17 +209,17 @@ export default function InvoicesPage() {
             </p>
           </div>
           
-          <div className="flex flex-nowrap items-center gap-3 w-full md:w-auto">
+          <div className="grid grid-cols-2 md:flex md:flex-nowrap items-center gap-3 w-full md:w-auto">
             <button
-              className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-sky-500 border border-sky-600 text-white font-bold hover:bg-sky-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+              className="h-14 px-6 rounded-2xl bg-sky-500 border border-sky-600 text-white font-bold hover:bg-sky-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
               onClick={handleExport}
             >
               <Download className="size-5" />
               <span className="hidden sm:inline">تصدير CSV</span>
             </button>
-            
+
             <button
-              className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-[#25D366] text-white border border-[#1DA851] font-bold hover:bg-[#1DA851] active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+              className="h-14 px-6 rounded-2xl bg-[#25D366] text-white border border-[#1DA851] font-bold hover:bg-[#1DA851] active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
               onClick={shareWhatsAppSummary}
             >
               <MessageCircle className="size-5" />
@@ -228,7 +228,7 @@ export default function InvoicesPage() {
 
             <DateRangeExportButton
               label="تقرير PDF"
-              className="flex-1 md:flex-none h-14 px-6 rounded-2xl bg-rose-500 border border-rose-600 text-white font-bold hover:bg-rose-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+              className="h-14 px-6 rounded-2xl bg-rose-500 border border-rose-600 text-white font-bold hover:bg-rose-600 active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
               onExport={async (range: DateRange) => {
                 try {
                   const { exportSalesReportPDF } = await import('@/lib/pdf')
@@ -237,10 +237,10 @@ export default function InvoicesPage() {
                 } catch { toast.error('فشل التصدير') }
               }}
             />
-            
+
             <Link
               href="/invoices/new"
-              className="w-full md:w-auto h-14 px-8 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-[0_8px_20px_-6px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2"
+              className="h-14 px-8 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 active:scale-95 transition-all shadow-[0_8px_20px_-6px_rgba(79,70,229,0.4)] flex items-center justify-center gap-2"
             >
               <Plus className="size-6" />
               <span>فاتورة جديدة</span>
@@ -362,7 +362,7 @@ export default function InvoicesPage() {
                   }`}
                 >
                   <span>{tab.label}</span>
-                  <span className={`text-[10px] font-mono font-black px-2 py-0.5 rounded-md ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`text-[11px] font-mono font-black px-2 py-0.5 rounded-md ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
                     {tab.count}
                   </span>
                 </button>
@@ -424,7 +424,7 @@ export default function InvoicesPage() {
                             </div>
                             <div>
                               <span className="font-bold text-slate-900 block">{inv.clientName}</span>
-                              <span className="text-[10px] text-slate-500 font-bold block">{inv.items.length} أصناف</span>
+                              <span className="text-[11px] text-slate-500 font-bold block">{inv.items.length} أصناف</span>
                             </div>
                           </div>
                         </td>
@@ -437,7 +437,7 @@ export default function InvoicesPage() {
                           <div className="flex flex-col items-end">
                             <span className="font-black text-base font-mono text-indigo-600">{formatCurrency(inv.total)}</span>
                             {inv.discountAmount > 0 && (
-                              <span className="text-[10px] uppercase tracking-widest text-emerald-600 font-black mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              <span className="text-[11px] uppercase tracking-widest text-emerald-600 font-black mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md">
                                 خصم {formatCurrency(inv.discountAmount)}
                               </span>
                             )}
@@ -445,7 +445,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
-                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black
+                            <span className={`px-3 py-1.5 rounded-xl text-[11px] font-black
                               ${inv.status === 'مدفوعة' ? 'bg-emerald-100 text-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.2)]' :
                                 inv.status === 'غير مدفوعة' ? 'bg-rose-100 text-rose-700 shadow-[0_0_10px_rgba(244,63,94,0.2)]' :
                                 'bg-slate-100 text-slate-600'
@@ -501,7 +501,7 @@ export default function InvoicesPage() {
                     <StatusBadge status={inv.status} />
                   </div>
                   
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 font-bold mb-5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 inline-flex">
+                  <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold mb-5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 inline-flex">
                     <Calendar className="size-3" />
                     <span className="font-mono">{inv.createdAt}</span>
                     <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
@@ -510,7 +510,7 @@ export default function InvoicesPage() {
 
                   <div className="flex justify-between items-end border-t border-slate-100 pt-4">
                     <div className="flex flex-col text-left">
-                       <span className="text-[10px] uppercase tracking-widest font-black text-slate-400 block mb-0.5">الإجمالي</span>
+                       <span className="text-[11px] uppercase tracking-widest font-black text-slate-400 block mb-0.5">الإجمالي</span>
                        <span className="font-black text-2xl font-mono text-indigo-600">{formatCurrency(inv.total)}</span>
                     </div>
                     

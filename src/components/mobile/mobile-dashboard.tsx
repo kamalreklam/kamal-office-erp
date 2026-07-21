@@ -133,7 +133,7 @@ export function MobileDashboard() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <p className="truncate" style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{inv.invoiceNumber}</p>
-                      <Badge variant="outline" className={`text-[11px] shrink-0 ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
+                      <Badge variant="outline" className={`text-xs shrink-0 ${getStatusColor(inv.status)}`}>{inv.status}</Badge>
                     </div>
                     <p style={{ fontSize: 14, color: "var(--text-muted)" }}>{inv.clientName}</p>
                   </div>
