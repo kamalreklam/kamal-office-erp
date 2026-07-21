@@ -43,8 +43,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'العمليات',
     items: [
       { label: 'الفواتير', href: '/invoices', icon: Receipt },
-      { label: 'العملاء', href: '/clients', icon: Users },
-      { label: 'الطلبات', href: '/orders', icon: ShoppingBag }
+      { label: 'العملاء', href: '/clients', icon: Users }
     ]
   },
   {
