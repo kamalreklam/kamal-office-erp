@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Truck, Search, Plus, Phone, MapPin, Pencil, Trash2, AlertTriangle, DollarSign, X,
+  Truck, Search, Plus, Phone, MapPin, Pencil, Trash2, AlertTriangle, X,
 } from "lucide-react";
 
 const blankForm = { name: "", phone: "", address: "", notes: "" };
@@ -177,8 +177,8 @@ export default function SuppliersPage() {
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-                <span className={`inline-flex items-center gap-1 text-sm font-black ${s.totalOwed > 0 ? "text-rose-600" : "text-emerald-600"}`}>
-                  <DollarSign className="h-3.5 w-3.5" /> {formatCurrency(s.totalOwed, "$")}
+                <span className={`text-sm font-black ${s.totalOwed > 0 ? "text-rose-600" : "text-emerald-600"}`}>
+                  {formatCurrency(s.totalOwed, "$")}
                 </span>
                 <div className="flex gap-1">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(s)} className="text-indigo-600 px-2"><Pencil className="h-4 w-4" /></Button>

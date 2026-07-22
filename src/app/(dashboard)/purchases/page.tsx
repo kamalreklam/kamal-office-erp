@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useStore } from "@/lib/store";
 import type { PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus } from "@/lib/store";
@@ -9,12 +9,9 @@ import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Plus, Trash2, PackageCheck, X, AlertTriangle, Sparkles } from "lucide-react";
+import { ShoppingCart, Plus, Trash2, PackageCheck, X, AlertTriangle, Sparkles, Search, Package } from "lucide-react";
 
 const STATUS_META: Record<PurchaseOrderStatus, { label: string; cls: string }> = {
   draft: { label: "مسودة", cls: "bg-slate-100 text-slate-600 border-slate-200" },
@@ -23,10 +20,29 @@ const STATUS_META: Record<PurchaseOrderStatus, { label: string; cls: string }> =
   cancelled: { label: "ملغى", cls: "bg-rose-50 text-rose-700 border-rose-200" },
 };
 
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span key={i} className="bg-amber-200 text-amber-900 rounded-[4px] px-0.5">{part}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 // isNew rows aren't in the catalog yet — newName holds the typed name until save(),
 // when a real product row is created first so the purchase order can reference a
-// real productId (receiving still adds stock the normal way).
-type DraftItem = { productId: string; quantity: number; costPrice: number; isNew?: boolean; newName?: string };
+// real productId (receiving still adds stock the normal way). productQuery holds
+// the live search text shown in the input, separate from the committed productId.
+type DraftItem = { productId: string; productQuery: string; quantity: number; costPrice: number; isNew?: boolean; newName?: string };
+const BLANK_ITEM: DraftItem = { productId: "", productQuery: "", quantity: 1, costPrice: 0 };
 
 export default function PurchasesPage() {
   const {
@@ -37,16 +53,37 @@ export default function PurchasesPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [supplierId, setSupplierId] = useState("");
+  const [supplierSearch, setSupplierSearch] = useState("");
+  const [showSupplierDrop, setShowSupplierDrop] = useState(false);
+  const supplierRef = useRef<HTMLDivElement>(null);
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<DraftItem[]>([{ productId: "", quantity: 1, costPrice: 0 }]);
+  const [items, setItems] = useState<DraftItem[]>([{ ...BLANK_ITEM }]);
+  const [openProductRow, setOpenProductRow] = useState<number | null>(null);
+  const productRowRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [deleting, setDeleting] = useState<PurchaseOrder | null>(null);
   const [receiving, setReceiving] = useState<PurchaseOrder | null>(null);
+
+  const selectedSupplier = suppliers.find((s) => s.id === supplierId) || null;
 
   const sorted = useMemo(
     () => [...purchaseOrders].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [purchaseOrders]
   );
   const draftTotal = useMemo(() => items.reduce((s, it) => s + it.quantity * it.costPrice, 0), [items]);
+  const filteredSuppliers = useMemo(() => {
+    const q = supplierSearch.trim().toLowerCase();
+    return q ? suppliers.filter((s) => s.name.toLowerCase().includes(q)) : suppliers;
+  }, [suppliers, supplierSearch]);
+
+  useEffect(() => {
+    function clickOutside(e: MouseEvent) {
+      if (supplierRef.current && !supplierRef.current.contains(e.target as Node)) setShowSupplierDrop(false);
+      const openRef = openProductRow != null ? productRowRefs.current[openProductRow] : null;
+      if (openRef && !openRef.contains(e.target as Node)) setOpenProductRow(null);
+    }
+    document.addEventListener("mousedown", clickOutside);
+    return () => document.removeEventListener("mousedown", clickOutside);
+  }, [openProductRow]);
 
   if (connectionStatus === "loading") {
     return (
@@ -56,7 +93,10 @@ export default function PurchasesPage() {
     );
   }
 
-  function resetForm() { setSupplierId(""); setNotes(""); setItems([{ productId: "", quantity: 1, costPrice: 0 }]); }
+  function resetForm() {
+    setSupplierId(""); setSupplierSearch(""); setShowSupplierDrop(false);
+    setNotes(""); setItems([{ ...BLANK_ITEM }]); setOpenProductRow(null);
+  }
   function toggleCreate() {
     if (createOpen) { setCreateOpen(false); return; }
     resetForm(); setCreateOpen(true);
@@ -66,10 +106,16 @@ export default function PurchasesPage() {
   }
   function pickProduct(idx: number, productId: string) {
     const p = products.find((x) => x.id === productId);
-    setItem(idx, { productId, costPrice: p && p.costPrice > 0 ? p.costPrice : items[idx].costPrice });
+    setItem(idx, {
+      productId, productQuery: p?.name || "",
+      costPrice: p && p.costPrice > 0 ? p.costPrice : items[idx].costPrice,
+    });
+    setOpenProductRow(null);
   }
   function toggleNewProduct(idx: number) {
-    setItem(idx, items[idx].isNew ? { isNew: false, newName: "", productId: "" } : { isNew: true, productId: "" });
+    setItem(idx, items[idx].isNew
+      ? { isNew: false, newName: "", productId: "", productQuery: "" }
+      : { isNew: true, productId: "", productQuery: "" });
   }
   // New-product rows create the catalog entry now (stock 0 — receiving the order
   // adds the ordered quantity the normal way) so the purchase order can reference
@@ -148,54 +194,153 @@ export default function PurchasesPage() {
 
               <div>
                 <label className="text-xs font-bold text-slate-500 mb-1.5 block">المورد</label>
-                <Select value={supplierId} onValueChange={(v) => setSupplierId(v ?? "")}>
-                  <SelectTrigger className="bg-white w-full"><SelectValue placeholder="اختر المورد" /></SelectTrigger>
-                  <SelectContent>{suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                </Select>
+                {selectedSupplier ? (
+                  <div className="bg-gradient-to-l from-violet-50 to-indigo-50 border border-violet-200/50 rounded-2xl p-3 flex items-center justify-between shadow-sm">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 text-white flex items-center justify-center font-black shadow-inner">
+                        {selectedSupplier.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-800 block truncate">{selectedSupplier.name}</span>
+                        {selectedSupplier.phone && <span className="text-xs text-indigo-500 font-mono block" dir="ltr">{selectedSupplier.phone}</span>}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => { setSupplierId(""); setSupplierSearch(""); }} className="w-9 h-9 shrink-0 rounded-xl bg-white text-rose-500 flex items-center justify-center hover:bg-rose-50 transition-colors shadow-sm active:scale-95">
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative" ref={supplierRef}>
+                    <div className="relative">
+                      <Search className="absolute start-4 top-1/2 -translate-y-1/2 size-4 text-indigo-300" />
+                      <input
+                        type="text"
+                        placeholder="ابحث عن مورد..."
+                        value={supplierSearch}
+                        onChange={(e) => { setSupplierSearch(e.target.value); setShowSupplierDrop(true); }}
+                        onFocus={() => setShowSupplierDrop(true)}
+                        className="w-full bg-white border border-slate-200 rounded-2xl py-3 ps-11 pe-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
+                      />
+                    </div>
+                    {showSupplierDrop && (
+                      <div className="absolute start-0 top-[calc(100%+8px)] w-full bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl z-[60] max-h-[280px] overflow-y-auto p-2">
+                        {filteredSuppliers.length === 0 ? (
+                          <div className="p-4 text-center text-sm font-bold text-slate-500">لا يوجد مورد بهذا الاسم</div>
+                        ) : (
+                          filteredSuppliers.map((s) => (
+                            <button
+                              type="button"
+                              key={s.id}
+                              onClick={() => { setSupplierId(s.id); setSupplierSearch(s.name); setShowSupplierDrop(false); }}
+                              className="w-full flex items-center gap-3 p-2.5 hover:bg-indigo-50/50 rounded-xl transition-colors border border-transparent hover:border-indigo-100 text-start"
+                            >
+                              <div className="w-9 h-9 shrink-0 rounded-xl bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-600 flex items-center justify-center font-bold">
+                                {s.name.charAt(0)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-800 truncate text-sm">
+                                  <HighlightMatch text={s.name} query={supplierSearch} />
+                                </div>
+                                {s.phone && <div className="text-xs font-mono text-indigo-500/80">{s.phone}</div>}
+                              </div>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {suppliers.length === 0 && <p className="mt-1 text-xs text-amber-600">أضف مورداً أولاً من صفحة الموردين.</p>}
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-slate-500">الأصناف</label>
-                  <Button size="sm" variant="ghost" onClick={() => setItems((p) => [...p, { productId: "", quantity: 1, costPrice: 0 }])} className="gap-1 text-xs font-bold text-indigo-600">
+                  <Button size="sm" variant="ghost" onClick={() => setItems((p) => [...p, { ...BLANK_ITEM }])} className="gap-1 text-xs font-bold text-indigo-600">
                     <Plus className="h-3.5 w-3.5" /> صنف
                   </Button>
                 </div>
-                {items.map((it, idx) => (
-                  <div key={idx} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                    <div className="flex-1 min-w-[160px] flex items-center gap-1.5">
-                      {it.isNew ? (
-                        <Input
-                          value={it.newName || ""}
-                          onChange={(e) => setItem(idx, { newName: e.target.value })}
-                          placeholder="اسم المنتج الجديد"
-                          className="bg-amber-50 border-amber-200 focus-visible:border-amber-400 w-full"
-                        />
-                      ) : (
-                        <Select value={it.productId} onValueChange={(v) => pickProduct(idx, v ?? "")}>
-                          <SelectTrigger className="bg-white w-full"><SelectValue placeholder="المنتج" /></SelectTrigger>
-                          <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                        </Select>
-                      )}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => toggleNewProduct(idx)}
-                        title={it.isNew ? "اختيار من المخزون بدلاً من ذلك" : "منتج جديد غير موجود في المخزون"}
-                        className={`shrink-0 px-2 gap-1 text-xs font-bold ${it.isNew ? "text-amber-600" : "text-indigo-600"}`}
-                      >
-                        <Sparkles className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">{it.isNew ? "من المخزون" : "جديد"}</span>
-                      </Button>
+                {items.map((it, idx) => {
+                  const q = it.productQuery.trim().toLowerCase();
+                  const filteredProducts = q
+                    ? products.filter((p) => p.name.toLowerCase().includes(q)).slice(0, 30)
+                    : products.slice(0, 30);
+                  const rowTotal = it.quantity * it.costPrice;
+                  return (
+                    <div key={idx} className="rounded-2xl border border-slate-100 bg-white p-3 flex flex-col gap-2.5">
+                      <div className="flex items-start gap-2">
+                        {it.isNew ? (
+                          <Input
+                            value={it.newName || ""}
+                            onChange={(e) => setItem(idx, { newName: e.target.value })}
+                            placeholder="اسم المنتج الجديد"
+                            className="bg-amber-50 border-amber-200 focus-visible:border-amber-400 flex-1"
+                          />
+                        ) : (
+                          <div className="relative flex-1 min-w-0" ref={(el) => { productRowRefs.current[idx] = el; }}>
+                            <input
+                              type="text"
+                              value={it.productQuery}
+                              onFocus={() => setOpenProductRow(idx)}
+                              onChange={(e) => { setItem(idx, { productQuery: e.target.value, productId: "" }); setOpenProductRow(idx); }}
+                              placeholder="ابحث عن منتج..."
+                              autoComplete="off"
+                              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all px-3 text-sm font-bold text-slate-800"
+                            />
+                            {openProductRow === idx && (
+                              <div className="absolute start-0 top-[calc(100%+6px)] w-72 max-w-[85vw] bg-white/95 backdrop-blur-xl border border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.15)] rounded-2xl z-[60] max-h-[280px] overflow-y-auto p-2">
+                                {filteredProducts.length === 0 ? (
+                                  <div className="p-4 text-center text-sm font-bold text-slate-500">لا يوجد منتج بهذا الاسم</div>
+                                ) : (
+                                  filteredProducts.map((p) => (
+                                    <button
+                                      type="button"
+                                      key={p.id}
+                                      onClick={() => pickProduct(idx, p.id)}
+                                      className="w-full flex items-center gap-2.5 p-2.5 hover:bg-indigo-50/50 rounded-xl transition-colors border border-transparent hover:border-indigo-100 text-start"
+                                    >
+                                      <div className="w-8 h-8 shrink-0 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center"><Package className="size-4" /></div>
+                                      <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-800">
+                                        <HighlightMatch text={p.name} query={it.productQuery} />
+                                      </span>
+                                      <span className="shrink-0 text-xs font-mono font-black text-slate-500">{formatCurrency(p.costPrice, cur)} تكلفة</span>
+                                    </button>
+                                  ))
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => toggleNewProduct(idx)}
+                          title={it.isNew ? "اختيار من المخزون بدلاً من ذلك" : "منتج جديد غير موجود في المخزون"}
+                          className={`shrink-0 px-2 gap-1 text-xs font-bold ${it.isNew ? "text-amber-600" : "text-indigo-600"}`}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{it.isNew ? "من المخزون" : "جديد"}</span>
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setItems((p) => p.length === 1 ? p : p.filter((_, i) => i !== idx))} className="text-rose-500 px-2 shrink-0"><Trash2 className="h-4 w-4" /></Button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-1">الكمية</label>
+                          <Input type="number" min={1} value={it.quantity} onChange={(e) => setItem(idx, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="bg-slate-50 text-center" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-1">التكلفة للوحدة</label>
+                          <Input type="number" min={0} step="0.01" value={it.costPrice} onChange={(e) => setItem(idx, { costPrice: Math.max(0, Number(e.target.value) || 0) })} className="bg-slate-50 text-center" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 block mb-1">الإجمالي الفرعي</label>
+                          <div className="h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-sm font-black text-indigo-700">{formatCurrency(rowTotal, cur)}</div>
+                        </div>
+                      </div>
                     </div>
-                    <Input type="number" min={1} value={it.quantity} onChange={(e) => setItem(idx, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="w-16 bg-white" />
-                    <Input type="number" min={0} step="0.01" value={it.costPrice} onChange={(e) => setItem(idx, { costPrice: Math.max(0, Number(e.target.value) || 0) })} className="w-24 bg-white" placeholder="التكلفة" />
-                    <span className="w-20 text-left text-xs font-bold text-slate-700">{formatCurrency(it.quantity * it.costPrice, cur)}</span>
-                    <Button size="sm" variant="ghost" onClick={() => setItems((p) => p.length === 1 ? p : p.filter((_, i) => i !== idx))} className="text-rose-500 px-2"><X className="h-4 w-4" /></Button>
-                  </div>
-                ))}
+                  );
+                })}
                 {items.some((it) => it.isNew) && (
                   <p className="text-[11px] font-bold text-amber-600">المنتجات الجديدة تُضاف إلى كتالوج المخزون مباشرة (بمخزون 0 وسعر بيع غير محدد) — أكمل السعر والفئة لاحقاً من الإدارة المتقدمة للمخزون.</p>
                 )}

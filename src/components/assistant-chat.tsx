@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkles, Send, User, Loader2, FileText, Download, MessageCircle, ExternalLink, Tag,
+  Sparkles, Send, User, Loader2, FileText, Download, MessageCircle, ExternalLink, Tag, Zap,
 } from "lucide-react";
 
 // Renders the small subset of markdown Gemini tends to emit (bold, bullet lines)
@@ -39,22 +39,25 @@ interface RenamedProduct {
   bundlesUpdated: number;
 }
 
+interface QuickAction { label: string; href: string; }
+
 interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   invoice?: (Invoice & { skipped_products?: string[] }) | null;
   renamedProduct?: RenamedProduct | null;
+  actions?: QuickAction[];
 }
 
 const DEFAULT_SUGGESTIONS = [
-  "ما هو الملخص المالي الحالي؟",
-  "كم عدد الفواتير غير المدفوعة؟",
-  "ما هي المنتجات ذات المخزون المنخفض؟",
-  "ما هي اقتراحاتك لتحسين النظام؟",
+  "شو وضعي المالي هلق؟",
+  "في مشاكل بالنظام لازم أعرفها؟",
+  "شو أكتر منتج عم يبيع؟",
+  "شو المنتجات يلي مخزونها عم يخلص؟",
 ];
 
 const DEFAULT_WELCOME =
-  "أهلاً! أنا مساعدك الذكي. اسألني عن الوضع المالي، المخزون، العملاء، أو اطلب مني إنشاء فاتورة مسودة مباشرة — مثلاً: \"أنشئ فاتورة للعميل أحمد بـ 3 قطع من ورق A4\".";
+  "أهلاً فيك! أنا مساعدك الذكي، اسألني عن وضعك المالي أو المخزون أو العملاء، أو اطلب مني افحص النظام كله وأقلك وين المشاكل — مثلاً: \"شو في مشاكل بالنظام؟\" أو \"أنشئ فاتورة للعميل أحمد بـ 3 قطع من ورق A4\".";
 
 interface AssistantChatProps {
   className?: string;
@@ -100,9 +103,10 @@ export function AssistantChat({
       if (!res.ok) throw new Error(data.error || "فشل الاتصال بالمساعد");
       const invoice = data.invoice as (Invoice & { skipped_products?: string[] }) | null;
       const renamedProduct = data.renamedProduct as RenamedProduct | null;
+      const actions = (data.actions as QuickAction[] | undefined) || [];
       if (invoice) injectInvoice(invoice);
       if (renamedProduct?.success) onProductRenamed?.(renamedProduct);
-      setMessages((prev) => [...prev, { role: "assistant", text: data.text || "", invoice, renamedProduct }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: data.text || "", invoice, renamedProduct, actions }]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "حدث خطأ في المساعد الذكي");
       setMessages((prev) => [...prev, { role: "assistant", text: "عذراً، حدث خطأ أثناء المعالجة. حاول مرة أخرى." }]);
@@ -186,6 +190,20 @@ export function AssistantChat({
                   <div className="text-xs text-muted-foreground">
                     تم التحديث في {m.renamedProduct.invoicesUpdated} فاتورة، {m.renamedProduct.purchaseOrdersUpdated} طلب شراء، {m.renamedProduct.bundlesUpdated} مجموعة
                   </div>
+                </div>
+              )}
+
+              {m.actions && m.actions.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {m.actions.map((a) => (
+                    <Link
+                      key={a.href}
+                      href={a.href}
+                      className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+                    >
+                      <Zap className="size-3.5" /> {a.label}
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
