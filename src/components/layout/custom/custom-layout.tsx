@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { NavList } from './nav-list'
 import { TopBar } from './top-bar'
+import { FloatingAssistant } from '@/components/floating-assistant'
 import { cn } from '@/lib/utils'
 import { Menu, X } from 'lucide-react'
 
@@ -145,6 +146,7 @@ export default function CustomLayout({ children }: { children: React.ReactNode }
         </main>
 
       </div>
+      <FloatingAssistant />
     </div>
   )
 }

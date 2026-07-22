@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
 import type { Invoice } from "@/lib/data";
 import { exportInvoicePDF, shareInvoiceWhatsApp } from "@/lib/pdf";
@@ -9,7 +10,7 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
-  Sparkles, Send, User, Loader2, FileText, Download, MessageCircle, ExternalLink, Tag, Zap,
+  Sparkles, Send, User, FileText, Download, MessageCircle, ExternalLink, Tag, Zap,
 } from "lucide-react";
 
 // Renders the small subset of markdown Gemini tends to emit (bold, bullet lines)
@@ -59,12 +60,15 @@ const DEFAULT_SUGGESTIONS = [
 const DEFAULT_WELCOME =
   "أهلاً فيك! أنا مساعدك الذكي، اسألني عن وضعك المالي أو المخزون أو العملاء، أو اطلب مني افحص النظام كله وأقلك وين المشاكل — مثلاً: \"شو في مشاكل بالنظام؟\" أو \"أنشئ فاتورة للعميل أحمد بـ 3 قطع من ورق A4\".";
 
+interface UsageInfo { promptTokens: number; completionTokens: number; totalTokens: number; model: string; }
+
 interface AssistantChatProps {
   className?: string;
   height?: string;
   welcomeText?: string;
   suggestions?: string[];
   onProductRenamed?: (result: RenamedProduct) => void;
+  onUsage?: (usage: UsageInfo) => void;
   compact?: boolean;
 }
 
@@ -74,6 +78,7 @@ export function AssistantChat({
   welcomeText = DEFAULT_WELCOME,
   suggestions = DEFAULT_SUGGESTIONS,
   onProductRenamed,
+  onUsage,
   compact = false,
 }: AssistantChatProps) {
   const { settings, injectInvoice } = useStore();
@@ -81,6 +86,16 @@ export function AssistantChat({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-grow the input as the user types (up to max-h-32), instead of a
+  // fixed single-row box with no visual feedback on longer messages.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -106,6 +121,7 @@ export function AssistantChat({
       const actions = (data.actions as QuickAction[] | undefined) || [];
       if (invoice) injectInvoice(invoice);
       if (renamedProduct?.success) onProductRenamed?.(renamedProduct);
+      if (data.usage) onUsage?.(data.usage as UsageInfo);
       setMessages((prev) => [...prev, { role: "assistant", text: data.text || "", invoice, renamedProduct, actions }]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "حدث خطأ في المساعد الذكي");
@@ -134,13 +150,19 @@ export function AssistantChat({
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto rounded-2xl border p-3 sm:p-4 space-y-4" style={{ background: "var(--surface-1)", borderColor: "var(--border-subtle)" }}>
         {messages.map((m, i) => (
-          <div key={i} className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}>
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className={`flex gap-2.5 ${m.role === "user" ? "flex-row-reverse" : ""}`}
+          >
             <div
               className={`flex size-8 shrink-0 items-center justify-center rounded-full ${m.role === "user" ? "bg-indigo-600 text-white" : "bg-gradient-to-br from-violet-500 to-indigo-600 text-white"}`}
             >
               {m.role === "user" ? <User className="size-4" /> : <Sparkles className="size-4" />}
             </div>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${m.role === "user" ? "bg-indigo-600 text-white" : ""}`}
+            <div className={`max-w-[88%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap ${m.role === "user" ? "bg-indigo-600 text-white" : ""}`}
               style={m.role === "assistant" ? { background: "var(--surface-2)", color: "var(--text-primary, inherit)" } : undefined}
             >
               <FormattedText text={m.text} />
@@ -207,28 +229,43 @@ export function AssistantChat({
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         ))}
-        {loading && (
-          <div className="flex gap-2.5">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
-              <Sparkles className="size-4" />
-            </div>
-            <div className="rounded-2xl px-4 py-2.5" style={{ background: "var(--surface-2)" }}>
-              <Loader2 className="size-4 animate-spin text-indigo-500" />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {loading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex gap-2.5"
+            >
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-white">
+                <Sparkles className="size-4" />
+              </div>
+              <div className="flex items-center gap-1 rounded-2xl px-4 py-3" style={{ background: "var(--surface-2)" }}>
+                {[0, 1, 2].map((d) => (
+                  <motion.span
+                    key={d}
+                    className="size-1.5 rounded-full bg-indigo-400"
+                    animate={{ opacity: [0.3, 1, 0.3] }}
+                    transition={{ duration: 1, repeat: Infinity, delay: d * 0.15, ease: "easeInOut" }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Suggestions */}
+      {/* Suggestions — one scrollable row so they never eat vertical space,
+          especially in the floating widget's tighter panel. */}
       {messages.length <= 1 && suggestions.length > 0 && (
-        <div className="flex flex-wrap gap-2 shrink-0 mt-3">
+        <div className="flex gap-1.5 shrink-0 mt-2 overflow-x-auto pb-0.5 [scrollbar-width:none]">
           {suggestions.map((s) => (
             <button
               key={s}
               onClick={() => send(s)}
-              className="text-xs rounded-full border px-3 py-1.5 hover:bg-accent transition-colors"
+              className="shrink-0 text-[11px] font-bold rounded-full border px-2.5 py-1 hover:bg-accent active:scale-95 transition-all whitespace-nowrap"
               style={{ borderColor: "var(--border-subtle)" }}
             >
               {s}
@@ -240,6 +277,7 @@ export function AssistantChat({
       {/* Input */}
       <div className="flex items-end gap-2 shrink-0 mt-3">
         <Textarea
+          ref={textareaRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
@@ -247,10 +285,11 @@ export function AssistantChat({
           }}
           placeholder="اكتب سؤالك أو اطلب إنشاء فاتورة أو إعادة تسمية منتج..."
           rows={1}
-          className="min-h-11 max-h-32 resize-none rounded-xl"
+          // text-base (16px) prevents iOS Safari auto-zooming the page on focus
+          className="min-h-11 max-h-32 resize-none rounded-xl text-base overflow-y-auto"
           disabled={loading}
         />
-        <Button onClick={() => send()} disabled={loading || !input.trim()} className="h-11 w-11 shrink-0 rounded-xl p-0">
+        <Button onClick={() => send()} disabled={loading || !input.trim()} className="h-11 w-11 shrink-0 rounded-xl p-0 active:scale-90 transition-transform">
           <Send className="size-4" />
         </Button>
       </div>

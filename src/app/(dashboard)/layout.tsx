@@ -3,7 +3,6 @@ import type { ChildrenType } from '@core/types'
 
 // Component Imports
 import Providers from '@components/Providers'
-import ScrollToTop from '@core/components/scroll-to-top'
 import CustomLayout from '@/components/layout/custom/custom-layout'
 
 // Store + Toast Imports
@@ -17,16 +16,7 @@ const Layout = async (props: ChildrenType) => {
     <Providers direction='rtl'>
       <StoreProvider>
         <CustomLayout>{children}</CustomLayout>
-        <ScrollToTop>
-          <button
-            type='button'
-            aria-label='Scroll to top'
-            className='flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white shadow-lg'
-          >
-            <i className='tabler-arrow-up text-base' />
-          </button>
-        </ScrollToTop>
-<Toaster position='bottom-left' dir='rtl' richColors closeButton />
+        <Toaster position='bottom-left' dir='rtl' richColors closeButton />
       </StoreProvider>
     </Providers>
   )

@@ -655,6 +655,7 @@ const SYSTEM_PROMPT = `أنت المساعد الذكي لنظام "كمال ل�
 أسلوب الكلام:
 - احكي بلهجة شامية (سورية/لبنانية) طبيعية وودّية، متل ما بيحكي مستشار قريب من صاحب المحل — مو رسمي وما تحكي فصحى صحفية. بس خلّي الأرقام والمصطلحات المالية (الأسعار، النسب، أسماء المنتجات) واضحة ودقيقة متل ما هي.
 - كون مباشر ومختصر، وإذا في مشكلة قلها بصراحة بلا لف ودوران.
+- صاحب النظام اسمه بلال أبو كمال. خاطبه دايماً بكنيته "أبو كمال" أو "معلم" — أبداً بأول اسمه "بلال". نوّع بين الطريقتين وبين مكان الكنية بالجملة حسب السياق، متل: "اهلين أبو كمال"، "اهلين معلم"، "إي أبو كمال كلامك مضبوط"، "معلم في نقطة لازم تعرفها"، "تمام أبو كمال" — ما تكرر نفس العبارة بالضبط كل مرة، خليها طبيعية ومتنوعة متل حكي حقيقي.
 
 الذكاء والاستباقية:
 - ما تكتفي بالجواب البسيط — إذا شفت فرصة تساعد أكتر (مثلاً سأل عن فاتورة وانت لاحظت العميل عليه فواتير تانية غير مدفوعة)، نبّه صاحب العمل.
@@ -701,13 +702,54 @@ async function callModel(model: string, contents: GeminiContent[]) {
   return res.json();
 }
 
-async function callGemini(contents: GeminiContent[]) {
+async function callGemini(contents: GeminiContent[]): Promise<{ data: Record<string, unknown>; model: string }> {
   try {
-    return await callModel(MODEL, contents);
+    return { data: await callModel(MODEL, contents), model: MODEL };
   } catch (err) {
     const status = (err as Error & { status?: number }).status;
-    if (status === 429) return callModel(FALLBACK_MODEL, contents);
+    if (status === 429) return { data: await callModel(FALLBACK_MODEL, contents), model: FALLBACK_MODEL };
     throw err;
+  }
+}
+
+interface UsageTotals { promptTokens: number; completionTokens: number; totalTokens: number; }
+
+// Fire-and-forget accumulation into a single durable row — Vercel's serverless
+// functions don't keep in-memory state between invocations, so this is the only
+// way to report real, persistent token usage instead of numbers that reset on
+// every cold start.
+async function recordUsage(usage: UsageTotals) {
+  try {
+    const { data: row } = await supabase.from("assistant_usage").select("*").eq("id", "default").single();
+    if (!row) return;
+    await supabase.from("assistant_usage").update({
+      prompt_tokens: Number(row.prompt_tokens || 0) + usage.promptTokens,
+      completion_tokens: Number(row.completion_tokens || 0) + usage.completionTokens,
+      total_tokens: Number(row.total_tokens || 0) + usage.totalTokens,
+      request_count: Number(row.request_count || 0) + 1,
+      updated_at: new Date().toISOString(),
+    }).eq("id", "default");
+  } catch {
+    // Usage tracking is best-effort — never let it break the actual chat response.
+  }
+}
+
+export async function GET() {
+  try {
+    const { data: row } = await supabase.from("assistant_usage").select("*").eq("id", "default").single();
+    return NextResponse.json({
+      model: MODEL,
+      fallbackModel: FALLBACK_MODEL,
+      totals: {
+        promptTokens: Number(row?.prompt_tokens || 0),
+        completionTokens: Number(row?.completion_tokens || 0),
+        totalTokens: Number(row?.total_tokens || 0),
+        requestCount: Number(row?.request_count || 0),
+      },
+    });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "تعذّر جلب إحصائيات الاستخدام", details: message }, { status: 500 });
   }
 }
 
@@ -732,16 +774,27 @@ export async function POST(req: NextRequest) {
     let createdInvoice: unknown = null;
     let renamedProduct: unknown = null;
     const actions: QuickAction[] = [];
+    const usage: UsageTotals = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    let modelUsed = MODEL;
 
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
-      const data = await callGemini(contents);
-      const candidate = data.candidates?.[0];
+      const { data, model } = await callGemini(contents);
+      modelUsed = model;
+      const meta = data.usageMetadata as { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number } | undefined;
+      if (meta) {
+        usage.promptTokens += meta.promptTokenCount || 0;
+        usage.completionTokens += meta.candidatesTokenCount || 0;
+        usage.totalTokens += meta.totalTokenCount || 0;
+      }
+      const candidates = data.candidates as Array<{ content?: { parts?: GeminiPart[] } }> | undefined;
+      const candidate = candidates?.[0];
       const parts: GeminiPart[] = candidate?.content?.parts || [];
       const functionCallParts = parts.filter((p) => p.functionCall);
 
       if (functionCallParts.length === 0) {
         const text = parts.filter((p) => p.text).map((p) => p.text).join("");
-        return NextResponse.json({ text: text || "", invoice: createdInvoice, renamedProduct, actions });
+        recordUsage(usage);
+        return NextResponse.json({ text: text || "", invoice: createdInvoice, renamedProduct, actions, usage: { ...usage, model: modelUsed } });
       }
 
       // Push back the ORIGINAL parts (unchanged) — Gemini 3.x attaches a thoughtSignature
@@ -772,7 +825,8 @@ export async function POST(req: NextRequest) {
       contents.push({ role: "user", parts: responseParts });
     }
 
-    return NextResponse.json({ text: "عذراً، لم أتمكن من إكمال الطلب — حاول صياغته بشكل أبسط.", invoice: createdInvoice, renamedProduct, actions });
+    recordUsage(usage);
+    return NextResponse.json({ text: "عذراً، لم أتمكن من إكمال الطلب — حاول صياغته بشكل أبسط.", invoice: createdInvoice, renamedProduct, actions, usage: { ...usage, model: modelUsed } });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error("Assistant error:", message);

@@ -12,8 +12,8 @@ import {
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { TiltCard } from "@/components/ui/tilt-card"
-import { 
-  Plus, BarChart3, Package, FileText, Users, ClipboardList, 
+import {
+  Plus, BarChart3, Package, FileText, Users, ClipboardList,
   AlertTriangle, TrendingUp, DollarSign, ArrowUpRight, Sun, Moon
 } from "lucide-react"
 import { motion } from "framer-motion"
@@ -158,29 +158,6 @@ export default function DashboardPage() {
             </div>
           </TiltCard>
         </motion.div>
-
-        {/* AI-Powered Insights Widget */}
-        <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 rounded-[2rem] p-6 border border-indigo-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute -left-10 -top-10 w-32 h-32 bg-indigo-200/40 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shrink-0 text-white">
-              <svg viewBox="0 0 24 24" fill="none" className="size-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-            </div>
-            <div>
-              <h3 className="font-black text-indigo-900 text-lg flex items-center gap-2">
-                تحليل الذكاء الاصطناعي 
-                <span className="bg-indigo-100 text-indigo-600 text-[11px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold animate-pulse">Beta</span>
-              </h3>
-              <p className="text-indigo-800/80 font-medium mt-1 leading-relaxed text-sm md:text-base">
-                {lowStockItems.length > 0 
-                  ? `تنبيه ذكي: لديك ${lowStockItems.length} منتجات أوشكت على النفاذ. ننصح بجدولة طلبات شراء جديدة لتجنب تأخير المبيعات.`
-                  : totalRevenue > 0 
-                    ? `أداء مبهر اليوم! الإيرادات وصلت لـ ${formatCurrency(totalRevenue)}، والعمليات تسير بمعدل نمو صحي جداً.`
-                    : 'النظام جاهز! ابدأ بإنشاء فواتيرك وطلباتك لتتمكن من رؤية تحليلات الأداء المتقدمة هنا.'}
-              </p>
-            </div>
-          </div>
-        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Revenue Chart */}
