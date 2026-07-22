@@ -4,9 +4,12 @@ import { renameProductCascade } from "@/lib/server/product-rename";
 
 export const maxDuration = 30;
 
-// Primary model is the smartest available; fall back to the lite tier (much
-// higher free-quota headroom) automatically if the primary is rate-limited,
-// so the assistant degrades gracefully instead of just failing.
+// Note: gemini-2.0-flash / gemini-2.0-flash-lite have zero free quota on this
+// project (confirmed via direct API test — limit: 0, not just exhausted), so
+// they are NOT a viable fallback tier here despite being older/cheaper models
+// elsewhere. gemini-3.6-flash's earlier rate limit was a short-lived per-minute
+// throttle, not a hard block — this pairing is the best option until billing
+// is enabled on the Gemini key.
 const MODEL = "gemini-3.6-flash";
 const FALLBACK_MODEL = "gemini-3.1-flash-lite";
 const MAX_TOOL_ROUNDS = 8;
