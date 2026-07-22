@@ -71,9 +71,12 @@ interface ProductSheetProps {
   onUpdate: (id: string, updates: Partial<Product>) => void;
   onReorder: (orderedIds: string[]) => void;
   onDelete: (product: Product) => void;
+  /** False while a non-manual sort is active — dragging would look like it
+   *  reorders but the view would just re-sort back, so the handle is disabled. */
+  dragEnabled?: boolean;
 }
 
-export function ProductSheet({ products: sorted, allProducts, categories, currencySymbol, onRename, onUpdate, onReorder, onDelete }: ProductSheetProps) {
+export function ProductSheet({ products: sorted, allProducts, categories, currencySymbol, onRename, onUpdate, onReorder, onDelete, dragEnabled = true }: ProductSheetProps) {
   const [widths, setWidths] = useState<Record<string, number>>(loadWidths);
   const resizing = useRef<{ key: string; startX: number; startWidth: number } | null>(null);
 
@@ -154,7 +157,7 @@ export function ProductSheet({ products: sorted, allProducts, categories, curren
           </div>
 
           {/* Rows */}
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dragEnabled ? handleDragEnd : undefined}>
             <SortableContext items={sorted.map((p) => p.id)} strategy={verticalListSortingStrategy}>
               <div className="divide-y divide-slate-100">
                 {sorted.map((p) => (
@@ -167,6 +170,7 @@ export function ProductSheet({ products: sorted, allProducts, categories, curren
                     onRename={onRename}
                     onUpdate={onUpdate}
                     onDelete={onDelete}
+                    dragEnabled={dragEnabled}
                   />
                 ))}
               </div>
@@ -186,10 +190,11 @@ interface ProductRowProps {
   onRename: (id: string, name: string) => void;
   onUpdate: (id: string, updates: Partial<Product>) => void;
   onDelete: (product: Product) => void;
+  dragEnabled: boolean;
 }
 
-function ProductRow({ product: p, gridTemplateColumns, categories, currencySymbol, onRename, onUpdate, onDelete }: ProductRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id });
+function ProductRow({ product: p, gridTemplateColumns, categories, currencySymbol, onRename, onUpdate, onDelete, dragEnabled }: ProductRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: p.id, disabled: !dragEnabled });
   const margin = marginOf(p);
 
   const style: React.CSSProperties = {
@@ -205,10 +210,11 @@ function ProductRow({ product: p, gridTemplateColumns, categories, currencySymbo
     <div ref={setNodeRef} style={style} className="grid items-center hover:bg-slate-50/70 group">
       <div className="px-2 py-2.5 flex items-center justify-center">
         <button
-          {...attributes}
-          {...listeners}
-          className="flex h-8 w-8 cursor-grab items-center justify-center rounded-lg text-slate-300 opacity-0 group-hover:opacity-100 hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing transition-opacity"
-          title="اسحب لإعادة الترتيب"
+          {...(dragEnabled ? attributes : {})}
+          {...(dragEnabled ? listeners : {})}
+          disabled={!dragEnabled}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ${dragEnabled ? "cursor-grab hover:bg-slate-100 hover:text-slate-500 active:cursor-grabbing" : "cursor-not-allowed"}`}
+          title={dragEnabled ? "اسحب لإعادة الترتيب" : "بدّل إلى \"الترتيب اليدوي\" لتفعيل السحب"}
         >
           <GripVertical className="h-4 w-4" />
         </button>

@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { useStore } from "@/lib/store";
+import { useStore, usePendingSaves } from "@/lib/store";
 import type { Product } from "@/lib/data";
 import { formatCurrency } from "@/lib/data";
 import { toast } from "sonner";
@@ -31,6 +31,20 @@ function marginOf(p: Product): number {
   return p.sellingPrice > 0 ? ((p.sellingPrice - p.costPrice) / p.sellingPrice) * 100 : 0;
 }
 
+const SORT_LABELS: Record<string, string> = {
+  manual: "الترتيب اليدوي (افتراضي)",
+  "name-asc": "الاسم أبجدياً",
+  "price-desc": "السعر: الأعلى أولاً",
+  "price-asc": "السعر: الأقل أولاً",
+  "cost-desc": "التكلفة: الأعلى أولاً",
+  "cost-asc": "التكلفة: الأقل أولاً",
+  "margin-desc": "هامش الربح: الأعلى أولاً",
+  "margin-asc": "هامش الربح: الأقل أولاً",
+  "stock-desc": "المخزون: الأكثر أولاً",
+  "stock-asc": "المخزون: الأقل أولاً",
+  category: "الفئة أبجدياً",
+};
+
 const blankForm = {
   name: "", category: "", sku: "", description: "",
   costPrice: 0, sellingPrice: 0, stock: 0, minStock: 5, unit: "قطعة", image: "",
@@ -38,9 +52,11 @@ const blankForm = {
 
 export default function AdvancedInventoryPage() {
   const { connectionStatus, products, settings, addProduct, addProducts, updateProduct, reorderProducts, deleteProduct } = useStore();
+  const isSaving = usePendingSaves();
   const [search, setSearch] = useState("");
   const debounced = useDebounce(search);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("manual");
 
   const [addOpen, setAddOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -73,12 +89,27 @@ export default function AdvancedInventoryPage() {
 
   const filtered = useMemo(() => {
     const q = debounced.toLowerCase().trim();
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       if (categoryFilter !== "all" && p.category !== categoryFilter) return false;
       if (!q) return true;
       return p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q);
     });
-  }, [products, debounced, categoryFilter]);
+    // "manual" keeps the store's sort_order (drag-to-reorder) as-is; any other
+    // option re-sorts just this view without touching the saved manual order.
+    switch (sortBy) {
+      case "name-asc": return [...list].sort((a, b) => a.name.localeCompare(b.name, "ar"));
+      case "price-desc": return [...list].sort((a, b) => b.sellingPrice - a.sellingPrice);
+      case "price-asc": return [...list].sort((a, b) => a.sellingPrice - b.sellingPrice);
+      case "cost-desc": return [...list].sort((a, b) => b.costPrice - a.costPrice);
+      case "cost-asc": return [...list].sort((a, b) => a.costPrice - b.costPrice);
+      case "stock-desc": return [...list].sort((a, b) => b.stock - a.stock);
+      case "stock-asc": return [...list].sort((a, b) => a.stock - b.stock);
+      case "margin-desc": return [...list].sort((a, b) => marginOf(b) - marginOf(a));
+      case "margin-asc": return [...list].sort((a, b) => marginOf(a) - marginOf(b));
+      case "category": return [...list].sort((a, b) => a.category.localeCompare(b.category, "ar"));
+      default: return list;
+    }
+  }, [products, debounced, categoryFilter, sortBy]);
 
   const stats = useMemo(() => {
     const totalCostValue = products.reduce((s, p) => s + p.costPrice * p.stock, 0);
@@ -171,6 +202,25 @@ export default function AdvancedInventoryPage() {
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
           ملاحظة: هذه الصفحة مخفية من التنقّل الرئيسي فقط، وليست محمية بكلمة مرور — لا يوجد نظام تسجيل دخول في التطبيق حالياً.
         </div>
+
+        {/* Save-state indicator — every cell edit auto-saves on blur/Enter (no
+            separate Save button); this makes that visible so users don't
+            refresh/navigate away before an edit finishes writing to Supabase. */}
+        <AnimatePresence>
+          {isSaving && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="fixed top-4 inset-x-0 z-50 flex justify-center pointer-events-none"
+            >
+              <div className="flex items-center gap-2 rounded-full bg-slate-900 text-white text-xs font-bold px-4 py-2 shadow-lg">
+                <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
+                جارٍ الحفظ... لا تغلق الصفحة
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Inline AI assistant panel — helps organize/rename/analyze inventory faster from within this page */}
         <AnimatePresence initial={false}>
@@ -293,10 +343,30 @@ export default function AdvancedInventoryPage() {
             <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="ابحث بالاسم أو الكود أو الفئة" className="pr-10 h-11 rounded-xl" />
           </div>
           <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v ?? "all")}>
-            <SelectTrigger className="md:w-48 h-11 rounded-xl"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="md:w-48 h-11 rounded-xl">
+              <SelectValue>{(v: string) => (v === "all" ? "كل الفئات" : v)}</SelectValue>
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل الفئات</SelectItem>
               {settings.productCategories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v ?? "manual")}>
+            <SelectTrigger className="md:w-52 h-11 rounded-xl">
+              <SelectValue>{(v: string) => SORT_LABELS[v] || SORT_LABELS.manual}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">الترتيب اليدوي (افتراضي)</SelectItem>
+              <SelectItem value="name-asc">الاسم أبجدياً</SelectItem>
+              <SelectItem value="price-desc">السعر: الأعلى أولاً</SelectItem>
+              <SelectItem value="price-asc">السعر: الأقل أولاً</SelectItem>
+              <SelectItem value="cost-desc">التكلفة: الأعلى أولاً</SelectItem>
+              <SelectItem value="cost-asc">التكلفة: الأقل أولاً</SelectItem>
+              <SelectItem value="margin-desc">هامش الربح: الأعلى أولاً</SelectItem>
+              <SelectItem value="margin-asc">هامش الربح: الأقل أولاً</SelectItem>
+              <SelectItem value="stock-desc">المخزون: الأكثر أولاً</SelectItem>
+              <SelectItem value="stock-asc">المخزون: الأقل أولاً</SelectItem>
+              <SelectItem value="category">الفئة أبجدياً</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={exportFullCsv} variant="outline" className="gap-2 h-11 rounded-xl font-bold">
@@ -319,6 +389,7 @@ export default function AdvancedInventoryPage() {
           onUpdate={updateProduct}
           onReorder={reorderProducts}
           onDelete={setDeleting}
+          dragEnabled={sortBy === "manual"}
         />
       </div>
 

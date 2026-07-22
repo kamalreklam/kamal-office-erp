@@ -30,14 +30,53 @@ export type { Payment, PaymentMethod, Supplier, PurchaseOrder, PurchaseOrderItem
 import { supabase } from "./supabase";
 import { toast } from "sonner";
 
+// Every write goes through here fire-and-forget (callers don't await it), so a
+// refresh/navigation right after an edit can abort the in-flight request before
+// it reaches Supabase — silently losing the change, with no save button or
+// indicator to warn the user to wait. This counter + beforeunload guard closes
+// that gap for every write in the store, not just one page's.
+let pendingSaveCount = 0;
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", (e) => {
+    if (pendingSaveCount > 0) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+}
+
+const SAVE_STATE_EVENT = "kamal:pending-saves-changed";
+function notifySaveStateChange() {
+  if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(SAVE_STATE_EVENT));
+}
+
 // Supabase call with error toast — returns promise for awaiting critical ops
 async function dbExec(promise: PromiseLike<{ error: { message: string } | null }>): Promise<boolean> {
-  const res = await promise;
-  if (res.error) {
-    toast.error(`خطأ في المزامنة: ${res.error.message}`);
-    return false;
+  pendingSaveCount++;
+  notifySaveStateChange();
+  try {
+    const res = await promise;
+    if (res.error) {
+      toast.error(`خطأ في المزامنة: ${res.error.message}`);
+      return false;
+    }
+    return true;
+  } finally {
+    pendingSaveCount--;
+    notifySaveStateChange();
   }
-  return true;
+}
+
+// Lets any component show a "saving..." indicator while a write is in flight —
+// same underlying counter the beforeunload guard above uses.
+export function usePendingSaves(): boolean {
+  const [isSaving, setIsSaving] = useState(pendingSaveCount > 0);
+  useEffect(() => {
+    function handleChange() { setIsSaving(pendingSaveCount > 0); }
+    window.addEventListener(SAVE_STATE_EVENT, handleChange);
+    return () => window.removeEventListener(SAVE_STATE_EVENT, handleChange);
+  }, []);
+  return isSaving;
 }
 
 // ==========================================
