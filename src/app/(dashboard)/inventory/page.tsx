@@ -606,14 +606,14 @@ export default function InventoryPage() {
                         </div>
                         <button
                           onClick={e => { e.stopPropagation(); updateProduct(product.id, { isActive: product.isActive === false }) }}
-                          className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-bold ${product.isActive === false ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
+                          className={`shrink-0 rounded-full border px-2 py-0.5 text-[length:var(--text-2xs)] font-bold ${product.isActive === false ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}
                         >
                           {product.isActive === false ? 'معطّل' : 'فعّال'}
                         </button>
                       </div>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        {isEmpty && <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-slate-200 text-slate-600">نفذت الكمية</span>}
-                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-rose-100 text-rose-700 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]">منخفض المخزون</span>}
+                        {isEmpty && <span className="inline-flex px-2 py-1 rounded-lg text-[length:var(--text-2xs)] font-black bg-slate-200 text-slate-600">نفذت الكمية</span>}
+                        {isLow && <span className="inline-flex px-2 py-1 rounded-lg text-[length:var(--text-2xs)] font-black bg-rose-100 text-rose-700 animate-pulse shadow-[0_0_10px_rgba(244,63,94,0.2)]">منخفض المخزون</span>}
                       </div>
                       <div className="font-mono text-xs font-bold text-slate-400 mt-2"><CopyToClipboard text={product.sku}>{product.sku}</CopyToClipboard></div>
                     </div>
@@ -625,7 +625,7 @@ export default function InventoryPage() {
                       <span className={`font-mono text-2xl font-black block ${isLow ? 'text-rose-600' : 'text-slate-900'}`}>
                         {product.stock}
                       </span>
-                      <span className="text-[11px] text-slate-400 block font-bold uppercase tracking-wider">{product.unit}</span>
+                      <span className="text-[length:var(--text-2xs)] text-slate-400 block font-bold uppercase tracking-wider">{product.unit}</span>
                     </div>
 
                     <div className="text-left bg-slate-50 rounded-2xl px-4 py-2 border border-slate-100">
@@ -693,7 +693,7 @@ export default function InventoryPage() {
                     </div>
                   )}
                   {isLow && (
-                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[11px] font-black bg-rose-500 text-white shadow-sm animate-pulse">منخفض</span>
+                    <span className="absolute top-2 end-2 inline-flex px-2 py-1 rounded-lg text-[length:var(--text-2xs)] font-black bg-rose-500 text-white shadow-sm animate-pulse">منخفض</span>
                   )}
                 </div>
 
@@ -702,13 +702,13 @@ export default function InventoryPage() {
                   <span className="font-black text-slate-900 text-xs sm:text-sm block leading-snug break-words">
                     {product.name}
                   </span>
-                  <span className="font-mono text-[11px] font-bold text-slate-400 block mt-1">{product.sku}</span>
+                  <span className="font-mono text-[length:var(--text-2xs)] font-bold text-slate-400 block mt-1">{product.sku}</span>
                 </div>
 
                 {/* Pricing and Stock info */}
                 <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-50">
                   <div>
-                    <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">السعر</span>
+                    <span className="text-[length:var(--text-2xs)] font-bold text-slate-400 block uppercase tracking-wider mb-0.5">السعر</span>
                     <span className="font-mono text-sm font-black text-indigo-600">{formatCurrency(product.sellingPrice)}</span>
                   </div>
                   <div className="text-center bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-100">

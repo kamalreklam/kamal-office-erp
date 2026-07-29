@@ -202,7 +202,7 @@ function DesktopOrders() {
               {/* Updated at */}
               <div className="flex items-center gap-1.5 mt-3 text-slate-400 font-bold">
                 <Clock className="size-3.5" />
-                <span className={compact ? 'text-[11px]' : 'text-xs'}>{order.updatedAt}</span>
+                <span className={compact ? 'text-[length:var(--text-2xs)]' : 'text-xs'}>{order.updatedAt}</span>
               </div>
             </div>
           </div>

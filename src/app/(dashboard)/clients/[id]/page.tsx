@@ -27,28 +27,28 @@ function getAvatarColors(id: string) {
 
 function InvoiceStatusBadge({ status }: { status: string }) {
   if (status === "مدفوعة") {
-    return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-black px-2 py-0.5 rounded-md">مدفوعة</span>;
+    return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">مدفوعة</span>;
   }
   if (status === "مدفوعة جزئياً") {
-    return <span className="bg-amber-50 text-amber-600 border border-amber-200 text-[11px] font-black px-2 py-0.5 rounded-md">مدفوعة جزئياً</span>;
+    return <span className="bg-amber-50 text-amber-600 border border-amber-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">مدفوعة جزئياً</span>;
   }
   if (status === "غير مدفوعة") {
-    return <span className="bg-rose-50 text-rose-600 border border-rose-200 text-[11px] font-black px-2 py-0.5 rounded-md">غير مدفوعة</span>;
+    return <span className="bg-rose-50 text-rose-600 border border-rose-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">غير مدفوعة</span>;
   }
-  return <span className="bg-slate-50 text-slate-600 border border-slate-200 text-[11px] font-black px-2 py-0.5 rounded-md">{status}</span>;
+  return <span className="bg-slate-50 text-slate-600 border border-slate-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">{status}</span>;
 }
 
 function OrderStatusBadge({ status }: { status: string }) {
   if (status === "مكتمل") {
-    return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[11px] font-black px-2 py-0.5 rounded-md">مكتمل</span>;
+    return <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">مكتمل</span>;
   }
   if (status === "جاهز للاستلام") {
-    return <span className="bg-amber-50 text-amber-600 border border-amber-200 text-[11px] font-black px-2 py-0.5 rounded-md">جاهز للاستلام</span>;
+    return <span className="bg-amber-50 text-amber-600 border border-amber-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">جاهز للاستلام</span>;
   }
   if (status === "قيد التنفيذ") {
-    return <span className="bg-indigo-50 text-indigo-600 border border-indigo-200 text-[11px] font-black px-2 py-0.5 rounded-md">قيد التنفيذ</span>;
+    return <span className="bg-indigo-50 text-indigo-600 border border-indigo-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">قيد التنفيذ</span>;
   }
-  return <span className="bg-slate-50 text-slate-600 border border-slate-200 text-[11px] font-black px-2 py-0.5 rounded-md">{status}</span>;
+  return <span className="bg-slate-50 text-slate-600 border border-slate-200 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md">{status}</span>;
 }
 
 function StatusIcon({ type, status }: { type: "invoice" | "order", status: string }) {
@@ -184,7 +184,7 @@ export default function ClientDetailPage() {
                       <Phone className="size-4" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">رقم الهاتف</span>
+                      <span className="block text-[length:var(--text-2xs)] font-bold text-slate-400 uppercase tracking-wider mb-0.5">رقم الهاتف</span>
                       <span className="block text-sm font-bold text-slate-700 font-mono" dir="ltr">{client.phone}</span>
                     </div>
                   </div>
@@ -195,7 +195,7 @@ export default function ClientDetailPage() {
                       <MapPin className="size-4" />
                     </div>
                     <div>
-                      <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">العنوان</span>
+                      <span className="block text-[length:var(--text-2xs)] font-bold text-slate-400 uppercase tracking-wider mb-0.5">العنوان</span>
                       <span className="block text-sm font-bold text-slate-700">{client.address}</span>
                     </div>
                   </div>
@@ -240,7 +240,7 @@ export default function ClientDetailPage() {
                                 <OrderStatusBadge status={item.status} />
                               )}
                             </div>
-                            <span className="text-[11px] font-bold text-slate-400 shrink-0 uppercase tracking-widest">{item.date}</span>
+                            <span className="text-[length:var(--text-2xs)] font-bold text-slate-400 shrink-0 uppercase tracking-widest">{item.date}</span>
                           </div>
                           <p className="text-sm font-medium text-slate-500 pr-7">{item.subtitle}</p>
                         </div>

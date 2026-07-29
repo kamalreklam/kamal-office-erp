@@ -480,7 +480,7 @@ export default function AccountingPage() {
                 const text = isCritical ? 'text-rose-600' : isWarning ? 'text-amber-600' : 'text-slate-700';
                 return (
                   <div key={bucket} className={`p-4 text-center rounded-2xl border ${bg} transition-all`}>
-                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{bucket}</p>
+                    <p className="text-[length:var(--text-2xs)] font-black text-slate-400 uppercase tracking-widest mb-1">{bucket}</p>
                     <p className={`text-xl font-black font-mono tracking-tight ${text}`}>
                       {formatCurrency(amount)}
                     </p>
@@ -592,11 +592,11 @@ export default function AccountingPage() {
                       <span className="font-bold text-slate-900">{c.name}</span>
                       <div className="flex gap-4">
                         <div className="text-right">
-                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">مستحق</p>
+                          <p className="text-[length:var(--text-2xs)] font-black text-slate-400 uppercase tracking-widest">مستحق</p>
                           <p className="font-black font-mono text-amber-600">{formatCurrency(c.unpaid)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">مدفوع</p>
+                          <p className="text-[length:var(--text-2xs)] font-black text-slate-400 uppercase tracking-widest">مدفوع</p>
                           <p className="font-bold font-mono text-slate-500">{formatCurrency(c.paid)}</p>
                         </div>
                       </div>

@@ -77,7 +77,7 @@ export function ImageUpload({
           )}
         >
           <Camera className="h-5 w-5" />
-          <span className="text-[11px]">{label}</span>
+          <span className="text-[length:var(--text-2xs)]">{label}</span>
         </button>
       )}
       {!value && (

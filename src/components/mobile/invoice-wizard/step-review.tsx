@@ -58,12 +58,12 @@ export function StepReview({
             style={{ background: "var(--surface-1)", border: "1px solid var(--border-subtle)" }}
           >
             <div className="flex-1 min-w-0">
-              <p className="font-bold truncate" style={{ fontSize: 16, color: "var(--text-primary)" }}>{item.productName}</p>
-              <p style={{ fontSize: 14, color: "var(--text-muted)" }}>
+              <p className="font-bold truncate" style={{ fontSize: 'var(--text-base)', color: "var(--text-primary)" }}>{item.productName}</p>
+              <p style={{ fontSize: 'var(--text-sm)', color: "var(--text-muted)" }}>
                 {item.quantity} × {formatCurrency(item.unitPrice)}
               </p>
             </div>
-            <span className="font-extrabold shrink-0" style={{ fontSize: 18, color: "var(--primary)" }}>
+            <span className="font-extrabold shrink-0" style={{ fontSize: 'var(--text-lg)', color: "var(--primary)" }}>
               {formatCurrency(item.total)}
             </span>
             <button onClick={() => removeItem(item.productId)} className="p-2 shrink-0" style={{ color: "var(--red-500)" }}>

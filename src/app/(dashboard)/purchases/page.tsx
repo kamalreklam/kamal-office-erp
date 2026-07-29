@@ -326,15 +326,15 @@ export default function PurchasesPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-1">الكمية</label>
+                          <label className="text-[length:var(--text-2xs)] font-bold text-slate-400 block mb-1">الكمية</label>
                           <Input type="number" min={1} value={it.quantity} onChange={(e) => setItem(idx, { quantity: Math.max(1, Number(e.target.value) || 1) })} className="bg-slate-50 text-center" />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-1">التكلفة للوحدة</label>
+                          <label className="text-[length:var(--text-2xs)] font-bold text-slate-400 block mb-1">التكلفة للوحدة</label>
                           <Input type="number" min={0} step="0.01" value={it.costPrice} onChange={(e) => setItem(idx, { costPrice: Math.max(0, Number(e.target.value) || 0) })} className="bg-slate-50 text-center" />
                         </div>
                         <div>
-                          <label className="text-[10px] font-bold text-slate-400 block mb-1">الإجمالي الفرعي</label>
+                          <label className="text-[length:var(--text-2xs)] font-bold text-slate-400 block mb-1">الإجمالي الفرعي</label>
                           <div className="h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-sm font-black text-indigo-700">{formatCurrency(rowTotal, cur)}</div>
                         </div>
                       </div>
@@ -342,7 +342,7 @@ export default function PurchasesPage() {
                   );
                 })}
                 {items.some((it) => it.isNew) && (
-                  <p className="text-[11px] font-bold text-amber-600">المنتجات الجديدة تُضاف إلى كتالوج المخزون مباشرة (بمخزون 0 وسعر بيع غير محدد) — أكمل السعر والفئة لاحقاً من الإدارة المتقدمة للمخزون.</p>
+                  <p className="text-[length:var(--text-2xs)] font-bold text-amber-600">المنتجات الجديدة تُضاف إلى كتالوج المخزون مباشرة (بمخزون 0 وسعر بيع غير محدد) — أكمل السعر والفئة لاحقاً من الإدارة المتقدمة للمخزون.</p>
                 )}
               </div>
 
@@ -397,7 +397,7 @@ export default function PurchasesPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-black text-slate-800">{po.poNumber}</span>
-                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold ${meta.cls}`}>{meta.label}</span>
+                      <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[length:var(--text-2xs)] font-bold ${meta.cls}`}>{meta.label}</span>
                     </div>
                     <p className="mt-0.5 text-xs text-slate-500">{po.supplierName} · {po.items.length} صنف · {po.createdAt}</p>
                   </div>

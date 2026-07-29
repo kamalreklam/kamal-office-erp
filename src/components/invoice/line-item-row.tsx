@@ -105,11 +105,11 @@ function AutocompleteList({ searchQuery, filteredItems, focusedSearchIndex, onHo
                 {opt.type === "bundle" ? <Layers className="size-5" /> : <Package className="size-5" />}
               </div>
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="font-bold break-words text-xs sm:text-[13px]">
+                <span className="font-bold break-words text-xs sm:text-[length:var(--text-sm)]">
                   <HighlightMatch text={opt.name} query={searchQuery} />
                 </span>
                 {opt.type === "bundle" && (
-                  <span className={`text-[11px] ${focusedSearchIndex === oIdx ? "text-indigo-100" : "text-slate-400"}`}>حزمة تحتوي على عدة منتجات</span>
+                  <span className={`text-[length:var(--text-2xs)] ${focusedSearchIndex === oIdx ? "text-indigo-100" : "text-slate-400"}`}>حزمة تحتوي على عدة منتجات</span>
                 )}
               </div>
             </div>
@@ -162,7 +162,7 @@ export function LineItemRow({
         className={`${inputClass} bg-amber-50 border-amber-200 focus:border-amber-500 focus:bg-white pe-16 w-full`}
       />
       {!item.showDescription && (
-        <button type="button" onClick={() => onUpdate({ showDescription: true })} className="absolute end-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-amber-600 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded-md transition-colors border border-amber-300">
+        <button type="button" onClick={() => onUpdate({ showDescription: true })} className="absolute end-3 top-1/2 -translate-y-1/2 text-[length:var(--text-2xs)] font-bold text-amber-600 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded-md transition-colors border border-amber-300">
           + وصف
         </button>
       )}
@@ -181,7 +181,7 @@ export function LineItemRow({
         className={`${inputClass} prod-input bg-slate-50 focus:bg-white pe-16 w-full`}
       />
       {!item.showDescription && (
-        <button type="button" onClick={() => onUpdate({ showDescription: true })} className="absolute end-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition-colors border border-indigo-200">
+        <button type="button" onClick={() => onUpdate({ showDescription: true })} className="absolute end-3 top-1/2 -translate-y-1/2 text-[length:var(--text-2xs)] font-bold text-indigo-500 bg-indigo-50 hover:bg-indigo-100 px-2 py-1 rounded-md transition-colors border border-indigo-200">
           + وصف
         </button>
       )}
@@ -257,7 +257,7 @@ export function LineItemRow({
           </div>
 
           <div className="col-span-2 text-left h-full flex items-start pt-0.5 pe-1">
-            <span className="font-mono font-black text-[15px] xl:text-lg text-indigo-700 bg-indigo-50 px-2 xl:px-3 py-1.5 rounded-xl border border-indigo-100 inline-block w-full text-center shadow-sm h-[46px] flex items-center justify-center overflow-hidden">
+            <span className="font-mono font-black text-[length:var(--text-base)] xl:text-lg text-indigo-700 bg-indigo-50 px-2 xl:px-3 py-1.5 rounded-xl border border-indigo-100 inline-block w-full text-center shadow-sm h-[46px] flex items-center justify-center overflow-hidden">
               {formatCurrency(item.total)}
             </span>
           </div>

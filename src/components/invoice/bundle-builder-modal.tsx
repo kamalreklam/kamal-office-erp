@@ -91,7 +91,7 @@ export function BundleBuilderModal({ open, onClose, products, onConfirm }: Bundl
                     <div key={idx} className="flex items-center gap-3 bg-white border border-slate-100 p-3 rounded-xl shadow-sm">
                       <div className="flex-1 font-bold text-sm text-slate-800">{comp.productName}</div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <label className="text-[11px] font-black text-slate-400">الكمية:</label>
+                        <label className="text-[length:var(--text-2xs)] font-black text-slate-400">الكمية:</label>
                         <input
                           type="number" inputMode="numeric" min="1" value={comp.quantity}
                           onChange={(e) => {

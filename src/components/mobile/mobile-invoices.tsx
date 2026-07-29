@@ -120,7 +120,7 @@ export function MobileInvoices() {
               {s}
               <span
                 className="rounded-full px-1.5 py-0.5"
-                style={{ fontSize: 11, fontWeight: 700, background: active ? "rgba(255,255,255,0.2)" : "var(--surface-2)", color: active ? "white" : "var(--text-muted)" }}
+                style={{ fontSize: 'var(--text-2xs)', fontWeight: 700, background: active ? "rgba(255,255,255,0.2)" : "var(--surface-2)", color: active ? "white" : "var(--text-muted)" }}
               >
                 {count}
               </span>

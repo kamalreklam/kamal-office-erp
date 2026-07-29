@@ -284,7 +284,7 @@ export default function ReportsPage() {
                         {growth >= 0 ? <TrendingUp className="size-3.5 me-1 inline" /> : <TrendingDown className="size-3.5 me-1 inline" />}
                         <span>{Math.abs(growth).toFixed(1)}%</span>
                       </div>
-                      <span className="text-[11px] font-bold text-slate-400">من الشهر السابق</span>
+                      <span className="text-[length:var(--text-2xs)] font-bold text-slate-400">من الشهر السابق</span>
                     </div>
                   )}
                 </div>

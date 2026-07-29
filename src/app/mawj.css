@@ -56,7 +56,7 @@
   background: var(--canvas);
   color: var(--ink-deep);
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--text-base);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -107,7 +107,7 @@
 }
 
 .mawj-app .t-page {
-  font-size: 30px;
+  font-size: var(--text-2xl);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.01em;
@@ -115,18 +115,18 @@
   word-break: keep-all;
 }
 .mawj-app .t-section {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 700;
   line-height: 1.3;
 }
 .mawj-app .t-label {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--slate);
   letter-spacing: 0.02em;
 }
 .mawj-app .t-micro {
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--slate);
 }
 .mawj-app .t-num {
@@ -181,7 +181,7 @@
 .mawj-app textarea,
 .mawj-app select {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--ink-deep);
 }
 .mawj-app input::placeholder,
@@ -329,20 +329,20 @@
 .mawj-app .side-brand .brand-name {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 21px;
+  font-size: var(--text-xl);
   color: var(--ink-deep);
   line-height: 1;
   white-space: nowrap;
 }
 .mawj-app .side-brand .brand-sub {
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--slate);
   letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
 .mawj-app .side-group {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--slate);
@@ -359,7 +359,7 @@
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   color: var(--wave);
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 500;
   white-space: nowrap;
   position: relative;
@@ -442,7 +442,7 @@
   border: 1px solid var(--mist);
   border-radius: 99px;
   color: var(--slate);
-  font-size: 14px;
+  font-size: var(--text-base);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .mawj-app .search-pill:hover {
@@ -452,7 +452,7 @@
 .mawj-app .search-pill kbd {
   margin-inline-start: auto;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--text-base);
   background: var(--crystal);
   border: 1px solid var(--mist);
   border-radius: 6px;
@@ -498,7 +498,7 @@
   background: var(--ink);
   color: var(--gold);
   font-weight: 600;
-  font-size: 14px;
+  font-size: var(--text-base);
   box-shadow: var(--shadow-card);
   transition: transform 0.12s ease, box-shadow 0.15s ease;
   white-space: nowrap;
@@ -561,7 +561,7 @@
   min-height: 44px;
   padding: 10px 22px;
   border-radius: 99px;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   border: 1px solid transparent;
   transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -605,7 +605,7 @@
 }
 .mawj-app .btn-sm {
   padding: 5px 13px;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 /* ————— badges & chips ————— */
@@ -615,7 +615,7 @@
   gap: 6px;
   padding: 2.5px 11px;
   border-radius: 99px;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   line-height: 1.5;
   white-space: nowrap;
@@ -664,7 +664,7 @@
   border-radius: 99px;
   border: 1px solid var(--mist);
   background: var(--card);
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--wave);
   transition: all 0.15s ease;
@@ -687,11 +687,11 @@
 .mawj-app table.mtable {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .mawj-app .mtable th {
   text-align: start;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--slate);
@@ -722,7 +722,7 @@
 .mawj-app .kpi-value {
   font-family: var(--font-num);
   font-weight: 700;
-  font-size: 34px;
+  font-size: var(--text-3xl);
   line-height: 1.12;
   font-variant-numeric: tabular-nums;
   color: var(--ink-deep);
@@ -731,13 +731,13 @@
 }
 .mawj-app .kpi-value .unit {
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 500;
   color: var(--slate);
   margin-inline-start: 4px;
 }
 .mawj-app .delta {
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
@@ -832,7 +832,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: var(--text-base);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--gold-deep);
@@ -845,7 +845,7 @@
   border-radius: var(--radius-sm);
   background: linear-gradient(90deg, var(--gold-08), transparent 70%);
   border: 1px solid var(--gold-30);
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 /* ————— overlays: palette & assistant ————— */
@@ -877,7 +877,7 @@
   border: none;
   outline: none;
   padding: 18px 22px;
-  font-size: 16px;
+  font-size: var(--text-base);
   background: transparent;
 }
 .mawj-app .palette-list {
@@ -893,7 +893,7 @@
   width: 100%;
   padding: 11px 16px;
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--ink-deep);
   text-align: start;
 }
@@ -906,7 +906,7 @@
 }
 .mawj-app .palette-item .hint {
   margin-inline-start: auto;
-  font-size: 14px;
+  font-size: var(--text-base);
   color: var(--slate);
 }
 .mawj-app .palette-item[data-sel='true'] .hint {
@@ -938,7 +938,7 @@
   padding: 10px 16px;
   max-width: 85%;
   margin-inline-start: auto;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .mawj-app .bubble-ai {
   background: var(--crystal);
@@ -946,7 +946,7 @@
   border-radius: 16px 16px 5px 16px;
   padding: 12px 16px;
   max-width: 92%;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 
 /* ————— orders pipeline board ————— */
@@ -1018,7 +1018,7 @@
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-base);
   flex: 0 0 auto;
 }
 .mawj-app .avatar-gold {
@@ -1039,7 +1039,7 @@
   place-items: center;
   color: var(--slate);
   font-family: monospace;
-  font-size: 14px;
+  font-size: var(--text-base);
 }
 .mawj-app .stepper {
   display: flex;
@@ -1058,7 +1058,7 @@
   padding: 11px 22px;
   border-radius: 99px;
   box-shadow: var(--shadow-pop);
-  font-size: 14px;
+  font-size: var(--text-base);
   z-index: 120;
   display: flex;
   align-items: center;
@@ -1151,13 +1151,13 @@
   .mawj-app .btn {
     min-height: 52px;
     padding: 12px 24px;
-    font-size: 16px;
+    font-size: var(--text-base);
     border-radius: 14px;
   }
   .mawj-app .btn-sm {
     min-height: 44px;
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: var(--text-base);
     border-radius: 10px;
   }
   .mawj-app .field input,
@@ -1168,7 +1168,7 @@
   .mawj-app select {
     min-height: 52px;
     padding: 12px 18px;
-    font-size: 16px;
+    font-size: var(--text-base);
     border-radius: 14px;
   }
   .mawj-app .bottom-tabs {
@@ -1191,7 +1191,7 @@
     gap: 3px;
     padding: 6px 0 4px;
     border-radius: var(--radius-sm);
-    font-size: 14px;
+    font-size: var(--text-base);
     font-weight: 600;
     color: var(--slate);
     min-height: 44px;
@@ -1217,9 +1217,9 @@
     border-radius: 20px;
   }
   .mawj-app .kpi-value {
-    font-size: 29px;
+    font-size: var(--text-2xl);
   }
   .mawj-app .t-page {
-    font-size: 25px;
+    font-size: var(--text-xl);
   }
 }

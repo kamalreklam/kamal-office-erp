@@ -48,7 +48,7 @@ export default function AssistantPage() {
         ) : !stats ? (
           <p className="text-xs font-bold text-muted-foreground">جاري تحميل حالة المساعد...</p>
         ) : (
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-[13px] font-bold">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs sm:text-[length:var(--text-sm)] font-bold">
             <div className="flex items-center gap-1.5">
               <Cpu className="size-3.5 text-indigo-500 shrink-0" />
               <span className="text-muted-foreground">النموذج:</span>

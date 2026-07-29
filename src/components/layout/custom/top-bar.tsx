@@ -85,7 +85,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           >
             <Bell className="size-4" />
             {alertCount > 0 && (
-              <span className="absolute end-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[11px] font-bold text-white">
+              <span className="absolute end-1.5 top-1.5 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[length:var(--text-2xs)] font-bold text-white">
                 {alertCount > 9 ? '9+' : alertCount}
               </span>
             )}
@@ -149,7 +149,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </span>
           <span className="hidden flex-col text-start xl:flex">
             <span className="text-xs font-semibold leading-tight">كمال</span>
-            <span className="text-[11px] text-muted-foreground leading-none flex items-center gap-1">
+            <span className="text-[length:var(--text-2xs)] text-muted-foreground leading-none flex items-center gap-1">
               <Settings className="size-2.5" /> الإعدادات
             </span>
           </span>

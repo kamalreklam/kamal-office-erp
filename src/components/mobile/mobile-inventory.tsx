@@ -186,7 +186,7 @@ export function MobileInventory() {
               <span
                 className="rounded-full px-1.5 py-0.5"
                 style={{
-                  fontSize: 11, fontWeight: 700,
+                  fontSize: 'var(--text-2xs)', fontWeight: 700,
                   background: active ? "rgba(255,255,255,0.2)" : "var(--surface-2)",
                   color: active ? "white" : "var(--text-muted)",
                 }}

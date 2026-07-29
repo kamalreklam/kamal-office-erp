@@ -498,7 +498,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                           onClick={() => selectClient(c)}
                           className="flex w-full items-center gap-2.5 rounded-[8px] p-2.5 text-right transition-colors hover:bg-[#f1f5f9]"
                         >
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[11px] font-bold text-[#2563eb]">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb]/10 text-[length:var(--text-2xs)] font-bold text-[#2563eb]">
                             {c.name.charAt(0)}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -563,10 +563,10 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                               onChange={(e) => updateCartItem(item.productId, { productName: e.target.value })}
                               className="flex-1 min-w-0 rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-white px-2 py-1 text-sm font-medium text-[#1e293b] outline-none focus:border-[#2563eb]"
                             />
-                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[11px] font-bold text-white">مؤقت</span>
+                            <span className="shrink-0 rounded-full bg-[#f59e0b] px-2 py-0.5 text-[length:var(--text-2xs)] font-bold text-white">مؤقت</span>
                           </div>
                           <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
+                            <span className="text-[length:var(--text-2xs)] font-bold text-[#94a3b8] shrink-0">التكلفة</span>
                             <input
                               type="text" inputMode="decimal" dir="ltr"
                               placeholder="0.00"
@@ -586,7 +586,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                         <div className="flex items-center gap-1.5">
                           <p className="text-sm font-bold text-[#1e293b] truncate">{item.productName}</p>
                           {item.isBundle && (
-                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[11px] font-bold text-white">باقة</span>
+                            <span className="shrink-0 rounded-full bg-[#7c3aed] px-2 py-0.5 text-[length:var(--text-2xs)] font-bold text-white">باقة</span>
                           )}
                         </div>
                       )}
@@ -608,7 +608,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                   <div className="grid grid-cols-3 gap-2">
                     {/* Quantity */}
                     <div>
-                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
+                      <label className="block text-[length:var(--text-2xs)] font-bold text-[#94a3b8] mb-0.5">الكمية</label>
                       <div className="flex items-center rounded-[8px] border-[1.5px] border-[#e2e8f0] bg-[#f8fafc]">
                         <button
                           onClick={() => updateCartQuantity(item.productId, item.quantity - 1)}
@@ -635,7 +635,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
                     {/* Price */}
                     <div>
-                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">السعر</label>
+                      <label className="block text-[length:var(--text-2xs)] font-bold text-[#94a3b8] mb-0.5">السعر</label>
                       <input
                         type="text"
                         inputMode="decimal"
@@ -648,7 +648,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
 
                     {/* Line total */}
                     <div>
-                      <label className="block text-[11px] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
+                      <label className="block text-[length:var(--text-2xs)] font-bold text-[#94a3b8] mb-0.5">الإجمالي</label>
                       <div className="flex h-[30px] items-center justify-center rounded-[8px] bg-[#2563eb]/5 text-sm font-bold font-mono text-[#2563eb]">
                         {formatCurrency(getLineTotal(item))}
                       </div>
@@ -689,7 +689,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                             className={`flex w-full items-center gap-2 rounded-[8px] px-1 py-2 text-right transition-colors ${outOfStock ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f1f5f9]"} ${inCart ? "bg-[#2563eb]/5" : ""}`}
                           >
                             <div className="flex-1 min-w-0">
-                              <p className="text-[13px] font-medium text-[#1e293b] truncate" dir="ltr">{p.name}</p>
+                              <p className="text-[length:var(--text-sm)] font-medium text-[#1e293b] truncate" dir="ltr">{p.name}</p>
                               <p className={`text-xs ${outOfStock ? "text-red-500" : "text-[#94a3b8]"}`}>
                                 {outOfStock ? "نفذ المخزون" : `${p.category} · ${p.stock}`}
                               </p>
@@ -896,7 +896,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                       <div key={bi.productId} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
                         <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
                         <span className="text-sm font-medium flex-1 truncate">{bi.product?.name || bi.productName}</span>
-                        <span className={`text-[11px] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                        <span className={`text-[length:var(--text-2xs)] ${bi.product && bi.product.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
                           {bi.product ? (bi.product.stock <= 0 ? "نفذ!" : `${bi.product.stock}`) : "—"}
                         </span>
                       </div>
@@ -958,7 +958,7 @@ export function MobileInvoiceWizard({ editId }: { editId?: string | null }) {
                     <div key={p.id} className="flex items-center gap-2.5 rounded-xl bg-[#f8fafc] px-3 py-2">
                       <div className="h-3.5 w-3.5 rounded-full shadow-sm" style={{ backgroundColor: cfg.dot }} />
                       <span className="text-sm font-medium flex-1 truncate">{p.name}</span>
-                      <span className={`text-[11px] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
+                      <span className={`text-[length:var(--text-2xs)] ${p.stock <= 0 ? "text-red-500 font-bold" : "text-[#94a3b8]"}`}>
                         {p.stock <= 0 ? "نفذ!" : `${p.stock}`}
                       </span>
                     </div>

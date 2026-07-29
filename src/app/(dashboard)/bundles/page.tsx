@@ -248,7 +248,7 @@ export default function BundlesPage() {
                               </div>
                               <div className="flex items-center gap-6 shrink-0">
                                 <div className="text-center bg-white rounded-xl px-4 py-2 border border-slate-200 shadow-sm">
-                                  <span className="text-[11px] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">الكمية</span>
+                                  <span className="text-[length:var(--text-2xs)] font-bold text-slate-400 block mb-0.5 uppercase tracking-wider">الكمية</span>
                                   <span className="font-black text-base font-mono text-indigo-600">×{c.quantity}</span>
                                 </div>
                               </div>
@@ -268,7 +268,7 @@ export default function BundlesPage() {
                         <div className="text-end">
                           <div className="flex items-center justify-end gap-2 mb-1">
                             {bundle.discount > 0 && (
-                              <span className="bg-indigo-100 text-indigo-700 text-[11px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              <span className="bg-indigo-100 text-indigo-700 text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
                                 خصم {bundle.discount}%
                               </span>
                             )}

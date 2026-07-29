@@ -162,7 +162,7 @@ export function AssistantChat({
             >
               {m.role === "user" ? <User className="size-4" /> : <Sparkles className="size-4" />}
             </div>
-            <div className={`max-w-[88%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 text-sm sm:text-[15px] leading-relaxed whitespace-pre-wrap ${m.role === "user" ? "bg-indigo-600 text-white" : ""}`}
+            <div className={`max-w-[88%] sm:max-w-[85%] rounded-2xl px-4 py-2.5 text-sm sm:text-[length:var(--text-base)] leading-relaxed whitespace-pre-wrap ${m.role === "user" ? "bg-indigo-600 text-white" : ""}`}
               style={m.role === "assistant" ? { background: "var(--surface-2)", color: "var(--text-primary, inherit)" } : undefined}
             >
               <FormattedText text={m.text} />
@@ -265,7 +265,7 @@ export function AssistantChat({
             <button
               key={s}
               onClick={() => send(s)}
-              className="shrink-0 text-[11px] font-bold rounded-full border px-2.5 py-1 hover:bg-accent active:scale-95 transition-all whitespace-nowrap"
+              className="shrink-0 text-[length:var(--text-2xs)] font-bold rounded-full border px-2.5 py-1 hover:bg-accent active:scale-95 transition-all whitespace-nowrap"
               style={{ borderColor: "var(--border-subtle)" }}
             >
               {s}

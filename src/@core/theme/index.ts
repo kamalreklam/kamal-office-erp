@@ -13,8 +13,8 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-// Use Almarai loaded globally via Next.js font in root layout
-const almaraiFontFamily = '"Almarai", sans-serif'
+// App-wide font: IBM Plex Sans Arabic, loaded globally via Next.js font in root layout (src/app/layout.tsx)
+const appFontFamily = 'var(--font-ibm), "IBM Plex Sans Arabic", sans-serif'
 
 const theme = (settings: Settings, mode: SystemMode, direction: Theme['direction']): Theme => {
   return {
@@ -33,7 +33,7 @@ const theme = (settings: Settings, mode: SystemMode, direction: Theme['direction
       }
     },
     shadows: shadows(mode),
-    typography: typography(almaraiFontFamily),
+    typography: typography(appFontFamily),
     customShadows: customShadows(mode),
     mainColorChannels: {
       light: '47 43 61',

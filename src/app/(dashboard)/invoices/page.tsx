@@ -362,7 +362,7 @@ export default function InvoicesPage() {
                   }`}
                 >
                   <span>{tab.label}</span>
-                  <span className={`text-[11px] font-mono font-black px-2 py-0.5 rounded-md ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
+                  <span className={`text-[length:var(--text-2xs)] font-mono font-black px-2 py-0.5 rounded-md ${isActive ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
                     {tab.count}
                   </span>
                 </button>
@@ -424,7 +424,7 @@ export default function InvoicesPage() {
                             </div>
                             <div>
                               <span className="font-bold text-slate-900 block">{inv.clientName}</span>
-                              <span className="text-[11px] text-slate-500 font-bold block">{inv.items.length} أصناف</span>
+                              <span className="text-[length:var(--text-2xs)] text-slate-500 font-bold block">{inv.items.length} أصناف</span>
                             </div>
                           </div>
                         </td>
@@ -437,7 +437,7 @@ export default function InvoicesPage() {
                           <div className="flex flex-col items-end">
                             <span className="font-black text-base font-mono text-indigo-600">{formatCurrency(inv.total)}</span>
                             {inv.discountAmount > 0 && (
-                              <span className="text-[11px] uppercase tracking-widest text-emerald-600 font-black mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md">
+                              <span className="text-[length:var(--text-2xs)] uppercase tracking-widest text-emerald-600 font-black mt-0.5 bg-emerald-50 px-2 py-0.5 rounded-md">
                                 خصم {formatCurrency(inv.discountAmount)}
                               </span>
                             )}
@@ -445,7 +445,7 @@ export default function InvoicesPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex justify-center">
-                            <span className={`px-3 py-1.5 rounded-xl text-[11px] font-black
+                            <span className={`px-3 py-1.5 rounded-xl text-[length:var(--text-2xs)] font-black
                               ${inv.status === 'مدفوعة' ? 'bg-emerald-100 text-emerald-700 shadow-[0_0_10px_rgba(16,185,129,0.2)]' :
                                 inv.status === 'غير مدفوعة' ? 'bg-rose-100 text-rose-700 shadow-[0_0_10px_rgba(244,63,94,0.2)]' :
                                 'bg-slate-100 text-slate-600'
@@ -501,7 +501,7 @@ export default function InvoicesPage() {
                     <StatusBadge status={inv.status} />
                   </div>
                   
-                  <div className="flex items-center gap-2 text-[11px] text-slate-500 font-bold mb-5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 inline-flex">
+                  <div className="flex items-center gap-2 text-[length:var(--text-2xs)] text-slate-500 font-bold mb-5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 inline-flex">
                     <Calendar className="size-3" />
                     <span className="font-mono">{inv.createdAt}</span>
                     <span className="w-1 h-1 rounded-full bg-slate-300 mx-1" />
@@ -510,7 +510,7 @@ export default function InvoicesPage() {
 
                   <div className="flex justify-between items-end border-t border-slate-100 pt-4">
                     <div className="flex flex-col text-left">
-                       <span className="text-[11px] uppercase tracking-widest font-black text-slate-400 block mb-0.5">الإجمالي</span>
+                       <span className="text-[length:var(--text-2xs)] uppercase tracking-widest font-black text-slate-400 block mb-0.5">الإجمالي</span>
                        <span className="font-black text-2xl font-mono text-indigo-600">{formatCurrency(inv.total)}</span>
                     </div>
                     

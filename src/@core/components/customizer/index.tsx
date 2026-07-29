@@ -176,7 +176,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
         })}
       >
         <div className={styles.toggler} onClick={handleToggle}>
-          <i className='tabler-settings text-[22px]' />
+          <i className='tabler-settings text-[length:var(--text-xl)]' />
         </div>
         <div className={styles.header}>
           <div className='flex flex-col'>
@@ -270,7 +270,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
                       })}
                       onClick={() => handleChange('mode', 'light')}
                     >
-                      <i className='tabler-sun text-[30px]' />
+                      <i className='tabler-sun text-3xl' />
                     </div>
                     <p className={styles.itemLabel} onClick={() => handleChange('mode', 'light')}>
                       Light
@@ -283,7 +283,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
                       })}
                       onClick={() => handleChange('mode', 'dark')}
                     >
-                      <i className='tabler-moon-stars text-[30px]' />
+                      <i className='tabler-moon-stars text-3xl' />
                     </div>
                     <p className={styles.itemLabel} onClick={() => handleChange('mode', 'dark')}>
                       Dark
@@ -296,7 +296,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
                       })}
                       onClick={() => handleChange('mode', 'system')}
                     >
-                      <i className='tabler-device-laptop text-[30px]' />
+                      <i className='tabler-device-laptop text-3xl' />
                     </div>
                     <p className={styles.itemLabel} onClick={() => handleChange('mode', 'system')}>
                       System

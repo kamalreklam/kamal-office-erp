@@ -210,7 +210,7 @@ code {
   min-height: 500px;
   padding: 16px;
   font-family: monospace;
-  font-size: 12px;
+  font-size: var(--text-xs);
   line-height: 1.5;
   resize: none;
   outline: none;

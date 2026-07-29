@@ -64,16 +64,16 @@ function BundleChip({ card, onAdd }: { card: BundleCard; onAdd: (bundle: Product
       }`}
     >
       <div className="flex items-start justify-between gap-1">
-        <span className="text-[14px] sm:text-[15px] font-black text-slate-800 leading-snug">{card.bundle.name}</span>
-        <span className={`shrink-0 text-[12px] sm:text-[13px] font-bold px-2 py-0.5 rounded-full ${
+        <span className="text-sm sm:text-[length:var(--text-base)] font-black text-slate-800 leading-snug">{card.bundle.name}</span>
+        <span className={`shrink-0 text-xs sm:text-[length:var(--text-sm)] font-bold px-2 py-0.5 rounded-full ${
           card.availableUnits > 3 ? "bg-emerald-50 text-emerald-700" : card.availableUnits > 0 ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-600"
         }`}>
           {inStock ? card.availableUnits : "✕"}
         </span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-[15px] sm:text-[16px] font-black text-indigo-600">{formatCurrency(card.price)}</span>
-        <span className={`text-[12px] sm:text-[13px] font-bold px-2.5 py-1 rounded-lg transition-colors ${
+        <span className="text-[length:var(--text-base)] sm:text-base font-black text-indigo-600">{formatCurrency(card.price)}</span>
+        <span className={`text-xs sm:text-[length:var(--text-sm)] font-bold px-2.5 py-1 rounded-lg transition-colors ${
           inStock ? "bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white" : "bg-slate-100 text-slate-400"
         }`}>
           + إضافة

@@ -351,7 +351,7 @@ function PremiumClientsLayout() {
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-900 truncate max-w-[180px]">{client.name}</span>
                                 {tier && (
-                                  <span className={`text-[11px] font-black px-2 py-0.5 rounded-md border flex items-center gap-1 ${tier.styles}`}>
+                                  <span className={`text-[length:var(--text-2xs)] font-black px-2 py-0.5 rounded-md border flex items-center gap-1 ${tier.styles}`}>
                                     <span>{tier.icon}</span>
                                     <span>{tier.label}</span>
                                   </span>
@@ -494,7 +494,7 @@ function PremiumClientsLayout() {
                       )}
                     </div>
                     <div className="text-left shrink-0">
-                      <span className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">المشتريات</span>
+                      <span className="block text-[length:var(--text-2xs)] font-bold text-slate-400 uppercase tracking-wider mb-0.5">المشتريات</span>
                       <span className="font-black text-lg font-mono text-indigo-600 tracking-tight">{formatCurrency(client.totalSpent)}</span>
                     </div>
                   </div>

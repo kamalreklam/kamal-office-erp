@@ -194,7 +194,7 @@ export default function NewBundlePage() {
                       {multiType && (
                         <div className="flex items-center gap-3 py-2">
                           <div className="h-px flex-1 bg-slate-200" />
-                          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
+                          <span className="text-[length:var(--text-2xs)] font-black text-slate-400 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
                             {group.label}
                           </span>
                           <div className="h-px flex-1 bg-slate-200" />
@@ -256,14 +256,14 @@ export default function NewBundlePage() {
 
                               <div className="flex items-center gap-6 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-sm">
                                 <div className="space-y-1 text-center">
-                                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">سعر التكلفة</span>
+                                  <span className="text-[length:var(--text-2xs)] font-bold text-slate-400 uppercase tracking-widest block">سعر التكلفة</span>
                                   <span className="block text-sm font-black text-slate-700 font-mono">
                                     {formatCurrency(cost)}
                                   </span>
                                 </div>
                                 <div className="w-px h-8 bg-slate-200" />
                                 <div className="space-y-1">
-                                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">سعر المبيع</span>
+                                  <span className="text-[length:var(--text-2xs)] font-bold text-slate-400 uppercase tracking-widest block">سعر المبيع</span>
                                   <input
                                     type="number"
                                     value={item.sellingPrice ?? 0}
