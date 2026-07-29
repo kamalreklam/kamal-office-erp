@@ -141,7 +141,7 @@ export function CommandPalette() {
       {/* Anchored dropdown panel — no full-page modal/backdrop, closes on outside click or Escape */}
       {open && (
         <div
-          className="absolute end-0 top-full z-50 mt-2 w-[92vw] max-w-md rounded-2xl border shadow-2xl overflow-hidden"
+          className="fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-[26rem] max-w-md z-50 rounded-2xl border shadow-2xl overflow-hidden"
           style={{ background: "var(--surface-1)", borderColor: "var(--border-subtle)" }}
         >
           <Command dir="rtl">

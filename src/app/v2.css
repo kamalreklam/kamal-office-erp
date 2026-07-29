@@ -74,6 +74,26 @@
   --chart-3: #1e3a5f;
   --chart-4: #6b7280;
   --chart-5: #9c7b3f;
+
+  /* ---- Legacy aliases ----
+     Referenced by ~20 mobile/dropdown components (notifications, command
+     palette, dialogs, sidesheets) but never defined, so those surfaces
+     rendered fully transparent. Alias to the real tokens above instead of
+     rewriting every call site. */
+  --surface-1: var(--card);
+  --surface-2: var(--secondary);
+  --surface-3: var(--accent);
+  --glass-border: var(--border);
+  --border-subtle: var(--border);
+  --border-default: var(--border);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-muted: var(--muted-foreground);
+  --amber-500: #f59e0b;
+  --green-500: #22c55e;
+  --rose-500: #f43f5e;
+  --red-500: #ef4444;
+  --blue-500: #3b82f6;
 }
 
 .dark {
@@ -101,6 +121,21 @@
   --border: rgba(238, 242, 247, 0.1);
   --input: rgba(238, 242, 247, 0.14);
   --ring: #c9a961;
+
+  --surface-1: var(--card);
+  --surface-2: var(--secondary);
+  --surface-3: var(--accent);
+  --glass-border: var(--border);
+  --border-subtle: var(--border);
+  --border-default: var(--border);
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-muted: var(--muted-foreground);
+  --amber-500: #fbbf24;
+  --green-500: #4ade80;
+  --rose-500: #fb7185;
+  --red-500: #f87171;
+  --blue-500: #60a5fa;
 }
 
 /* ---- Map tokens to Tailwind color/utility namespace ----

@@ -93,7 +93,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
           {notifOpen && (
             <div
-              className="absolute end-0 top-full z-50 mt-2 w-80 max-w-[90vw] rounded-2xl border shadow-2xl overflow-hidden"
+              className="fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:end-0 sm:top-full sm:mt-2 sm:w-80 z-50 rounded-2xl border shadow-2xl overflow-hidden"
               style={{ background: 'var(--surface-1)', borderColor: 'var(--border-subtle)' }}
             >
               <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
