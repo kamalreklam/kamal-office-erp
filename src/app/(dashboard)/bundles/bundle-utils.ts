@@ -1,5 +1,5 @@
-import { type Product } from "@/lib/data";
-import { type BundleItem } from "@/lib/store";
+import { type Product, type Invoice } from "@/lib/data";
+import { type BundleItem, type ProductBundle } from "@/lib/store";
 
 export const colorOrder = ["C", "M", "Y", "BK", "LC", "LM"];
 export const typeOrder = ["printer", "ink", "tank", "other"] as const;
@@ -15,20 +15,21 @@ export const colorStyles: Record<string, { light: string; dark: string; textLigh
 
 export function getColorKey(name: string): string {
   const n = name.toLowerCase();
-  if (n.includes("light cyan")    || n === "lc") return "LC";
-  if (n.includes("light magenta") || n === "lm") return "LM";
-  if (n.includes("cyan")          || n === "c")  return "C";
-  if (n.includes("magenta")       || n === "m")  return "M";
-  if (n.includes("yellow")        || n === "y")  return "Y";
-  if (n.includes("black")         || n === "bk") return "BK";
+  const isLight = n.includes("light") || n.includes("فاتح");
+  if ((n.includes("cyan") || n.includes("سماوي")) && isLight) return "LC";
+  if ((n.includes("magenta") || n.includes("أحمر") || n.includes("احمر")) && isLight) return "LM";
+  if (n.includes("cyan") || n.includes("سماوي") || n === "c") return "C";
+  if (n.includes("magenta") || n.includes("أحمر") || n.includes("احمر") || n === "m") return "M";
+  if (n.includes("yellow") || n.includes("أصفر") || n.includes("اصفر") || n === "y") return "Y";
+  if (n.includes("black") || n.includes("أسود") || n.includes("اسود") || n === "bk") return "BK";
   return "";
 }
 
 export function detectType(product: Product): NonNullable<BundleItem["componentType"]> {
   const cat = product.category.toLowerCase();
   const name = product.name.toLowerCase();
-  if (cat.includes("printer") || cat === "printers") return "printer";
-  if (name.includes("tank") || cat.includes("tank")) return "tank";
+  if (cat.includes("printer") || cat === "printers" || cat.includes("طابعة")) return "printer";
+  if (name.includes("tank") || cat.includes("tank") || name.includes("خزان") || cat.includes("خزان")) return "tank";
   if (getColorKey(name) !== "") return "ink";
   return "other";
 }
@@ -61,3 +62,66 @@ export const itemSell = (item: BundleItem, product?: Product) =>
   item.sellingPrice ?? product?.sellingPrice ?? 0;
 export const itemCost = (item: BundleItem, product?: Product) =>
   item.costPrice ?? product?.sellingPrice ?? 0;
+
+export interface BundleSuggestion {
+  productIds: string[];
+  products: Product[];
+  invoiceCount: number;
+  suggestedName: string;
+}
+
+/**
+ * Finds products frequently invoiced together that aren't already covered
+ * by an existing bundle — a lightweight co-purchase signal read straight
+ * from invoice history, no external AI call needed.
+ */
+export function suggestBundles(
+  invoices: Invoice[],
+  products: Product[],
+  bundles: ProductBundle[],
+  { minInvoices = 2, maxSuggestions = 6 }: { minInvoices?: number; maxSuggestions?: number } = {}
+): BundleSuggestion[] {
+  const productById = new Map(products.map(p => [p.id, p]));
+
+  // Skip line items that are themselves a bundle — we want raw co-purchases,
+  // not products already sold together as a package.
+  const invoiceProductSets = invoices
+    .map(inv => Array.from(new Set(inv.items.filter(it => !it.isBundle && productById.has(it.productId)).map(it => it.productId))))
+    .filter(ids => ids.length >= 2 && ids.length <= 5); // ignore single-item and huge mixed invoices — weak signal either way
+
+  const existingPairs = new Set<string>();
+  for (const b of bundles) {
+    const ids = b.items.map(i => i.productId).sort();
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) existingPairs.add(`${ids[i]}|${ids[j]}`);
+    }
+  }
+
+  const pairCounts = new Map<string, number>();
+  for (const ids of invoiceProductSets) {
+    const sorted = [...ids].sort();
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const key = `${sorted[i]}|${sorted[j]}`;
+        if (existingPairs.has(key)) continue;
+        pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+
+  const ranked = Array.from(pairCounts.entries())
+    .filter(([, count]) => count >= minInvoices)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, maxSuggestions);
+
+  return ranked.map(([key, count]) => {
+    const [idA, idB] = key.split("|");
+    const productsInPair = [productById.get(idA), productById.get(idB)].filter((p): p is Product => !!p);
+    return {
+      productIds: [idA, idB],
+      products: productsInPair,
+      invoiceCount: count,
+      suggestedName: productsInPair.map(p => p.name).join(" + "),
+    };
+  });
+}

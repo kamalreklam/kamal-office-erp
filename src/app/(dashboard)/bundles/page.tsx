@@ -102,6 +102,13 @@ export default function BundlesPage() {
               <Plus className="size-5" />
               <span>مجموعة جديدة</span>
             </button>
+            <button
+              className="w-full sm:w-auto h-12 px-5 rounded-2xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 active:scale-95 transition-all flex items-center justify-center gap-2 text-sm"
+              onClick={() => router.push("/bundles/new-v2")}
+              title="واجهة تجريبية أسرع، مخصصة للجوال، مع اقتراحات ذكية"
+            >
+              <span>🧪 جرّب الواجهة الجديدة</span>
+            </button>
           </div>
         </div>
 
